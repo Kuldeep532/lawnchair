@@ -435,6 +435,8 @@ dependencies {
     implementation libs.rikka.refine.runtime
 
     implementation libs.androidx.activity.compose
+    implementation libs.androidx.media3.exoplayer
+    implementation libs.androidx.media3.session
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.datastore.preferences
 
