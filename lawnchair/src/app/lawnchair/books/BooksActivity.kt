@@ -55,6 +55,13 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Locale
 
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
+import com.google.android.gms.tasks.Tasks
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+
 class BooksActivity : ComponentActivity() {
     private lateinit var store: BooksStore
     private var selectedBook: BookItem? = null
@@ -256,6 +263,8 @@ private fun BookReaderScreen(
     var showMore by remember { mutableStateOf(false) }
     var speech by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
     var speaking by remember { mutableStateOf(false) }
+    var ocrBusy by remember { mutableStateOf(false) }
+    var ocrMessage by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(Unit) {
         val engine = android.speech.tts.TextToSpeech(context) { status ->
@@ -282,6 +291,22 @@ private fun BookReaderScreen(
             }
         }.getOrElse { listOf("This book could not be read.") }.ifEmpty { listOf("No readable text was found in this book.") }
         currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
+    }
+
+    if (book.mimeType == "application/pdf" || book.uri.endsWith(".pdf", true)) {
+        LaunchedEffect(Unit) {
+            ocrBusy = true
+            ocrMessage = "Reading PDF with OCR…"
+            val result = runCatching { loadPdfPagePlaceholders(context, Uri.parse(book.uri)) }
+            result.onSuccess {
+                if (it.isNotEmpty()) pages = it
+                currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
+                ocrMessage = "OCR is ready for this PDF."
+            }.onFailure {
+                ocrMessage = "This PDF could not be read with OCR."
+            }
+            ocrBusy = false
+        }
     }
 
     BackHandler { onBack() }
@@ -364,6 +389,7 @@ private fun BookReaderScreen(
             Text("Page ${if (pages.isEmpty()) 0 else currentPage + 1} of ${pages.size}", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(14.dp))
             Text(pages.getOrNull(currentPage).orEmpty().ifBlank { "Loading…" }, modifier = Modifier.fillMaxSize(), style = MaterialTheme.typography.bodyLarge)
+            ocrMessage?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
         }
     }
 }
