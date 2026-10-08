@@ -110,6 +110,32 @@ object ColorTokens {
 
     @JvmField val GroupHighlightBlur = Surface.setAlpha(0.54f)
 
+    // Nexus signature surfaces: premium translucent layers that adapt to the active wallpaper palette.
+    @JvmField val NexusGlassSurface = DayNightColorToken(
+        SurfaceContainerHighest.setAlpha(0.66f),
+        SurfaceContainerLow.setAlpha(0.62f),
+    )
+
+    @JvmField val NexusGlassSurfaceStrong = DayNightColorToken(
+        SurfaceContainerHighest.setAlpha(0.84f),
+        SurfaceContainerLow.setAlpha(0.82f),
+    )
+
+    @JvmField val NexusAccentGlow = DayNightColorToken(
+        Accent1_500.setAlpha(0.18f),
+        Accent1_300.setAlpha(0.18f),
+    )
+
+    @JvmField val NexusAccentGlowStrong = DayNightColorToken(
+        Accent1_600.setAlpha(0.30f),
+        Accent1_200.setAlpha(0.24f),
+    )
+
+    @JvmField val NexusIconSurface = DayNightColorToken(
+        StaticColorToken(0xB8FFFFFF),
+        StaticColorToken(0x24000000),
+    )
+
     // Era OS inspired app surface: calm translucent grouping without introducing a new palette.
     @JvmField val EraAppsSurface = DayNightColorToken(
         SurfaceContainerHighest.setAlpha(0.78f),
