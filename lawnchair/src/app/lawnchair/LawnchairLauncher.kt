@@ -29,6 +29,10 @@ import android.view.View
 import android.view.ViewTreeObserver
 import android.window.SplashScreen
 import androidx.core.view.WindowInsetsCompat
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import app.lawnchair.ui.ModalBottomSheetContent
+import app.lawnchair.views.ComposeBottomSheet
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import app.lawnchair.LawnchairApp.Companion.showQuickstepWarningIfNecessary
@@ -261,7 +265,9 @@ class LawnchairLauncher : QuickstepLauncher() {
 
         ComposeBottomSheet.show(this) {
             ModalBottomSheetContent(
-                title = { Text(text = getString(R.string.nexus_welcome_title)) },
+                title = {
+                    Text(text = getString(R.string.nexus_welcome_title))
+                },
                 text = {
                     Text(text = getString(R.string.nexus_welcome_message))
                 },
