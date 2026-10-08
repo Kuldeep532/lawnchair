@@ -53,6 +53,7 @@ import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.Locale
 
 class BooksActivity : ComponentActivity() {
     private lateinit var store: BooksStore
