@@ -16,11 +16,10 @@ class LiveTvPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val launchIntent = Intent(this, LiveTvActivity::class.java)
         val sessionActivity = PendingIntent.getActivity(
             this,
             2001,
-            launchIntent,
+            Intent(this, LiveTvActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         player = ExoPlayer.Builder(this)
@@ -39,20 +38,29 @@ class LiveTvPlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession = mediaSession
 
-    fun play(channel: LiveTvChannel) {
+    private fun play(url: String, name: String) {
         player.setMediaItem(
             MediaItem.Builder()
-                .setMediaId(channel.streamUrl)
-                .setUri(Uri.parse(channel.streamUrl))
+                .setMediaId(url)
+                .setUri(Uri.parse(url))
                 .setMediaMetadata(
                     androidx.media3.common.MediaMetadata.Builder()
-                        .setTitle(channel.name)
+                        .setTitle(name)
                         .build(),
                 )
                 .build(),
         )
         player.prepare()
         player.play()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == LiveTvController.ACTION_PLAY) {
+            val url = intent.getStringExtra(LiveTvController.EXTRA_URL).orEmpty()
+            val name = intent.getStringExtra(LiveTvController.EXTRA_NAME).orEmpty()
+            if (url.isNotBlank()) play(url, name)
+        }
+        return START_STICKY
     }
 
     override fun onDestroy() {
