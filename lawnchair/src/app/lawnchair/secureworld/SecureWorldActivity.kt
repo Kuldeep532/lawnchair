@@ -53,6 +53,8 @@ class SecureWorldActivity : ComponentActivity() {
 
     private lateinit var promptExecutor: Executor
     private lateinit var store: SecureWorldStore
+    private var unlocked = false
+    private var lockOnResume = false
 
     private val documentPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -92,6 +94,8 @@ class SecureWorldActivity : ComponentActivity() {
             promptExecutor,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    unlocked = true
+                    lockOnResume = false
                     showSecureVault()
                 }
 
@@ -145,6 +149,22 @@ class SecureWorldActivity : ComponentActivity() {
                     },
                 )
             }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (unlocked && !isFinishing) {
+            lockOnResume = true
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (unlocked && lockOnResume && !isFinishing) {
+            unlocked = false
+            lockOnResume = false
+            authenticateAndShow()
         }
     }
 
