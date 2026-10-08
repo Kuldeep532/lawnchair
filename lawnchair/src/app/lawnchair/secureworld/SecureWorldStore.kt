@@ -5,7 +5,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.util.UUID
 
-data class SecureNote(val id: String, val title: String, val body: String)
+data class SecureNote(val id: String, val title: String, val body: String, val category: String = "General")
 data class SecureDocument(
     val id: String,
     val category: String,
@@ -15,7 +15,7 @@ data class SecureDocument(
     val uri: String,
     val ocrText: String = "",
 )
-data class SecurePassword(val id: String, val title: String, val username: String, val password: String)
+data class SecurePassword(val id: String, val title: String, val username: String, val password: String, val category: String = "General")
 
 class SecureWorldStore private constructor(context: Context) {
     private val preferences = EncryptedSharedPreferences.create(
@@ -27,11 +27,11 @@ class SecureWorldStore private constructor(context: Context) {
     )
 
     fun notes(): List<SecureNote> = decode("notes") { p ->
-        if (p.size >= 3) SecureNote(p[0], p[1], p.drop(2).joinToString(SEP)) else null
+        if (p.size >= 4) SecureNote(p[0], p[1], p[2], p.drop(3).joinToString(SEP)) else if (p.size >= 3) SecureNote(p[0], p[1], p[2], "General") else null
     }
 
-    fun saveNote(title: String, body: String): SecureNote {
-        val item = SecureNote(UUID.randomUUID().toString(), title.trim(), body)
+    fun saveNote(title: String, body: String, category: String = "General"): SecureNote {
+        val item = SecureNote(UUID.randomUUID().toString(), title.trim(), body, category.trim().ifBlank { "General" })
         saveNotes(notes() + item)
         return item
     }
@@ -67,11 +67,11 @@ class SecureWorldStore private constructor(context: Context) {
     fun deleteDocument(id: String) = saveDocuments(documents().filterNot { it.id == id })
 
     fun passwords(): List<SecurePassword> = decode("passwords") { p ->
-        if (p.size >= 4) SecurePassword(p[0], p[1], p[2], p.drop(3).joinToString(SEP)) else null
+        if (p.size >= 5) SecurePassword(p[0], p[1], p[2], p[3], p.drop(4).joinToString(SEP)) else if (p.size >= 4) SecurePassword(p[0], p[1], p[2], p[3], "General") else null
     }
 
-    fun savePassword(title: String, username: String, password: String): SecurePassword {
-        val item = SecurePassword(UUID.randomUUID().toString(), title.trim(), username.trim(), password)
+    fun savePassword(title: String, username: String, password: String, category: String = "General"): SecurePassword {
+        val item = SecurePassword(UUID.randomUUID().toString(), title.trim(), username.trim(), password, category.trim().ifBlank { "General" })
         savePasswords(passwords() + item)
         return item
     }
@@ -80,7 +80,7 @@ class SecureWorldStore private constructor(context: Context) {
 
     private fun saveNotes(items: List<SecureNote>) {
         val encoded = items.joinToString(RECORD) {
-            listOf(it.id, it.title, it.body).joinToString(SEP, transform = ::escape)
+            listOf(it.id, it.title, it.body, it.category).joinToString(SEP, transform = ::escape)
         }
         preferences.edit().putString("notes", encoded).apply()
     }
@@ -95,7 +95,7 @@ class SecureWorldStore private constructor(context: Context) {
 
     private fun savePasswords(items: List<SecurePassword>) {
         val encoded = items.joinToString(RECORD) {
-            listOf(it.id, it.title, it.username, it.password).joinToString(SEP, transform = ::escape)
+            listOf(it.id, it.title, it.username, it.password, it.category).joinToString(SEP, transform = ::escape)
         }
         preferences.edit().putString("passwords", encoded).apply()
     }
