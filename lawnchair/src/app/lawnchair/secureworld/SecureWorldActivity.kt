@@ -1,6 +1,7 @@
 package app.lawnchair.secureworld
 
 import android.os.Bundle
+import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.biometric.BiometricManager
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -81,6 +83,7 @@ class SecureWorldActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.surface,
                 ) {
                     var selectedTab by remember { mutableIntStateOf(0) }
+                    val accessibilityManager = LocalAccessibilityManager.current
                     val tabs = listOf("Notes", "Documents", "Passwords")
 
                     Column {
