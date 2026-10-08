@@ -50,6 +50,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayoutLazyColumn
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroupHeading
+import app.lawnchair.ui.preferences.components.NavigationActionPreference
+import app.lawnchair.ui.preferences.navigation.AboutLicenses
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.R
 
@@ -138,6 +140,12 @@ fun About(
         item { Spacer(modifier = Modifier.height(18.dp)) }
         item {
             PreferenceGroupHeading(stringResource(R.string.nexus_legal_heading))
+        }
+        item {
+            NavigationActionPreference(
+                label = stringResource(R.string.nexus_open_source_licenses),
+                destination = AboutLicenses,
+            )
         }
         item {
             Text(
