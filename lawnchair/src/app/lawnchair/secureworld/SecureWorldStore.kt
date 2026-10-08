@@ -13,6 +13,7 @@ data class SecureDocument(
     val name: String,
     val details: String,
     val uri: String,
+    val ocrText: String = "",
 )
 data class SecurePassword(val id: String, val title: String, val username: String, val password: String)
 
@@ -38,8 +39,10 @@ class SecureWorldStore private constructor(context: Context) {
     fun deleteNote(id: String) = saveNotes(notes().filterNot { it.id == id })
 
     fun documents(): List<SecureDocument> = decode("documents") { p ->
-        if (p.size >= 6) {
-            SecureDocument(p[0], p[1], p[2], p[3], p[4], p[5])
+        if (p.size >= 7) {
+            SecureDocument(p[0], p[1], p[2], p[3], p[4], p[5], p[6])
+        } else if (p.size >= 6) {
+            SecureDocument(p[0], p[1], p[2], p[3], p[4], p[5], "")
         } else if (p.size >= 3) {
             SecureDocument(p[0], "Other", "", p[1], "", p.drop(2).joinToString(SEP))
         } else {
@@ -47,7 +50,7 @@ class SecureWorldStore private constructor(context: Context) {
         }
     }
 
-    fun saveDocument(category: String, number: String, name: String, details: String, uri: String): SecureDocument {
+    fun saveDocument(category: String, number: String, name: String, details: String, uri: String, ocrText: String = ""): SecureDocument {
         val item = SecureDocument(
             UUID.randomUUID().toString(),
             category.trim(),
@@ -55,6 +58,7 @@ class SecureWorldStore private constructor(context: Context) {
             name.trim(),
             details.trim(),
             uri,
+            ocrText,
         )
         saveDocuments(documents() + item)
         return item
@@ -83,7 +87,7 @@ class SecureWorldStore private constructor(context: Context) {
 
     private fun saveDocuments(items: List<SecureDocument>) {
         val encoded = items.joinToString(RECORD) {
-            listOf(it.id, it.category, it.number, it.name, it.details, it.uri)
+            listOf(it.id, it.category, it.number, it.name, it.details, it.uri, it.ocrText)
                 .joinToString(SEP, transform = ::escape)
         }
         preferences.edit().putString("documents", encoded).apply()
