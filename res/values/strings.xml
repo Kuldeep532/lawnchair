@@ -581,4 +581,9 @@
     <string name="nexus_welcome_message">राधे राधे\n\nWelcome\n\nDeveloped by Kuldeep Kumar</string>
     <string name="nexus_welcome_continue">Get Started</string>
 
+    <string name="nexus_open_source_licenses">Open Source Licenses</string>
+    <string name="nexus_open_source_developer_credit">Developer credit</string>
+    <string name="nexus_open_source_developer">Nexus Launcher</string>
+    <string name="nexus_open_source_developer_note">Personal modifications and original Nexus work by Kuldeep Kumar Yadav</string>
+
 </resources>
