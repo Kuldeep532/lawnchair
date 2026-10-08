@@ -51,6 +51,7 @@ import app.lawnchair.ui.preferences.destinations.PreferencesDashboard
 import app.lawnchair.ui.preferences.destinations.QuickstepPreferences
 import app.lawnchair.ui.preferences.destinations.SearchPreferences
 import app.lawnchair.ui.preferences.destinations.SearchProviderPreferences
+import app.lawnchair.ui.preferences.destinations.SecureVaultPreference
 import app.lawnchair.ui.preferences.destinations.SelectAppsForDrawerFolder
 import app.lawnchair.ui.preferences.destinations.SelectIconPreference
 import app.lawnchair.ui.preferences.destinations.ShapePreference
@@ -197,6 +198,10 @@ fun PreferenceNavigation(
         composable<BackupAndRestore>(
             deepLinks = getDeepLink(BackupAndRestore),
         ) { BackupAndRestorePreference() }
+
+        composable<SecureVault>(
+            deepLinks = getDeepLink(SecureVault),
+        ) { SecureVaultPreference() }
 
         composable<About>(
             deepLinks = getDeepLink(About),
