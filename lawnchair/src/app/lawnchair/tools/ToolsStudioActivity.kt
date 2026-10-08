@@ -159,6 +159,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) {
                 Text("Online Radio")
             }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, app.lawnchair.livetv.LiveTvActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Live TV")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
