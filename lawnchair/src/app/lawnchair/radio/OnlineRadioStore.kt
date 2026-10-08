@@ -1,7 +1,6 @@
 package app.lawnchair.radio
 
 import android.content.Context
-import org.json.JSONArray
 import org.json.JSONObject
 
 data class RadioStation(
