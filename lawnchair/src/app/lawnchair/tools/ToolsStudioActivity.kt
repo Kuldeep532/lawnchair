@@ -1,7 +1,5 @@
 package app.lawnchair.tools
 
-import android.content.ClipData
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
@@ -19,7 +17,6 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.IosShare
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
