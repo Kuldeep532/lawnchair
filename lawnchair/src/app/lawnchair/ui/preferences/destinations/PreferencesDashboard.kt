@@ -72,6 +72,7 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.ProvideDescriptionTextStyle
 import app.lawnchair.ui.preferences.data.liveinfo.SyncLiveInformation
 import app.lawnchair.ui.preferences.navigation.About
+import app.lawnchair.ui.preferences.navigation.DigitalWellbeing
 import app.lawnchair.ui.preferences.navigation.AppDrawer
 import app.lawnchair.ui.preferences.navigation.BackupAndRestore
 import app.lawnchair.ui.preferences.navigation.DebugMenu
@@ -141,6 +142,14 @@ fun PreferencesDashboard(
                 iconResource = R.drawable.ic_home_screen,
                 onNavigate = { onNavigate(HomeScreen) },
                 isSelected = currentRoute is HomeScreen,
+            )
+
+            PreferenceCategory(
+                label = "Digital Wellbeing",
+                description = "Set healthy time limits and block distracting apps",
+                iconResource = R.drawable.ic_apps,
+                onNavigate = { onNavigate(DigitalWellbeing) },
+                isSelected = currentRoute is DigitalWellbeing,
             )
 
             val isSmartspaceEnabled = prefs2.enableSmartspace.firstCached()
