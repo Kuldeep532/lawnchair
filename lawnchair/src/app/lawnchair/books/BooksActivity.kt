@@ -260,7 +260,8 @@ private fun BookReaderScreen(
     DisposableEffect(Unit) {
         val engine = android.speech.tts.TextToSpeech(context) { status ->
             if (status == android.speech.tts.TextToSpeech.SUCCESS) {
-                engineSafeLanguage(context, speech)
+                val locale = Locale.getDefault()
+                if (engineSafeAvailable(engine, locale)) engine.language = locale
             }
         }
         speech = engine
@@ -366,6 +367,11 @@ private fun BookReaderScreen(
         }
     }
 }
+
+private fun engineSafeAvailable(
+    engine: android.speech.tts.TextToSpeech,
+    locale: Locale,
+): Boolean = engine.isLanguageAvailable(locale) >= android.speech.tts.TextToSpeech.LANG_AVAILABLE
 
 private fun engineSafeLanguage(
     context: android.content.Context,
