@@ -17,6 +17,22 @@ data class SecureDocument(
 )
 data class SecurePassword(val id: String, val title: String, val username: String, val password: String, val category: String = "General")
 
+data class SecureMedia(
+    val id: String,
+    val name: String,
+    val uri: String,
+    val mimeType: String,
+    val category: String = "Private Media",
+)
+
+data class SecureHiddenFile(
+    val id: String,
+    val name: String,
+    val localPath: String,
+    val mimeType: String,
+    val category: String = "Hidden Files",
+)
+
 data class SecureVaultCategory(val id: String, val name: String, val isBuiltIn: Boolean = true)
 
 class SecureWorldStore private constructor(context: Context) {
@@ -27,6 +43,24 @@ class SecureWorldStore private constructor(context: Context) {
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
     )
+
+    fun media(): List<SecureMedia> = decode("media") { p ->
+        if (p.size >= 4) SecureMedia(p[0], p[1], p[2], p[3], p.getOrNull(4).orEmpty().ifBlank { "Private Media" }) else null
+    }
+
+    fun saveMedia(name: String, uri: String, mimeType: String, category: String = "Private Media"): SecureMedia {
+        val item = SecureMedia(UUID.randomUUID().toString(), name.trim(), uri, mimeType, category.trim().ifBlank { "Private Media" })
+        val encoded = media() + item
+        val value = encoded.joinToString(RECORD) { listOf(it.id, it.name, it.uri, it.mimeType, it.category).joinToString(SEP, transform = ::escape) }
+        preferences.edit().putString("media", value).apply()
+        return item
+    }
+
+    fun deleteMedia(id: String) {
+        val value = media().filterNot { it.id == id }
+            .joinToString(RECORD) { listOf(it.id, it.name, it.uri, it.mimeType, it.category).joinToString(SEP, transform = ::escape) }
+        preferences.edit().putString("media", value).apply()
+    }
 
     fun categories(): List<SecureVaultCategory> {
         val custom = preferences.getString("categories", null).orEmpty()
