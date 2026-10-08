@@ -42,6 +42,7 @@ import javax.crypto.spec.SecretKeySpec
 
 
 @Composable
+@Suppress("UNUSED_PARAMETER")
 private fun ToolsStudioQuickActions(onQr: () -> Unit) {
     OutlinedButton(onClick = onQr, modifier = Modifier.fillMaxWidth()) {
         Text("QR Code Generator")
@@ -101,6 +102,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("QR Code Generator")
+            }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, PdfToImageActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("PDF to Image Converter")
             }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Encrypt") })
