@@ -664,61 +664,54 @@ private fun CloseSecureVaultDialog(
 @androidx.compose.runtime.Composable
 private fun NoteDialog(
     onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit,
+    onSave: (String, String, String) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("General") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New note") },
+        title = { Text("Add New Text") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(title, { title = it }, label = { Text("Title") })
-                OutlinedTextField(body, { body = it }, label = { Text("Note") })
+                OutlinedTextField(body, { body = it }, label = { Text("Text") })
+                OutlinedTextField(category, { category = it }, label = { Text("Category") }, singleLine = true)
             }
         },
-        confirmButton = {
-            Button(enabled = title.isNotBlank() && body.isNotBlank(), onClick = { onSave(title, body) }) {
-                Text("Save")
-            }
-        },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(enabled = title.isNotBlank() && body.isNotBlank(), onClick = { onSave(title, body, category) }) { Text("Save") } },
     )
 }
 
 @androidx.compose.runtime.Composable
 private fun PasswordDialog(
     onDismiss: () -> Unit,
-    onSave: (String, String, String) -> Unit,
+    onSave: (String, String, String, String) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("Bank Passwords") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New password") },
+        title = { Text("Add New Password") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(title, { title = it }, label = { Text("Name") })
                 OutlinedTextField(username, { username = it }, label = { Text("Username") })
-                OutlinedTextField(
-                    password,
-                    { password = it },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                )
+                OutlinedTextField(password, { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation())
+                OutlinedTextField(category, { category = it }, label = { Text("Category") }, singleLine = true)
             }
         },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } },
         confirmButton = {
-            Button(
-                enabled = title.isNotBlank() && username.isNotBlank() && password.isNotBlank(),
-                onClick = { onSave(title, username, password) },
-            ) {
+            Button(enabled = title.isNotBlank() && username.isNotBlank() && password.isNotBlank(), onClick = { onSave(title, username, password, category) }) {
                 Text("Save")
             }
         },
     )
 }
-
 
 /**
  * Normalizes text extracted from a document image before placing it in the document number field.
