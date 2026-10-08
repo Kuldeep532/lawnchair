@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayoutLazyColumn
 import app.lawnchair.ui.preferences.components.layout.preferenceGroupItems
+import app.lawnchair.ui.preferences.components.layout.PreferenceGroupHeading
 import com.android.launcher3.R
 
 @Composable
@@ -40,7 +41,17 @@ fun Acknowledgements(
         label = stringResource(id = R.string.acknowledgements),
         modifier = modifier,
     ) {
-        preferenceGroupItems(ossLibraries, isFirstChild = true) { _, library ->
+        item {
+            PreferenceGroupHeading(stringResource(R.string.nexus_open_source_developer_credit))
+        }
+        item {
+            ClickablePreference(
+                label = stringResource(R.string.nexus_open_source_developer),
+                subtitle = stringResource(R.string.nexus_open_source_developer_note),
+                onClick = { },
+            )
+        }
+        preferenceGroupItems(ossLibraries, isFirstChild = false) { _, library ->
             OssLibraryItem(
                 name = library.name,
                 license = library.license,
