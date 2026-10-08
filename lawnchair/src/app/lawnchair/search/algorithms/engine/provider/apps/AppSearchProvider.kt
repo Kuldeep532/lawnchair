@@ -18,6 +18,57 @@ import kotlin.math.ln
 /** Lightweight, offline preference ranking used by Nexus Launcher.
  * It deliberately uses a handful of signals instead of shipping a neural model.
  */
+
+
+/**
+ * Offline AI-style ranking layer. It combines lexical relevance with launch frequency
+ * and recency without shipping a heavyweight model.
+ */
+private object NexusAiRanker {
+    fun rank(
+        context: Context,
+        query: String,
+        apps: List<AppInfo>,
+    ): List<AppInfo> {
+        if (apps.size < 2) return apps
+        val prefs = context.getSharedPreferences("nexus_app_preferences", Context.MODE_PRIVATE)
+        val normalized = query.trim().lowercase(Locale.getDefault())
+        return apps.withIndex()
+            .map { indexed ->
+                val app = indexed.value
+                val key = app.componentName.flattenToString()
+                val launches = prefs.getLong("launch:$key", 0L).coerceAtMost(10_000L)
+                val last = prefs.getLong("last:$key", 0L)
+                val ageHours = if (last == 0L) Double.POSITIVE_INFINITY else
+                    ((System.currentTimeMillis() - last).coerceAtLeast(0L)).toDouble() / 3_600_000.0
+                val recency = if (ageHours.isFinite()) 1.0 / (1.0 + ageHours) else 0.0
+                val title = stripForRanking(app.title.toString())
+                val lexical = when {
+                    normalized.isBlank() -> 0.0
+                    title == normalized -> 1.0
+                    title.startsWith(normalized) -> 0.75
+                    title.contains(normalized) -> 0.5
+                    else -> 0.0
+                }
+                val behavior = ln(1.0 + launches.toDouble()) / 10.0 + recency
+                IndexedValueScore(indexed.index, app, lexical * 2.0 + behavior)
+            }
+            .sortedWith(compareByDescending<IndexedValueScore> { it.score }.thenBy { it.index })
+            .map { it.app }
+    }
+
+    private fun stripForRanking(input: String): String =
+        Normalizer.normalize(input, Normalizer.Form.NFKD)
+            .replace(DIACRITICS_REMOVE_PATTERN, "")
+            .lowercase(Locale.getDefault())
+
+    private data class IndexedValueScore(
+        val index: Int,
+        val app: AppInfo,
+        val score: Double,
+    )
+}
+
 private object NexusPreferenceBrain {
     private const val PREFS_NAME = "nexus_app_preferences"
     private const val KEY_PREFIX = "launch:"
@@ -67,7 +118,7 @@ object AppSearchProvider {
             normalSearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         }
 
-        val rankedResults = if (query.isBlank()) NexusPreferenceBrain.rank(context, appResults) else appResults
+        val rankedResults = NexusAiRanker.rank(context, query, appResults)
         return rankedResults.map { SearchResult.App(data = it) }
     }
 
