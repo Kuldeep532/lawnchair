@@ -83,6 +83,7 @@ import app.lawnchair.ui.preferences.navigation.Gestures
 import app.lawnchair.ui.preferences.navigation.HomeScreen
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
+import app.lawnchair.ui.preferences.navigation.ControlCenter
 import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
 import app.lawnchair.ui.util.addIf
