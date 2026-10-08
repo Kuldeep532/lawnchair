@@ -141,7 +141,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Extract Text")
+                Text("Image OCR")
             }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
