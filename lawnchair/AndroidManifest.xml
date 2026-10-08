@@ -171,6 +171,18 @@
             android:exported="false"
             android:label="@string/image_to_pdf"
             android:theme="@style/Theme.Lawnchair" />
+        <activity
+            android:name="app.lawnchair.tools.PdfReaderActivity"
+            android:exported="true"
+            android:label="@string/pdf_reader"
+            android:theme="@style/Theme.Lawnchair">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+        </activity>
+
 
         <activity
             android:name="app.lawnchair.radio.OnlineRadioActivity"
