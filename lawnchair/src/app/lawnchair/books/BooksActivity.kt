@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -25,11 +27,14 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,6 +43,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -78,7 +84,7 @@ class BooksActivity : ComponentActivity() {
         store = BooksStore.getInstance(this)
 
         val externalUri = intent?.data
-        if (externalUri != null && isSupportedBook(externalUri)) {
+        if (externalUri != null && intent?.action == Intent.ACTION_VIEW && isSupportedBook(externalUri)) {
             importAndOpen(externalUri)
         } else {
             showLibrary()
@@ -90,7 +96,7 @@ class BooksActivity : ComponentActivity() {
         intent ?: return
         setIntent(intent)
         val uri = intent.data
-        if (uri != null && isSupportedBook(uri)) {
+        if (intent.action == Intent.ACTION_VIEW && uri != null && isSupportedBook(uri)) {
             importAndOpen(uri)
         }
     }
@@ -184,7 +190,6 @@ class BooksActivity : ComponentActivity() {
         }
     }
 }
-
 @androidx.compose.runtime.Composable
 private fun BooksLibraryScreen(
     books: List<BookItem>,
@@ -192,6 +197,77 @@ private fun BooksLibraryScreen(
     onOpen: (BookItem) -> Unit,
     onDelete: (BookItem) -> Unit,
 ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Books") },
+                actions = {
+                    IconButton(onClick = onImport) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Import book")
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        if (books.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(Icons.Rounded.MenuBook, contentDescription = null)
+                Text("Your library is empty.", style = MaterialTheme.typography.headlineSmall)
+                Text("Import a book to start reading.", style = MaterialTheme.typography.bodyLarge)
+            }
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+                items(books, key = { it.id }) { book ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpen(book) }.padding(horizontal = 20.dp, vertical = 14.dp),
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(book.title, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                if (book.lastPosition > 0) "Continue from page ${book.lastPosition + 1}" else "Not started",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        IconButton(onClick = { onDelete(book) }) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Remove book")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun BookReaderScreen(
+    book: BookItem,
+    onBack: () -> Unit,
+    onPositionChanged: (Int) -> Unit,
+) {
+    var pages by remember(book.uri) { mutableStateOf<List<String>>(emptyList()) }
+    var currentPage by remember(book.uri) { mutableIntStateOf(book.lastPosition.coerceAtLeast(0)) }
+    var playing by remember { mutableStateOf(false) }
+    var pageInput by remember { mutableStateOf("") }
+    var showMore by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(book.uri) {
+        pages = runCatching {
+            val uri = Uri.parse(book.uri)
+            when {
+                book.mimeType == "application/pdf" || book.uri.endsWith(".pdf", true) -> loadPdfPagePlaceholders(context, uri)
+                book.mimeType == "application/epub+zip" || book.uri.endsWith(".epub", true) -> loadEpubPages(context, uri)
+                else -> loadPlainTextPages(context, uri)
+            }
+        }.getOrElse { listOf("This book could not be read.") }.ifEmpty { listOf("No readable text was found in this book.") }
+        currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
+    }
+
+    BackHandler { onBack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -205,10 +281,7 @@ private fun BooksLibraryScreen(
                     IconButton(onClick = { showMore = true }) {
                         Icon(Icons.Rounded.MoreVert, contentDescription = "More reader options")
                     }
-                    DropdownMenu(
-                        expanded = showMore,
-                        onDismissRequest = { showMore = false },
-                    ) {
+                    DropdownMenu(expanded = showMore, onDismissRequest = { showMore = false }) {
                         DropdownMenuItem(
                             text = { Text("Configure TTS & voice") },
                             onClick = { showMore = false },
@@ -218,66 +291,51 @@ private fun BooksLibraryScreen(
             )
         },
         bottomBar = {
-            Surface {
-                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                        IconButton(
-                            enabled = current > 0,
-                            onClick = {
-                                current = (current - 1).coerceAtLeast(0)
-                                onPositionChanged(current)
-                            },
-                        ) {
-                            Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous")
+            Surface(tonalElevation = 3.dp) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        IconButton(enabled = currentPage > 0, onClick = { currentPage = (currentPage - 1).coerceAtLeast(0); onPositionChanged(currentPage) }) {
+                            Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous page")
+                        }
+                        IconButton(enabled = currentPage > 0, onClick = { currentPage = (currentPage - 2).coerceAtLeast(0); onPositionChanged(currentPage) }) {
+                            Icon(Icons.Rounded.SkipPrevious, contentDescription = "Rewind")
                         }
                         IconButton(onClick = { playing = !playing }) {
-                            Icon(
-                                if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                contentDescription = if (playing) "Pause" else "Play",
-                            )
+                            Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (playing) "Pause reading" else "Play reading")
                         }
-                        IconButton(
-                            enabled = current < lines.lastIndex,
-                            onClick = {
-                                current = (current + 1).coerceAtMost(lines.lastIndex.coerceAtLeast(0))
-                                onPositionChanged(current)
-                            },
-                        ) {
-                            Icon(Icons.Rounded.SkipNext, contentDescription = "Next")
+                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { currentPage = (currentPage + 2).coerceAtMost(pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }) {
+                            Icon(Icons.Rounded.SkipNext, contentDescription = "Fast forward")
+                        }
+                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { currentPage = (currentPage + 1).coerceAtMost(pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }) {
+                            Icon(Icons.Rounded.SkipNext, contentDescription = "Next page")
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
-                            value = pageNumber,
-                            onValueChange = { pageNumber = it.filter(Char::isDigit) },
-                            label = { Text("Go to page") },
+                            value = pageInput,
+                            onValueChange = { pageInput = it.filter(Char::isDigit) },
+                            label = { Text("Page") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = {
-                            pageNumber.toIntOrNull()?.let {
-                                current = it.coerceIn(0, lines.lastIndex.coerceAtLeast(0))
-                                onPositionChanged(current)
-                            }
+                        IconButton(enabled = pageInput.isNotBlank(), onClick = {
+                            pageInput.toIntOrNull()?.let { currentPage = (it - 1).coerceIn(0, pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }
                         }) {
-                            Icon(Icons.Rounded.PlayArrow, contentDescription = "Go")
+                            Icon(Icons.Rounded.PlayArrow, contentDescription = "Go to page")
                         }
                     }
                 }
             }
         },
     ) { padding ->
-        val text = lines.getOrNull(current).orEmpty()
-        Text(
-            text = text.ifBlank { "Loading…" },
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
-            style = MaterialTheme.typography.bodyLarge,
-        )
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Text("Page ${if (pages.isEmpty()) 0 else currentPage + 1} of ${pages.size}", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(14.dp))
+            Text(pages.getOrNull(currentPage).orEmpty().ifBlank { "Loading…" }, modifier = Modifier.fillMaxSize(), style = MaterialTheme.typography.bodyLarge)
+        }
     }
 }
+
 private fun loadPlainTextPages(
     context: android.content.Context,
     uri: Uri,
