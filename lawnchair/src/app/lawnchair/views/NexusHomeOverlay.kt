@@ -22,7 +22,7 @@ class NexusHomeOverlay @JvmOverloads constructor(
     init {
         orientation = VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(22, 16, 22, 16)
+        setPadding(22, 14, 22, 14)
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         descendantFocusability = FOCUS_AFTER_DESCENDANTS
         isClickable = false
@@ -38,10 +38,10 @@ class NexusHomeOverlay @JvmOverloads constructor(
         }
 
         clock.apply {
-            textSize = 27f
+            textSize = 26f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
-            letterSpacing = 0.02f
+            letterSpacing = 0.035f
             contentDescription = "Current time"
         }
         addView(clock, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
@@ -58,14 +58,14 @@ class NexusHomeOverlay @JvmOverloads constructor(
 
         val brand = TextView(context).apply {
             text = "NEXUS • YOUR SPACE"
-            textSize = 10f
+            textSize = 9f
             setTextColor(Color.argb(170, 255, 255, 255))
             gravity = Gravity.CENTER
-            letterSpacing = 0.14f
+            letterSpacing = 0.18f
             contentDescription = "Nexus launcher"
         }
         addView(brand, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-            topMargin = 5
+            topMargin = 6
         })
 
         refresh()
