@@ -347,6 +347,55 @@ private fun loadPlainTextPages(
     return paginateText(text)
 }
 
+private fun loadPdfPagePlaceholders(
+    context: android.content.Context,
+    uri: Uri,
+): List<String> {
+    val parcel = context.contentResolver.openFileDescriptor(uri, "r") ?: return emptyList()
+    parcel.use { descriptor ->
+        val renderer = android.graphics.pdf.PdfRenderer(descriptor.fileDescriptor)
+        return try {
+            (0 until renderer.pageCount).map { pageIndex ->
+                renderer.openPage(pageIndex).use {
+                    "PDF page ${pageIndex + 1}.\n\nPDF text extraction is not available yet. Use the system PDF reader for selectable text."
+                }
+            }
+        } finally {
+            renderer.close()
+        }
+    }
+}
+
+private fun loadEpubPages(
+    context: android.content.Context,
+    uri: Uri,
+): List<String> {
+    val input = context.contentResolver.openInputStream(uri) ?: return emptyList()
+    val bytes = input.use { it.readBytes() }
+    val zip = java.util.zip.ZipInputStream(bytes.inputStream())
+    val chapters = mutableListOf<String>()
+    zip.use { stream ->
+        while (true) {
+            val entry = stream.nextEntry ?: break
+            if (!entry.isDirectory && (entry.name.endsWith(".xhtml", true) || entry.name.endsWith(".html", true) || entry.name.endsWith(".htm", true))) {
+                val html = stream.readBytes().toString(Charsets.UTF_8)
+                val text = html
+                    .replace(Regex("<script[\\s\\S]*?</script>", RegexOption.IGNORE_CASE), "")
+                    .replace(Regex("<style[\\s\\S]*?</style>", RegexOption.IGNORE_CASE), "")
+                    .replace(Regex("<[^>]+>"), " ")
+                    .replace("&nbsp;", " ")
+                    .replace("&amp;", "&")
+                    .replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace(Regex("\\s+"), " ")
+                    .trim()
+                if (text.isNotBlank()) chapters += text
+            }
+        }
+    }
+    return chapters.flatMap(::paginateText)
+}
+
 private fun paginateText(text: String, charsPerPage: Int = 1800): List<String> {
     if (text.isBlank()) return emptyList()
     val normalized = text.replace("\r\n", "\n").replace("\r", "\n")
