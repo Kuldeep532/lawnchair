@@ -153,6 +153,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             }
             Button(
                 onClick = {
+                    context.startActivity(Intent(context, PdfReaderActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("PDF Reader")
+            }
+            Button(
+                onClick = {
                     context.startActivity(Intent(context, app.lawnchair.radio.OnlineRadioActivity::class.java))
                 },
                 modifier = Modifier.fillMaxWidth(),
