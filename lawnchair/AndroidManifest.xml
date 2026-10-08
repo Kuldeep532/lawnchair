@@ -104,6 +104,12 @@
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
+            android:name="app.lawnchair.tools.PdfToImageActivity"
+            android:exported="false"
+            android:label="@string/pdf_to_image"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
             android:exported="true"
             android:label="@string/secure_world_label"
