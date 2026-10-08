@@ -42,6 +42,11 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
+private data class PdfRenderResult(
+    val pageCount: Int,
+    val bitmap: Bitmap,
+)
+
 class PdfReaderActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +92,7 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
                 descriptor.use {
                     val renderer = PdfRenderer(it.fileDescriptor)
                     renderer.use {
-                        pageCount = renderer.pageCount
+                        val count = renderer.pageCount
                         val pdfPage = renderer.openPage(
                             targetPage.coerceIn(0, (renderer.pageCount - 1).coerceAtLeast(0)),
                         )
@@ -104,7 +109,7 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
                                 null,
                                 PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY,
                             )
-                            image
+                            PdfRenderResult(count, image)
                         }
                     }
                 }
@@ -112,7 +117,8 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
             context.mainExecutor.execute {
                 working = false
                 result.onSuccess {
-                    bitmap = it
+                    pageCount = it.pageCount
+                    bitmap = it.bitmap
                     message = "Page " + (targetPage + 1) + " of " + pageCount + "."
                 }.onFailure {
                     bitmap = null
@@ -210,7 +216,7 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
                 if (bitmap != null) {
                     Image(
                         bitmap = bitmap!!.asImageBitmap(),
-                        contentDescription = "PDF page",
+                        contentDescription = "PDF page ${page + 1} of $pageCount",
                         modifier = Modifier.fillMaxWidth().weight(1f),
                     )
                 } else if (working) {
