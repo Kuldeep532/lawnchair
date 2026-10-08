@@ -32,7 +32,7 @@ class SearchItemBackground(
     }
     val groupHighlight = if (showBackground) {
         if (supportBlur) {
-            ColorTokens.GroupHighlightBlur.resolveColor(context)
+            ColorTokens.EraAppsSurface.resolveColor(context)
         } else {
             ColorTokens.GroupHighlight.resolveColor(context)
         }
