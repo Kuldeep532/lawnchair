@@ -1088,4 +1088,5 @@
     <string name="please_wait">Please wait…</string>
     <string name="tools_studio">Tools Studio</string>
     <string name="qr_generator">QR Code Generator</string>
+    <string name="pdf_to_image">PDF to Image Converter</string>
 </resources>
