@@ -57,10 +57,6 @@ import java.util.Locale
 
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
-import com.google.android.gms.tasks.Tasks
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 class BooksActivity : ComponentActivity() {
     private lateinit var store: BooksStore
