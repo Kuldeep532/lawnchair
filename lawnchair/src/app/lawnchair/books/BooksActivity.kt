@@ -76,7 +76,73 @@ class BooksActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         EdgeToEdge()
         store = BooksStore.getInstance(this)
-        showLibrary()
+
+        val externalUri = intent?.data
+        if (externalUri != null && isSupportedBook(externalUri)) {
+            importAndOpen(externalUri)
+        } else {
+            showLibrary()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent ?: return
+        setIntent(intent)
+        val uri = intent.data
+        if (uri != null && isSupportedBook(uri)) {
+            importAndOpen(uri)
+        }
+    }
+
+    private fun importAndOpen(uri: Uri) {
+        try {
+            contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+        } catch (_: SecurityException) {
+        }
+
+        val title = contentResolver.query(
+            uri,
+            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        } ?: "Book"
+
+        val mimeType = contentResolver.getType(uri).orEmpty()
+        val item = store.addBook(
+            title.substringBeforeLast('.', title),
+            uri.toString(),
+            mimeType,
+        )
+        showReader(item)
+    }
+
+    private fun isSupportedBook(uri: Uri): Boolean {
+        val mime = contentResolver.getType(uri).orEmpty().lowercase(Locale.ROOT)
+        if (mime in setOf("application/pdf", "application/epub+zip", "text/plain", "text/markdown")) {
+            return true
+        }
+
+        val name = contentResolver.query(
+            uri,
+            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }.orEmpty().lowercase(Locale.ROOT)
+
+        return name.endsWith(".pdf") ||
+            name.endsWith(".epub") ||
+            name.endsWith(".txt") ||
+            name.endsWith(".md")
     }
 
     private fun showLibrary() {
