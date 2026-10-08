@@ -122,6 +122,12 @@
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
+            android:name="app.lawnchair.tools.PasswordGeneratorActivity"
+            android:exported="false"
+            android:label="@string/password_generator"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
             android:exported="true"
             android:label="@string/secure_world_label"
