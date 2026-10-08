@@ -240,8 +240,13 @@ class SecureWorldActivity : ComponentActivity() {
                         }
 
                         if (selectedTab == 0) {
+                            val filtered = when (contentTab) {
+                                0 -> allItems.filter { it is VaultListItem.NoteItem }
+                                1 -> allItems.filter { it is VaultListItem.DocumentItem }
+                                else -> allItems.filter { it is VaultListItem.PasswordItem }
+                            }
                             SecureAllList(
-                                items = allItems,
+                                items = filtered,
                                 onDelete = { item -> deleteVaultItem(item); showSecureVault() },
                                 onOpenDocument = ::openDocument,
                             )
