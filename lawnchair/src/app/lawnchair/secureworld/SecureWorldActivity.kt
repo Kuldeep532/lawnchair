@@ -131,6 +131,19 @@ class SecureWorldActivity : ComponentActivity() {
         }
     }
 
+    private fun suggestDocumentDetails(category: String, extractedText: String): String {
+        val normalized = extractedText
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .take(8)
+            .joinToString(" | ")
+        return when {
+            normalized.isBlank() -> ""
+            else -> "OCR: $normalized"
+        }
+    }
+
     private fun showDocumentDialog(
         uri: String,
         suggestedName: String,
@@ -141,6 +154,7 @@ class SecureWorldActivity : ComponentActivity() {
                 DocumentDialog(
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
+                    suggestedDetails = suggestDocumentDetails("Other", extractedText),
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
                         val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
