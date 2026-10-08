@@ -248,12 +248,28 @@ private fun BookReaderScreen(
     onBack: () -> Unit,
     onPositionChanged: (Int) -> Unit,
 ) {
+    val context = LocalContext.current
     var pages by remember(book.uri) { mutableStateOf<List<String>>(emptyList()) }
     var currentPage by remember(book.uri) { mutableIntStateOf(book.lastPosition.coerceAtLeast(0)) }
     var playing by remember { mutableStateOf(false) }
     var pageInput by remember { mutableStateOf("") }
     var showMore by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    var speech by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
+    var speaking by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        val engine = android.speech.tts.TextToSpeech(context) { status ->
+            if (status == android.speech.tts.TextToSpeech.SUCCESS) {
+                engineSafeLanguage(context, speech)
+            }
+        }
+        speech = engine
+        onDispose {
+            engine.stop()
+            engine.shutdown()
+            speech = null
+        }
+    }
 
     LaunchedEffect(book.uri) {
         pages = runCatching {
@@ -302,8 +318,21 @@ private fun BookReaderScreen(
                         IconButton(enabled = currentPage > 0, onClick = { currentPage = (currentPage - 2).coerceAtLeast(0); onPositionChanged(currentPage) }) {
                             Icon(Icons.Rounded.SkipPrevious, contentDescription = "Rewind")
                         }
-                        IconButton(onClick = { playing = !playing }) {
-                            Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (playing) "Pause reading" else "Play reading")
+                        IconButton(onClick = {
+                            val text = pages.getOrNull(currentPage).orEmpty()
+                            val engine = speech
+                            if (engine == null || text.isBlank()) return@IconButton
+                            if (speaking) {
+                                engine.stop()
+                                speaking = false
+                                playing = false
+                            } else {
+                                engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
+                                speaking = true
+                                playing = true
+                            }
+                        }) {
+                            Icon(if (speaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (speaking) "Pause reading" else "Read page aloud")
                         }
                         IconButton(enabled = currentPage < pages.lastIndex, onClick = { currentPage = (currentPage + 2).coerceAtMost(pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }) {
                             Icon(Icons.Rounded.SkipNext, contentDescription = "Fast forward")
@@ -335,6 +364,17 @@ private fun BookReaderScreen(
             Spacer(Modifier.height(14.dp))
             Text(pages.getOrNull(currentPage).orEmpty().ifBlank { "Loading…" }, modifier = Modifier.fillMaxSize(), style = MaterialTheme.typography.bodyLarge)
         }
+    }
+}
+
+private fun engineSafeLanguage(
+    context: android.content.Context,
+    engine: android.speech.tts.TextToSpeech?,
+) {
+    if (engine == null) return
+    val locale = Locale.getDefault()
+    if (engine.isLanguageAvailable(locale) >= android.speech.tts.TextToSpeech.LANG_AVAILABLE) {
+        engine.language = locale
     }
 }
 
