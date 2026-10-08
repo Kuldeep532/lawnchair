@@ -1,8 +1,11 @@
 package app.lawnchair.tools
 
+import android.content.ContentValues
 import android.content.Intent
+import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,8 +20,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.ImageSearch
+import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -27,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
+import java.io.File
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -110,7 +118,63 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
         }
     }
 
-    BackHandler(onBack = onBack)
+    fun clearResult() {
+        selectedUri = null
+        extractedText = ""
+        message = null
+    }
+
+    fun shareText() {
+        if (extractedText.isBlank()) return
+        val send = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_TEXT, extractedText)
+        context.startActivity(Intent.createChooser(send, "Share extracted text"))
+    }
+
+    fun saveAsPdf() {
+        if (extractedText.isBlank()) return
+        runCatching {
+            val document = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { textSize = 14f }
+            var y = 36f
+            extractedText.split("\\n").forEach { line ->
+                if (y > 810f) return@forEach
+                canvas.drawText(line.take(80), 24f, y, paint)
+                y += 20f
+            }
+            document.finishPage(page)
+            val values = ContentValues().apply {
+                put(MediaStore.Files.FileColumns.DISPLAY_NAME, "Nexus_Image_OCR_${System.currentTimeMillis()}.pdf")
+                put(MediaStore.Files.FileColumns.MIME_TYPE, "application/pdf")
+                put(MediaStore.Files.FileColumns.RELATIVE_PATH, "Download/Nexus Plus/Image OCR")
+                put(MediaStore.Files.FileColumns.IS_PENDING, 1)
+            }
+            val uri = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), values)
+                ?: error("Could not create PDF.")
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { document.writeTo(it) }
+                    ?: error("Could not save PDF.")
+                val done = ContentValues().apply {
+                    put(MediaStore.Files.FileColumns.IS_PENDING, 0)
+                }
+                context.contentResolver.update(uri, done, null, null)
+                message = "PDF saved."
+            } catch (e: Exception) {
+                context.contentResolver.delete(uri, null, null)
+                throw e
+            } finally {
+                document.close()
+            }
+        }.onFailure {
+            message = "PDF could not be saved."
+        }
+    }
+
+    BackHandler { if (selectedUri != null || extractedText.isNotBlank() || message != null) clearResult() else onBack() }
 
     Scaffold(
         topBar = {
@@ -160,15 +224,48 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     label = { Text("Extracted text") },
                 )
-                OutlinedButton(
-                    onClick = {
-                        clipboard.setText(AnnotatedString(extractedText))
-                        message = "Text copied."
-                    },
-                    modifier = Modifier.fillMaxWidth(),
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(Icons.Rounded.ContentCopy, contentDescription = null)
-                    Text("Copy Text")
+                    OutlinedButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(extractedText))
+                            message = "Text copied."
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy")
+                        Text("Copy")
+                    }
+                    OutlinedButton(
+                        onClick = ::shareText,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(Icons.Rounded.IosShare, contentDescription = "Share")
+                        Text("Share")
+                    }
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = ::saveAsPdf,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Save PDF")
+                    }
+                    OutlinedButton(
+                        onClick = ::clearResult,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(Icons.Rounded.DeleteSweep, contentDescription = "Clear")
+                        Text("Clear")
+                    }
+                    IconButton(onClick = ::clearResult) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    }
                 }
             } else {
                 Spacer(Modifier.height(8.dp))
