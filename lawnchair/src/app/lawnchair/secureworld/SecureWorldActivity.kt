@@ -193,6 +193,7 @@ class SecureWorldActivity : ComponentActivity() {
         setContent {
             LawnchairTheme {
                 var selectedTab by remember { mutableIntStateOf(0) }
+                    var contentTab by remember { mutableIntStateOf(0) }
                 var showAddSheet by remember { mutableStateOf(false) }
                 var showNoteDialog by remember { mutableStateOf(false) }
                 var showDocumentChoice by remember { mutableStateOf(false) }
@@ -232,9 +233,10 @@ class SecureWorldActivity : ComponentActivity() {
                             androidx.compose.material3.OutlinedButton(onClick = { showPasswordDialog = true }) { Text("Add New Password") }
                         }
 
-                        TabRow(selectedTabIndex = selectedTab) {
-                            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("All") })
-                            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Categories") })
+                        TabRow(selectedTabIndex = contentTab) {
+                            Tab(selected = contentTab == 0, onClick = { contentTab = 0 }, text = { Text("Text") })
+                            Tab(selected = contentTab == 1, onClick = { contentTab = 1 }, text = { Text("Documents") })
+                            Tab(selected = contentTab == 2, onClick = { contentTab = 2 }, text = { Text("Password") })
                         }
 
                         if (selectedTab == 0) {
