@@ -67,6 +67,7 @@ androidx-uiautomator = "androidx.test.uiautomator:uiautomator:2.4.0"
 androidx-window = "androidx.window:window:1.5.1"
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "androidx-media3" }
 androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "androidx-media3" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "androidx-media3" }
 
 # Compose
 compose-bom = "androidx.compose:compose-bom:2026.09.00"
