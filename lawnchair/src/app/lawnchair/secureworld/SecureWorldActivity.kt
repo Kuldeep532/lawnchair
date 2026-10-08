@@ -313,6 +313,141 @@ class SecureWorldActivity : ComponentActivity() {
     }
 }
 
+sealed class VaultListItem {
+    data class NoteItem(val value: SecureNote) : VaultListItem()
+    data class DocumentItem(val value: SecureDocument) : VaultListItem()
+    data class PasswordItem(val value: SecurePassword) : VaultListItem()
+
+    val id: String get() = when (this) {
+        is NoteItem -> value.id
+        is DocumentItem -> value.id
+        is PasswordItem -> value.id
+    }
+    val title: String get() = when (this) {
+        is NoteItem -> value.title
+        is DocumentItem -> value.name.ifBlank { "Document" }
+        is PasswordItem -> value.title
+    }
+    val category: String get() = when (this) {
+        is NoteItem -> value.category
+        is DocumentItem -> value.category
+        is PasswordItem -> value.category
+    }
+    val subtitle: String get() = when (this) {
+        is NoteItem -> value.body
+        is DocumentItem -> value.details.ifBlank { value.number }
+        is PasswordItem -> value.username
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun SecureAllList(
+    items: List<VaultListItem>,
+    onDelete: (VaultListItem) -> Unit,
+    onOpenDocument: (String) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Column(modifier = Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
+            Text("Your Secure Vault is empty.", style = MaterialTheme.typography.titleLarge)
+            Text("Use Add New to save something.")
+        }
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(items, key = { it.id }) { entry ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f).clickable {
+                        if (entry is VaultListItem.DocumentItem && entry.value.uri.isNotBlank()) onOpenDocument(entry.value.uri)
+                    }) {
+                        Text(entry.title, style = MaterialTheme.typography.titleMedium)
+                        Text(entry.category, style = MaterialTheme.typography.labelMedium)
+                        Text(entry.subtitle, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
+                    }
+                    IconButton(onClick = { onDelete(entry) }) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Delete item")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun SecureCategoriesTab(
+    categories: List<SecureVaultCategory>,
+    selectedCategory: String?,
+    onSelectCategory: (String?) -> Unit,
+    onCreateCategory: () -> Unit,
+    onDeleteCategory: (String) -> Unit,
+    items: List<VaultListItem>,
+    onDelete: (VaultListItem) -> Unit,
+    onOpenDocument: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(modifier = Modifier.weight(if (selectedCategory == null) 1f else 0.5f)) {
+            item {
+                androidx.compose.material3.ListItem(
+                    headlineContent = { Text("Create custom category") },
+                    supportingContent = { Text("Use your own category for anything in the vault.") },
+                    modifier = Modifier.clickable(onClick = onCreateCategory),
+                )
+            }
+            items(categories, key = { it.id }) { category ->
+                androidx.compose.material3.ListItem(
+                    headlineContent = { Text(category.name) },
+                    supportingContent = { Text("Category") },
+                    modifier = Modifier.clickable { onSelectCategory(category.name) },
+                    trailingContent = {
+                        if (!category.isBuiltIn) IconButton(onClick = { onDeleteCategory(category.name) }) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Delete category")
+                        }
+                    },
+                )
+            }
+        }
+        if (selectedCategory != null) {
+            Text(selectedCategory, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
+            SecureAllList(items.filter { it.category.equals(selectedCategory, true) }, onDelete, onOpenDocument)
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun SecureAddBottomSheet(
+    onDismiss: () -> Unit,
+    onAddText: () -> Unit,
+    onAddDocument: () -> Unit,
+    onAddPassword: () -> Unit,
+    onAddCategory: () -> Unit,
+) {
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Add new", style = MaterialTheme.typography.titleLarge)
+            Button(onClick = onAddText, modifier = Modifier.fillMaxWidth()) { Text("Add New Text") }
+            Button(onClick = onAddDocument, modifier = Modifier.fillMaxWidth()) { Text("Add New Document") }
+            Button(onClick = onAddPassword, modifier = Modifier.fillMaxWidth()) { Text("Add New Password") }
+            Button(onClick = onAddCategory, modifier = Modifier.fillMaxWidth()) { Text("Category") }
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
+private fun CategoryDialog(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New category") },
+        text = { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Category name") }, singleLine = true) },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(enabled = name.isNotBlank(), onClick = { onSave(name.trim()) }) { Text("Create") } },
+    )
+}
 @androidx.compose.runtime.Composable
 private fun NotesTab(
     items: List<SecureNote>,
