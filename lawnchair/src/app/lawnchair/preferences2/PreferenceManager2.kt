@@ -788,6 +788,26 @@ class PreferenceManager2 @Inject constructor(
         onSet = { reloadHelper.recreate() },
     )
 
+    val controlCenterGlass = preference(
+        key = booleanPreferencesKey(name = "control_center_glass"),
+        defaultValue = true,
+    )
+
+    val controlCenterNotifications = preference(
+        key = booleanPreferencesKey(name = "control_center_notifications"),
+        defaultValue = true,
+    )
+
+    val controlCenterQuickSettings = preference(
+        key = booleanPreferencesKey(name = "control_center_quick_settings"),
+        defaultValue = true,
+    )
+
+    val controlCenterLargeTiles = preference(
+        key = booleanPreferencesKey(name = "control_center_large_tiles"),
+        defaultValue = true,
+    )
+
     val wallpaperDepthEffect = preference(
         key = booleanPreferencesKey(name = "enable_wallpaper_depth_effect"),
         defaultValue = true,
