@@ -198,6 +198,7 @@ class SecureWorldActivity : ComponentActivity() {
                 var showNoteDialog by remember { mutableStateOf(false) }
                 var showDocumentChoice by remember { mutableStateOf(false) }
                 var showPasswordDialog by remember { mutableStateOf(false) }
+                var showCardDialog by remember { mutableStateOf(false) }
                 var showCategoryDialog by remember { mutableStateOf(false) }
                 var showCloseDialog by remember { mutableStateOf(false) }
                 var selectedCategory by remember { mutableStateOf<String?>(null) }
@@ -236,20 +237,29 @@ class SecureWorldActivity : ComponentActivity() {
                         TabRow(selectedTabIndex = contentTab) {
                             Tab(selected = contentTab == 0, onClick = { contentTab = 0 }, text = { Text("Text") })
                             Tab(selected = contentTab == 1, onClick = { contentTab = 1 }, text = { Text("Documents") })
-                            Tab(selected = contentTab == 2, onClick = { contentTab = 2 }, text = { Text("Password") })
+                            Tab(selected = contentTab == 2, onClick = { contentTab = 2 }, text = { Text("Passwords") })
+                            Tab(selected = contentTab == 3, onClick = { contentTab = 3 }, text = { Text("Cards") })
                         }
 
                         if (selectedTab == 0) {
                             val filtered = when (contentTab) {
                                 0 -> allItems.filter { it is VaultListItem.NoteItem }
                                 1 -> allItems.filter { it is VaultListItem.DocumentItem }
-                                else -> allItems.filter { it is VaultListItem.PasswordItem }
+                                2 -> allItems.filter { it is VaultListItem.PasswordItem }
+                                else -> emptyList()
                             }
-                            SecureAllList(
-                                items = filtered,
-                                onDelete = { item -> deleteVaultItem(item); showSecureVault() },
-                                onOpenDocument = ::openDocument,
-                            )
+                            if (contentTab == 3) {
+                                CardList(
+                                    items = store.cards(),
+                                    onDelete = { store.deleteCard(it); showSecureVault() },
+                                )
+                            } else {
+                                SecureAllList(
+                                    items = filtered,
+                                    onDelete = { item -> deleteVaultItem(item); showSecureVault() },
+                                    onOpenDocument = ::openDocument,
+                                )
+                            }
                         } else {
                             SecureCategoriesTab(
                                 categories = store.categories(),
@@ -271,6 +281,7 @@ class SecureWorldActivity : ComponentActivity() {
                         onAddText = { showAddSheet = false; showNoteDialog = true },
                         onAddDocument = { showAddSheet = false; showDocumentChoice = true },
                         onAddPassword = { showAddSheet = false; showPasswordDialog = true },
+                        onAddCard = { showAddSheet = false; showCardDialog = true },
                         onAddCategory = { showAddSheet = false; showCategoryDialog = true },
                     )
                 }
@@ -291,8 +302,24 @@ class SecureWorldActivity : ComponentActivity() {
 
                 if (showPasswordDialog) {
                     PasswordDialog(onDismiss = { showPasswordDialog = false }, onSave = { title, username, password, category ->
-                        store.savePassword(title, username, password, category); showPasswordDialog = false; showSecureVault()
+                        store.savePassword(title, username, password, category)
+                        showPasswordDialog = false
+                        showSecureVault()
                     })
+                }
+
+                if (showCardDialog) {
+                    CardDialog(
+                        onDismiss = { showCardDialog = false },
+                        onSave = { type, holder, number, expiry, details ->
+                            runCatching {
+                                store.saveCard(type, holder, number, expiry, details)
+                            }.onSuccess {
+                                showCardDialog = false
+                                showSecureVault()
+                            }
+                        },
+                    )
                 }
 
                 if (showCategoryDialog) {
@@ -427,6 +454,7 @@ private fun SecureAddBottomSheet(
     onAddText: () -> Unit,
     onAddDocument: () -> Unit,
     onAddPassword: () -> Unit,
+    onAddCard: () -> Unit,
     onAddCategory: () -> Unit,
 ) {
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -435,6 +463,7 @@ private fun SecureAddBottomSheet(
             Button(onClick = onAddText, modifier = Modifier.fillMaxWidth()) { Text("Add New Text") }
             Button(onClick = onAddDocument, modifier = Modifier.fillMaxWidth()) { Text("Add New Document") }
             Button(onClick = onAddPassword, modifier = Modifier.fillMaxWidth()) { Text("Add New Password") }
+            Button(onClick = onAddCard, modifier = Modifier.fillMaxWidth()) { Text("Add Credit / Debit Card") }
             Button(onClick = onAddCategory, modifier = Modifier.fillMaxWidth()) { Text("Category") }
             Spacer(Modifier.height(12.dp))
         }
@@ -528,6 +557,44 @@ private fun DocumentsTab(
         }
     }
 }
+
+@androidx.compose.runtime.Composable
+private fun CardList(
+    items: List<SecureCard>,
+    onDelete: (String) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text("No cards saved.", style = MaterialTheme.typography.titleLarge)
+            Text("Add a valid credit or debit card to keep it protected.")
+        }
+        return
+    }
+    LazyColumn {
+        items(items, key = { it.id }) { item ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(item.type, style = MaterialTheme.typography.titleMedium)
+                    Text(item.holderName, style = MaterialTheme.typography.bodyMedium)
+                    Text(maskCard(item.number), style = MaterialTheme.typography.bodyMedium)
+                    if (item.expiry.isNotBlank()) Text("Expires " + item.expiry, style = MaterialTheme.typography.bodySmall)
+                }
+                IconButton(onClick = { onDelete(item.id) }) {
+                    Icon(Icons.Rounded.Delete, contentDescription = "Delete card")
+                }
+            }
+        }
+    }
+}
+
+private fun maskCard(number: String): String =
+    if (number.length <= 4) number else "•••• •••• •••• " + number.takeLast(4)
 
 @androidx.compose.runtime.Composable
 private fun PasswordsTab(
@@ -692,6 +759,70 @@ private fun NoteDialog(
 }
 
 @androidx.compose.runtime.Composable
+@androidx.compose.runtime.Composable
+private fun CardDialog(
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, String) -> Unit,
+) {
+    var type by remember { mutableStateOf("Credit / Debit Card") }
+    var holder by remember { mutableStateOf("") }
+    var number by remember { mutableStateOf("") }
+    var expiry by remember { mutableStateOf("") }
+    var details by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Credit / Debit Card") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(type, { type = it }, label = { Text("Card type") }, singleLine = true)
+                OutlinedTextField(holder, { holder = it }, label = { Text("Cardholder name") }, singleLine = true)
+                OutlinedTextField(
+                    number,
+                    {
+                        val digits = it.filter(Char::isDigit).take(19)
+                        number = digits
+                        error = if (digits.isEmpty()) null else if (isValidCardNumber(digits)) null else "Enter a valid card number."
+                    },
+                    label = { Text("Card number") },
+                    singleLine = true,
+                )
+                OutlinedTextField(expiry, { expiry = it }, label = { Text("Expiry (MM/YY)") }, singleLine = true)
+                OutlinedTextField(details, { details = it }, label = { Text("Notes (optional)") })
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+        },
+        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = {
+            Button(
+                enabled = holder.isNotBlank() &&
+                    isValidCardNumber(number) &&
+                    Regex("^((0[1-9])|(1[0-2]))/[0-9]{2}$").matches(expiry),
+                onClick = { onSave(type.trim(), holder.trim(), number, expiry.trim(), details.trim()) },
+            ) {
+                Text("Save")
+            }
+        },
+    )
+}
+
+private fun isValidCardNumber(number: String): Boolean {
+    if (number.length !in 13..19) return false
+    var sum = 0
+    var doubleDigit = false
+    for (index in number.lastIndex downTo 0) {
+        var digit = number[index] - '0'
+        if (doubleDigit) {
+            digit *= 2
+            if (digit > 9) digit -= 9
+        }
+        sum += digit
+        doubleDigit = !doubleDigit
+    }
+    return sum % 10 == 0
+}
+
 private fun PasswordDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit,
