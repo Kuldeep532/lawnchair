@@ -342,3 +342,32 @@ private fun BookReaderScreen(
         )
     }
 }
+private fun loadPlainTextPages(
+    context: android.content.Context,
+    uri: Uri,
+): List<String> {
+    val text = BufferedReader(
+        InputStreamReader(context.contentResolver.openInputStream(uri))
+    ).use { it?.readText().orEmpty() }
+    return paginateText(text)
+}
+
+private fun paginateText(text: String, charsPerPage: Int = 1800): List<String> {
+    if (text.isBlank()) return emptyList()
+    val normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    if (normalized.length <= charsPerPage) return listOf(normalized)
+
+    val pages = mutableListOf<String>()
+    var start = 0
+    while (start < normalized.length) {
+        val target = minOf(start + charsPerPage, normalized.length)
+        val split = normalized.lastIndexOf('\n', target)
+            .takeIf { it > start + 400 }
+            ?: normalized.lastIndexOf(' ', target).takeIf { it > start + 400 }
+            ?: target
+        pages += normalized.substring(start, split).trim()
+        start = split
+        while (start < normalized.length && normalized[start].isWhitespace()) start++
+    }
+    return pages
+}
