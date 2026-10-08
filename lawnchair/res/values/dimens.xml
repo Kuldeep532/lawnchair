@@ -17,9 +17,10 @@
 
 <resources>
     <!-- Hotseat -->
+    <!-- Nexus tuned proportions: tighter dock spacing and a lighter search profile. -->
     <dimen name="dynamic_grid_hotseat_top_padding">0dp</dimen>
-    <dimen name="dynamic_grid_hotseat_bottom_padding">62dp</dimen>
-    <dimen name="dynamic_grid_hotseat_bottom_non_tall_padding">15dp</dimen>
+    <dimen name="dynamic_grid_hotseat_bottom_padding">48dp</dimen>
+    <dimen name="dynamic_grid_hotseat_bottom_non_tall_padding">12dp</dimen>
     <dimen name="dynamic_grid_hotseat_extra_vertical_size">24dp</dimen>
     <dimen name="noqsb_hotseat_top_padding">8dp</dimen>
     <dimen name="noqsb_hotseat_bottom_padding">2dp</dimen>
@@ -34,17 +35,17 @@
     <dimen name="edit_mode_page_strip_tip_margin">8dp</dimen>
 
     <!-- qsb -->
-    <dimen name="all_apps_search_bar_bottom_padding">36dp</dimen>
-    <dimen name="all_apps_search_vertical_offset">30dp</dimen>
+    <dimen name="all_apps_search_bar_bottom_padding">28dp</dimen>
+    <dimen name="all_apps_search_vertical_offset">26dp</dimen>
     <dimen name="qsb_g_icon_marginStart">16dp</dimen>
     <dimen name="qsb_icon_padding">10dp</dimen>
     <dimen name="qsb_margin_top_adjusting">20dp</dimen>
     <dimen name="qsb_min_width_with_mic">124dp</dimen>
     <dimen name="qsb_shadow_margin">6dp</dimen>
-    <dimen name="qsb_widget_height">64dp</dimen>
+    <dimen name="qsb_widget_height">60dp</dimen>
     <dimen name="qsb_icon_width">56dp</dimen>
     <dimen name="search_widget_top_shift">16dp</dimen>
-    <dimen name="search_widget_hotseat_height">56dp</dimen>
+    <dimen name="search_widget_hotseat_height">52dp</dimen>
     <dimen name="qsb_widget_vertical_padding">6dp</dimen>
 
     <!-- search -->
