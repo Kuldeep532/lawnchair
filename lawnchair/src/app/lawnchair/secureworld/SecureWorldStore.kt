@@ -28,6 +28,41 @@ class SecureWorldStore private constructor(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
     )
 
+    fun categories(): List<SecureVaultCategory> {
+        val custom = preferences.getString("categories", null).orEmpty()
+            .split(RECORD)
+            .mapNotNull { record ->
+                if (record.isBlank()) null else record.split(SEP).let { parts ->
+                    if (parts.size >= 2) SecureVaultCategory(unescape(parts[0]), unescape(parts.drop(1).joinToString(SEP)), false) else null
+                }
+            }
+        val customNames = custom.map { it.name.lowercase() }.toSet()
+        return defaultCategories.map { SecureVaultCategory(it.lowercase().replace(' ', '_'), it, true) }
+            .filterNot { it.name.lowercase() in customNames } + custom
+    }
+
+    fun addCategory(name: String): SecureVaultCategory? {
+        val clean = name.trim()
+        if (clean.isBlank() || categories().any { it.name.equals(clean, true) }) return null
+        val item = SecureVaultCategory(UUID.randomUUID().toString(), clean, false)
+        val current = preferences.getString("categories", null).orEmpty()
+        val next = if (current.isBlank()) {
+            escape(item.id) + SEP + escape(item.name)
+        } else {
+            current + RECORD + escape(item.id) + SEP + escape(item.name)
+        }
+        preferences.edit().putString("categories", next).apply()
+        return item
+    }
+
+    fun deleteCategory(name: String) {
+        if (defaultCategories.any { it.equals(name, true) }) return
+        val next = categories()
+            .filterNot { it.name.equals(name, true) }
+            .joinToString(RECORD) { escape(it.id) + SEP + escape(it.name) }
+        preferences.edit().putString("categories", next).apply()
+    }
+
     fun notes(): List<SecureNote> = decode("notes") { p ->
         if (p.size >= 4) SecureNote(p[0], p[1], p[2], p.drop(3).joinToString(SEP)) else if (p.size >= 3) SecureNote(p[0], p[1], p[2], "General") else null
     }
@@ -117,6 +152,29 @@ class SecureWorldStore private constructor(context: Context) {
     companion object {
         private const val RECORD = "\u001e"
         private const val SEP = "\u001f"
+
+        private val defaultCategories = listOf(
+            "General",
+            "Personal",
+            "Finance",
+            "Bank Passwords",
+            "Internet Banking Passwords",
+            "My Google Account",
+            "My Instagram",
+            "My Facebook",
+            "Email Accounts",
+            "Social Media",
+            "Work",
+            "Travel",
+            "Identity Documents",
+            "Insurance",
+            "Education",
+            "Health",
+            "Shopping",
+            "Bills",
+            "Wi-Fi & Network",
+            "Other",
+        )
 
         @Volatile private var instance: SecureWorldStore? = null
 
