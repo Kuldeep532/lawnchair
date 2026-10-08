@@ -98,6 +98,12 @@
         </activity>
 
         <activity
+            android:name="app.lawnchair.tools.QrGeneratorActivity"
+            android:exported="false"
+            android:label="@string/qr_generator"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
             android:exported="true"
             android:label="@string/secure_world_label"
