@@ -6,36 +6,29 @@ import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.FrameLayout
-import android.widget.TextView
 
 class NexusDockSurface @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : FrameLayout(context, attrs) {
 
+    private val content = com.android.launcher3.Hotseat(context, attrs)
+
     init {
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-        foregroundGravity = Gravity.CENTER
+        contentDescription = "Nexus dock"
 
         background = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
-            intArrayOf(Color.argb(110, 255, 255, 255), Color.argb(58, 255, 255, 255)),
+            intArrayOf(Color.argb(118, 255, 255, 255), Color.argb(46, 255, 255, 255)),
         ).apply {
-            cornerRadius = 44f
-            setStroke(1, Color.argb(85, 255, 255, 255))
+            cornerRadius = 46f
+            setStroke(1, Color.argb(82, 255, 255, 255))
         }
 
-        val hint = TextView(context).apply {
-            text = "Nexus Dock"
-            textSize = 12f
-            setTextColor(Color.argb(190, 255, 255, 255))
-            gravity = Gravity.CENTER
-            contentDescription = "Nexus dock"
-            isFocusable = true
-        }
         addView(
-            hint,
-            LayoutParams(LayoutParams.MATCH_PARENT, 44).apply {
+            content,
+            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT).apply {
                 gravity = Gravity.CENTER
             },
         )
