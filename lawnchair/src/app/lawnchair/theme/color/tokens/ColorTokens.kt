@@ -110,6 +110,17 @@ object ColorTokens {
 
     @JvmField val GroupHighlightBlur = Surface.setAlpha(0.54f)
 
+    // Era OS inspired app surface: calm translucent grouping without introducing a new palette.
+    @JvmField val EraAppsSurface = DayNightColorToken(
+        SurfaceContainerHighest.setAlpha(0.78f),
+        SurfaceContainerLow.setAlpha(0.72f),
+    )
+
+    @JvmField val EraAppsAccent = DayNightColorToken(
+        Accent1_600,
+        Accent1_200,
+    )
+
     @JvmField val OverviewScrimColor = DayNightColorToken(Neutral2_100.setLStar(87.0), Neutral1_800)
 
     @JvmField val OverviewScrimOverBlurColor = DayNightColorToken(
