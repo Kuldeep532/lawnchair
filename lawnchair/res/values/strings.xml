@@ -64,6 +64,8 @@
     <string name="nexus_launcher_name">Nexus Launcher</string>
     <string name="nexus_launcher_era_os">Nexus Launcher running on Era OS 2.0</string>
     <string name="secure_vault_label">Secure Vault</string>
+    <string name="books_label">Books</string>
+    <string name="books_description">Your personal book library and reader</string>
     <string name="secure_vault_description">Private space for protected files and shortcuts</string>
     <string name="secure_world_label">Secure Vault</string>
     <string name="secure_world_notes">Notes</string>
