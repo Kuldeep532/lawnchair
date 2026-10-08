@@ -14,7 +14,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import app.lawnchair.backup.ui.CreateBackupScreen
-import app.lawnchair.books.BooksActivity
 import app.lawnchair.backup.ui.restoreBackupGraph
 import app.lawnchair.backup.ui.restoreNovaBackupGraph
 import app.lawnchair.preferences.BasePreferenceManager
@@ -203,16 +202,6 @@ fun PreferenceNavigation(
         composable<SecureVault>(
             deepLinks = getDeepLink(SecureVault),
         ) { SecureVaultPreference() }
-
-        composable<Books>(
-            deepLinks = getDeepLink(Books),
-        ) {
-            val context = LocalContext.current
-            LaunchedEffect(Unit) {
-                context.startActivity(Intent(context, BooksActivity::class.java))
-                navController.popBackStack()
-            }
-        }
 
         composable<About>(
             deepLinks = getDeepLink(About),
