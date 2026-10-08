@@ -40,6 +40,7 @@ import app.lawnchair.gestures.VerticalSwipeTouchController
 import app.lawnchair.gestures.config.GestureHandlerConfig
 import app.lawnchair.gestures.ui.LawnchairShortcutActivity
 import app.lawnchair.nexuslauncher.OverlayCallbackImpl
+import app.lawnchair.wellbeing.runWellbeingTick
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
@@ -469,6 +470,9 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     override fun onResume() {
         super.onResume()
+        lifecycleScope.launch {
+            runCatching { runWellbeingTick(this@LawnchairLauncher) }
+        }
         restartIfPending()
         refreshPredictionContainersFromModel()
 
