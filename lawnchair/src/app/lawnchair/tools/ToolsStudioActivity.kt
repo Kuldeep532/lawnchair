@@ -143,6 +143,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) {
                 Text("Image OCR")
             }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, ImageToPdfActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Image to PDF")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
