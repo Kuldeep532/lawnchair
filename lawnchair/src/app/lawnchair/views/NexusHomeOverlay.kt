@@ -24,6 +24,9 @@ class NexusHomeOverlay @JvmOverloads constructor(
         gravity = Gravity.CENTER_HORIZONTAL
         setPadding(22, 16, 22, 16)
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        isClickable = false
+        isFocusable = false
+        clipToOutline = true
 
         background = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
