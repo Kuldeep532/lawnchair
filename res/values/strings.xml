@@ -576,4 +576,9 @@
     <string name="nexus_privacy_policy_text">Privacy: Nexus Launcher is designed to keep launcher settings and personal launcher data under your control. Third-party services may apply their own privacy practices when you open external links or use optional integrations.</string>
     <string name="nexus_terms_text">Terms: Nexus Launcher is provided for personal use. Use of Android, Google, or other third-party services remains subject to their respective terms and policies.</string>
     <string name="nexus_personal_use_notice">Nexus Launcher — personal edition by Kuldeep Kumar Yadav.</string>
-\n</resources>
+\n
+    <string name="nexus_welcome_title">Welcome to Nexus Launcher</string>
+    <string name="nexus_welcome_message">Welcome, Kuldeep Kumar Yadav. Nexus Launcher is your personal launcher, designed and developed by Kuldeep Kumar Yadav with an original, accessibility-first experience.</string>
+    <string name="nexus_welcome_continue">Continue</string>
+
+</resources>
