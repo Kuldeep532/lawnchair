@@ -18,34 +18,48 @@ class OnlineRadioStore private constructor(context: Context) {
         Context.MODE_PRIVATE,
     )
 
-    fun current(): RadioStation? {
-        val value = preferences.getString("current", null) ?: return null
-        return decodeStation(value)
-    }
+    fun current(): RadioStation? =
+        preferences.getString(KEY_CURRENT, null)?.let(::decodeStation)
 
-    fun isPlaying(): Boolean = preferences.getBoolean("playing", false)
+    fun isPlaying(): Boolean = preferences.getBoolean(KEY_PLAYING, false)
 
     fun setCurrent(station: RadioStation?, playing: Boolean) {
         preferences.edit()
-            .putString("current", station?.let(::encodeStation))
-            .putBoolean("playing", playing)
+            .putString(KEY_CURRENT, station?.let(::encodeStation))
+            .putBoolean(KEY_PLAYING, playing)
             .apply()
     }
 
     fun favorites(): List<RadioStation> =
-        preferences.getStringSet("favorites", emptySet()).orEmpty()
+        preferences.getStringSet(KEY_FAVORITES, emptySet()).orEmpty()
             .mapNotNull(::decodeStation)
             .sortedBy { it.name.lowercase() }
 
-    fun isFavorite(id: String): Boolean =
-        preferences.getStringSet("favorites", emptySet()).orEmpty().contains(id)
+    fun isFavorite(id: String): Boolean = favorites().any { it.id == id }
 
     fun setFavorite(station: RadioStation, favorite: Boolean) {
-        val current = preferences.getStringSet("favorites", emptySet()).orEmpty().toMutableSet()
-        if (favorite) current.removeAll { decodeStation(it)?.id == station.id }
-        if (favorite) current.add(encodeStation(station))
-        else current.removeAll { decodeStation(it)?.id == station.id }
-        preferences.edit().putStringSet("favorites", current).apply()
+        val next = favorites().filterNot { it.id == station.id }.toMutableList()
+        if (favorite) next.add(station)
+        preferences.edit().putStringSet(KEY_FAVORITES, next.map(::encodeStation).toSet()).apply()
+    }
+
+    fun recentlyPlayed(): List<RadioStation> =
+        preferences.getStringSet(KEY_RECENT, emptySet()).orEmpty()
+            .mapNotNull(::decodeRecent)
+            .sortedByDescending { it.second }
+            .map { it.first }
+
+    fun addRecentlyPlayed(station: RadioStation) {
+        val next = preferences.getStringSet(KEY_RECENT, emptySet()).orEmpty()
+            .mapNotNull(::decodeRecent)
+            .filterNot { it.first.id == station.id }
+            .toMutableList()
+        next.add(station to System.currentTimeMillis())
+        val encoded = next.sortedByDescending { it.second }
+            .take(MAX_RECENT)
+            .map { (item, time) -> time.toString() + "::" + encodeStation(item) }
+            .toSet()
+        preferences.edit().putStringSet(KEY_RECENT, encoded).apply()
     }
 
     private fun encodeStation(station: RadioStation): String =
@@ -70,7 +84,21 @@ class OnlineRadioStore private constructor(context: Context) {
         )
     }.getOrNull()?.takeIf { it.id.isNotBlank() && it.url.isNotBlank() }
 
+    private fun decodeRecent(value: String): Pair<RadioStation, Long>? = runCatching {
+        val separator = value.indexOf("::")
+        require(separator > 0)
+        val timestamp = value.substring(0, separator).toLong()
+        val station = decodeStation(value.substring(separator + 2)) ?: return@runCatching null
+        station to timestamp
+    }.getOrNull()
+
     companion object {
+        private const val KEY_CURRENT = "current"
+        private const val KEY_PLAYING = "playing"
+        private const val KEY_FAVORITES = "favorites"
+        private const val KEY_RECENT = "recently_played"
+        private const val MAX_RECENT = 20
+
         @Volatile private var instance: OnlineRadioStore? = null
 
         fun getInstance(context: Context): OnlineRadioStore =
