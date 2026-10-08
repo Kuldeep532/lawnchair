@@ -2,6 +2,9 @@ package app.lawnchair.secureworld
 
 import android.content.Intent
 import android.os.Bundle
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -497,4 +500,22 @@ private fun PasswordDialog(
             }
         },
     )
+}
+
+
+/**
+ * Normalizes text extracted from a document image before placing it in the document number field.
+ * This intentionally stays lightweight; the actual OCR engine is loaded on demand.
+ */
+private fun suggestDocumentNumber(category: String, extractedText: String): String {
+    val text = extractedText.uppercase()
+    val candidates = when (category) {
+        "PAN Card" -> Regex("\\b[A-Z]{5}[0-9]{4}[A-Z]\\b").findAll(text).map { it.value }
+        "Aadhaar Card" -> Regex("\\b[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}\\b").findAll(text).map { it.value }
+        "Driving Licence" -> Regex("\\b[A-Z]{2}[ -]?[0-9]{2}[A-Z0-9 -]{8,16}\\b").findAll(text).map { it.value.trim() }
+        "Voter ID" -> Regex("\\b[A-Z]{3}[0-9]{7}\\b").findAll(text).map { it.value }
+        "Passport" -> Regex("\\b[A-Z][0-9]{7}\\b").findAll(text).map { it.value }
+        else -> emptySequence()
+    }
+    return candidates.firstOrNull().orEmpty()
 }
