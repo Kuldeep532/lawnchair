@@ -24,4 +24,6 @@
     android:focusable="false"
     android:saveEnabled="false"
     android:background="@android:color/transparent"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
     android:importantForAccessibility="yes" />
