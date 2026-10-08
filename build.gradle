@@ -151,7 +151,7 @@ final def quickstepMinSdk = "35"
 final def quickstepMaxSdk = "36"
 
 android {
-    namespace "com.nexuswebtech.nexuslauncher"
+    namespace "com.kuldeep.nexuslauncher"
     defaultConfig {
         /* Nexus Launcher 1.0 */
         versionCode 1_00_00_01_00
@@ -267,17 +267,17 @@ android {
         }
 
         github {
-            applicationId "com.nexuswebtech.nexuslauncher"
+            applicationId "com.kuldeep.nexuslauncher"
             dimension "channel"
         }
 
         nightly {
-            applicationId "com.nexuswebtech.nexuslauncher.nightly"
+            applicationId "com.kuldeep.nexuslauncher.nightly"
             dimension "channel"
         }
 
         play {
-            applicationId "com.nexuswebtech.nexuslauncher.play"
+            applicationId "com.kuldeep.nexuslauncher.play"
             dimension "channel"
             isDefault true
         }
