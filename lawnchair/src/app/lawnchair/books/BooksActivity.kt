@@ -373,16 +373,6 @@ private fun engineSafeAvailable(
     locale: Locale,
 ): Boolean = engine.isLanguageAvailable(locale) >= android.speech.tts.TextToSpeech.LANG_AVAILABLE
 
-private fun engineSafeLanguage(
-    context: android.content.Context,
-    engine: android.speech.tts.TextToSpeech?,
-) {
-    if (engine == null) return
-    val locale = Locale.getDefault()
-    if (engine.isLanguageAvailable(locale) >= android.speech.tts.TextToSpeech.LANG_AVAILABLE) {
-        engine.language = locale
-    }
-}
 
 private fun loadPlainTextPages(
     context: android.content.Context,
