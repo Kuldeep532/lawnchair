@@ -1,6 +1,8 @@
 package app.lawnchair.search.algorithms.engine.provider.apps
 
 import android.content.Context
+import android.content.ComponentName
+import android.content.SharedPreferences
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.search.algorithms.engine.SearchResult
@@ -10,6 +12,41 @@ import com.android.launcher3.model.data.AppInfo
 import com.android.launcher3.search.StringMatcherUtility
 import java.text.Normalizer
 import java.util.Locale
+import kotlin.math.ln
+
+
+/** Lightweight, offline preference ranking used by Nexus Launcher.
+ * It deliberately uses a handful of signals instead of shipping a neural model.
+ */
+private object NexusPreferenceBrain {
+    private const val PREFS_NAME = "nexus_app_preferences"
+    private const val KEY_PREFIX = "launch:"
+    private const val KEY_LAST_PREFIX = "last:"
+
+    fun rank(context: Context, apps: List<AppInfo>): List<AppInfo> {
+        if (apps.size < 2) return apps
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return apps.withIndex()
+            .sortedWith(compareByDescending<IndexedValue<AppInfo>> { (_, app) ->
+                val key = app.componentName.flattenToString()
+                val launches = prefs.getLong(KEY_PREFIX + key, 0L).coerceAtMost(10_000L)
+                val last = prefs.getLong(KEY_LAST_PREFIX + key, 0L)
+                val recencyHours = ((System.currentTimeMillis() - last).coerceAtLeast(0L) / 3_600_000L).coerceAtMost(24L * 30L)
+                val recencyScore = if (last == 0L) 0.0 else 1.0 / (1.0 + recencyHours)
+                ln(1.0 + launches.toDouble()) * 0.65 + recencyScore * 0.35
+            }.thenBy { it.index })
+            .map { it.value }
+    }
+
+    fun recordLaunch(context: Context, componentName: ComponentName) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = componentName.flattenToString()
+        prefs.edit()
+            .putLong(KEY_PREFIX + key, prefs.getLong(KEY_PREFIX + key, 0L) + 1L)
+            .putLong(KEY_LAST_PREFIX + key, System.currentTimeMillis())
+            .apply()
+    }
+}
 
 object AppSearchProvider {
 
@@ -30,7 +67,8 @@ object AppSearchProvider {
             normalSearch(allApps.data, queryNormalized, maxAppResults, hiddenApps, hiddenAppsInSearch)
         }
 
-        return appResults.map { SearchResult.App(data = it) }
+        val rankedResults = if (query.isBlank()) NexusPreferenceBrain.rank(context, appResults) else appResults
+        return rankedResults.map { SearchResult.App(data = it) }
     }
 
     private fun normalSearch(apps: List<AppInfo>, query: String, maxResultsCount: Int, hiddenApps: Set<String>, hiddenAppsInSearch: String): List<AppInfo> {
