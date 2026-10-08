@@ -1,10 +1,6 @@
 package app.lawnchair.radio
 
 import android.os.Bundle
-import androidx.media3.common.MediaItem
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
 import androidx.activity.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -47,6 +43,16 @@ import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
 
+private enum class RadioPage {
+    HOME,
+    DISCOVERY,
+}
+
+private enum class DiscoveryTab {
+    STATIONS,
+    RECENT,
+}
+
 class OnlineRadioActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,45 +61,64 @@ class OnlineRadioActivity : ComponentActivity() {
     }
 }
 
-private enum class RadioPage { HOME, BROWSE }
-
 @Composable
 private fun OnlineRadioScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val store = remember { OnlineRadioStore.getInstance(context) }
     var page by remember { mutableStateOf(RadioPage.HOME) }
+    var discoveryTab by remember { mutableStateOf(DiscoveryTab.STATIONS) }
     var current by remember { mutableStateOf(store.current()) }
     var playing by remember { mutableStateOf(store.isPlaying()) }
     var favorites by remember { mutableStateOf(store.favorites()) }
+    var recentlyPlayed by remember { mutableStateOf(store.recentlyPlayed()) }
     var query by remember { mutableStateOf("") }
     var stations by remember { mutableStateOf<List<RadioStation>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
 
+    fun refreshLocalState() {
+        current = store.current()
+        playing = store.isPlaying()
+        favorites = store.favorites()
+        recentlyPlayed = store.recentlyPlayed()
+    }
+
     fun play(station: RadioStation) {
         store.setCurrent(station, true)
-        current = station
-        playing = true
+        store.addRecentlyPlayed(station)
+        refreshLocalState()
         OnlineRadioService.command(context, OnlineRadioService.ACTION_PLAY)
     }
 
     fun pause() {
         current?.let { store.setCurrent(it, false) }
-        playing = false
+        refreshLocalState()
         OnlineRadioService.command(context, OnlineRadioService.ACTION_PAUSE)
     }
 
-    fun toggleFavorite() {
-        current?.let {
-            store.setFavorite(it, !store.isFavorite(it.id))
-            favorites = store.favorites()
+    fun toggleFavorite(station: RadioStation) {
+        store.setFavorite(station, !store.isFavorite(station.id))
+        refreshLocalState()
+    }
+
+    fun back() {
+        when (page) {
+            RadioPage.DISCOVERY -> {
+                page = RadioPage.HOME
+                query = ""
+                message = null
+            }
+            RadioPage.HOME -> onBack()
         }
     }
 
     suspend fun loadStations(search: String) {
         withContext(Dispatchers.IO) {
             val endpoint = buildString {
-                append("https://de1.api.radio-browser.info/json/stations/search?limit=100&hidebroken=true&order=name&reverse=false")
+                append(
+                    "https://de1.api.radio-browser.info/json/stations/search" +
+                        "?limit=100&hidebroken=true&order=name&reverse=false"
+                )
                 if (search.isNotBlank()) {
                     append("&name=")
                     append(URLEncoder.encode(search, "UTF-8"))
@@ -134,7 +159,7 @@ private fun OnlineRadioScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(page, query) {
-        if (page == RadioPage.BROWSE) {
+        if (page == RadioPage.DISCOVERY && discoveryTab == DiscoveryTab.STATIONS) {
             loading = true
             message = null
             runCatching { loadStations(query) }
@@ -143,8 +168,10 @@ private fun OnlineRadioScreen(onBack: () -> Unit) {
         }
     }
 
-    fun back() {
-        if (page == RadioPage.BROWSE) page = RadioPage.HOME else onBack()
+    LaunchedEffect(page, discoveryTab) {
+        if (page == RadioPage.DISCOVERY && discoveryTab == DiscoveryTab.RECENT) {
+            refreshLocalState()
+        }
     }
 
     BackHandler(onBack = ::back)
@@ -167,25 +194,27 @@ private fun OnlineRadioScreen(onBack: () -> Unit) {
                 current = current,
                 playing = playing,
                 favorite = current?.let(store::isFavorite) == true,
-                onBrowse = { page = RadioPage.BROWSE },
+                favoriteCount = favorites.size,
+                onDiscovery = { page = RadioPage.DISCOVERY },
+                onFavorites = { page = RadioPage.DISCOVERY },
                 onPlay = { current?.let(::play) },
                 onPause = ::pause,
-                onFavorite = ::toggleFavorite,
+                onFavorite = { current?.let(::toggleFavorite) },
             )
         } else {
-            BrowseScreen(
+            DiscoveryScreen(
                 padding = padding,
+                tab = discoveryTab,
                 query = query,
+                onTabChange = { discoveryTab = it },
                 onQueryChange = { query = it },
                 stations = stations,
                 favorites = favorites,
+                recentlyPlayed = recentlyPlayed,
                 loading = loading,
                 message = message,
                 onPlay = ::play,
-                onFavorite = {
-                    store.setFavorite(it, !store.isFavorite(it.id))
-                    favorites = store.favorites()
-                },
+                onFavorite = ::toggleFavorite,
             )
         }
     }
@@ -197,7 +226,9 @@ private fun HomeScreen(
     current: RadioStation?,
     playing: Boolean,
     favorite: Boolean,
-    onBrowse: () -> Unit,
+    favoriteCount: Int,
+    onDiscovery: () -> Unit,
+    onFavorites: () -> Unit,
     onPlay: () -> Unit,
     onPause: () -> Unit,
     onFavorite: () -> Unit,
@@ -207,6 +238,7 @@ private fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text("Now Playing: " + (current?.name ?: "None"))
+
         if (current != null) {
             val details = listOf(current.country, current.language)
                 .filter { it.isNotBlank() }
@@ -239,46 +271,55 @@ private fun HomeScreen(
                 }
             }
         }
-        Button(onClick = onBrowse, modifier = Modifier.fillMaxWidth()) {
-            Text("Browse Station")
+
+        Button(onClick = onDiscovery, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Rounded.Search, contentDescription = null)
+            Text("Station Discovery")
+        }
+
+        OutlinedButton(onClick = onFavorites, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Rounded.Favorite, contentDescription = null)
+            Text("Favorite Stations ($favoriteCount)")
         }
     }
 }
 
 @Composable
-private fun BrowseScreen(
+private fun DiscoveryScreen(
     padding: PaddingValues,
+    tab: DiscoveryTab,
     query: String,
+    onTabChange: (DiscoveryTab) -> Unit,
     onQueryChange: (String) -> Unit,
     stations: List<RadioStation>,
     favorites: List<RadioStation>,
+    recentlyPlayed: List<RadioStation>,
     loading: Boolean,
     message: String?,
     onPlay: (RadioStation) -> Unit,
     onFavorite: (RadioStation) -> Unit,
 ) {
-    var tab by remember { mutableIntStateOf(0) }
     Column(
         Modifier.fillMaxSize().padding(padding),
     ) {
-        TabRow(selectedTabIndex = tab) {
+        TabRow(selectedTabIndex = tab.ordinal) {
             Tab(
-                selected = tab == 0,
-                onClick = { tab = 0 },
-                text = { Text("Browse Station") },
+                selected = tab == DiscoveryTab.STATIONS,
+                onClick = { onTabChange(DiscoveryTab.STATIONS) },
+                text = { Text("Station Discovery") },
             )
             Tab(
-                selected = tab == 1,
-                onClick = { tab = 1 },
-                text = { Text("Favorite Station") },
+                selected = tab == DiscoveryTab.RECENT,
+                onClick = { onTabChange(DiscoveryTab.RECENT) },
+                text = { Text("Recently Played") },
             )
         }
 
-        if (tab == 0) {
+        if (tab == DiscoveryTab.STATIONS) {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 label = { Text("Search stations") },
                 leadingIcon = {
                     Icon(Icons.Rounded.Search, contentDescription = "Search")
@@ -295,10 +336,11 @@ private fun BrowseScreen(
             )
         } else {
             StationList(
-                stations = favorites,
+                stations = recentlyPlayed,
                 favorites = favorites,
                 loading = false,
                 message = null,
+                emptyMessage = "No recently played stations.",
                 onPlay = onPlay,
                 onFavorite = onFavorite,
             )
@@ -312,19 +354,17 @@ private fun StationList(
     favorites: List<RadioStation>,
     loading: Boolean,
     message: String?,
+    emptyMessage: String = "No stations found.",
     onPlay: (RadioStation) -> Unit,
     onFavorite: (RadioStation) -> Unit,
 ) {
     when {
-        loading -> Text("Loading stations…", Modifier.padding(horizontal = 20.dp))
-        message != null -> Text(message, Modifier.padding(horizontal = 20.dp))
-        stations.isEmpty() -> Text(
-            "No stations found.",
-            Modifier.padding(horizontal = 20.dp),
-        )
+        loading -> Text("Loading stations…", Modifier.padding(16.dp))
+        message != null -> Text(message, Modifier.padding(16.dp))
+        stations.isEmpty() -> Text(emptyMessage, Modifier.padding(16.dp))
         else -> LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             items(stations, key = { it.id }) { station ->
                 val favorite = favorites.any { it.id == station.id }
