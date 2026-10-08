@@ -22,6 +22,7 @@ object LauncherOptionsPopup {
         LauncherOptionPopupItem("wallpaper", true),
         LauncherOptionPopupItem("widgets", true),
         LauncherOptionPopupItem("all_apps", true),
+        LauncherOptionPopupItem("tools", true),
         LauncherOptionPopupItem("home_settings", true),
         LauncherOptionPopupItem("sys_settings", false),
         LauncherOptionPopupItem("default_page", false),
@@ -92,6 +93,13 @@ object LauncherOptionsPopup {
                 LauncherEvent.LAUNCHER_SETTINGS_BUTTON_TAP_OR_LONGPRESS,
                 onStartEditMode,
             ),
+            "tools" to OptionItem(
+                launcher,
+                R.string.tools_studio,
+                R.drawable.ic_tools_studio,
+                LauncherEvent.IGNORE,
+                ::startTools,
+            ),
             "all_apps" to OptionItem(
                 launcher,
                 R.string.all_apps_button_label,
@@ -155,6 +163,13 @@ object LauncherOptionsPopup {
         return options
     }
 
+    private fun startTools(v: View): Boolean {
+        val launcher = Launcher.getLauncher(v.context)
+        val intent = android.content.Intent(v.context, app.lawnchair.tools.ToolsStudioActivity::class.java)
+        launcher.startActivitySafely(v, intent, com.android.launcher3.views.OptionsPopupView.placeholderInfo(intent))
+        return true
+    }
+
     private fun setAsDefaultHomePage(v: View): Boolean {
         val launcher = Launcher.getLauncher(v.context)
         val currentPage = launcher.workspace.getNextPage()
@@ -194,6 +209,11 @@ object LauncherOptionsPopup {
             "widgets" -> LauncherOptionMetadata(
                 label = R.string.widget_button_text,
                 icon = SystemShortcut.Widgets.getDrawableId(),
+            )
+
+            "tools" -> LauncherOptionMetadata(
+                label = R.string.tools_studio,
+                icon = R.drawable.ic_tools_studio,
             )
 
             "all_apps" -> LauncherOptionMetadata(
