@@ -59,6 +59,12 @@
 
     <application>
         <activity
+            android:name="app.lawnchair.books.BooksActivity"
+            android:exported="false"
+            android:label="@string/books_label"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
             android:exported="false"
             android:label="@string/secure_world_label"
