@@ -60,7 +60,15 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var extractedText by remember { mutableStateOf("") }
     var working by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf<String?>(null) }\n\n    LaunchedEffect(Unit) {\n        val incomingUri = (context as? TextExtractorActivity)?.incomingImageUri()\n        if (incomingUri != null) {\n            selectedUri = incomingUri\n            message = "Image ready. Tap Extract Text."\n        }\n    }
+    var message by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(Unit) {
+        val incomingUri = (context as? TextExtractorActivity)?.incomingImageUri()
+        if (incomingUri != null && incomingUri.toString().isNotBlank()) {
+            selectedUri = incomingUri
+            message = "Image ready. Tap Extract Text."
+        }
+    }
 
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
