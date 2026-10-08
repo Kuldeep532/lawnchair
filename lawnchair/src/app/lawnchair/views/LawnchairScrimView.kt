@@ -11,6 +11,8 @@ import com.android.launcher3.views.ScrimView
 
 class LawnchairScrimView(context: Context, attrs: AttributeSet?) : ScrimView(context, attrs) {
 
+    // Nexus visual layer: keep drawer transitions calm and adaptive to the current theme.
+
     private var drawerOpacity = 0f
 
     init {
