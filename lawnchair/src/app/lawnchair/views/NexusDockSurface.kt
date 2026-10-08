@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
-import android.view.Gravity
+import android.view.View
 import android.widget.FrameLayout
 
 class NexusDockSurface @JvmOverloads constructor(
@@ -12,11 +12,10 @@ class NexusDockSurface @JvmOverloads constructor(
     attrs: AttributeSet? = null,
 ) : FrameLayout(context, attrs) {
 
-    private val content = com.android.launcher3.Hotseat(context, attrs)
-
     init {
-        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
-        contentDescription = "Nexus dock"
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        isClickable = false
+        isFocusable = false
 
         background = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
@@ -26,11 +25,6 @@ class NexusDockSurface @JvmOverloads constructor(
             setStroke(1, Color.argb(82, 255, 255, 255))
         }
 
-        addView(
-            content,
-            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT).apply {
-                gravity = Gravity.CENTER
-            },
-        )
+        alpha = 0.98f
     }
 }
