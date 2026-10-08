@@ -577,8 +577,8 @@
     <string name="nexus_terms_text">Terms: Nexus Launcher is provided for personal use. Use of Android, Google, or other third-party services remains subject to their respective terms and policies.</string>
     <string name="nexus_personal_use_notice">Nexus Launcher — personal edition by Kuldeep Kumar Yadav.</string>
 \n
-    <string name="nexus_welcome_title">Welcome to Nexus Launcher</string>
-    <string name="nexus_welcome_message">Welcome, Kuldeep Kumar Yadav. Nexus Launcher is your personal launcher, designed and developed by Kuldeep Kumar Yadav with an original, accessibility-first experience.</string>
-    <string name="nexus_welcome_continue">Continue</string>
+    <string name="nexus_welcome_title">राधे राधे</string>
+    <string name="nexus_welcome_message">राधे राधे\n\nWelcome\n\nDeveloped by Kuldeep Kumar</string>
+    <string name="nexus_welcome_continue">Get Started</string>
 
 </resources>
