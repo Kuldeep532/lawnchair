@@ -111,6 +111,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) {
                 Text("PDF to Image Converter")
             }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, ImageCompressorActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Image Compressor")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Encrypt") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Decrypt") })
