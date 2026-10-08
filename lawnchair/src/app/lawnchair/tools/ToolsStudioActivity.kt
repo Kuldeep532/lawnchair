@@ -135,6 +135,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) {
                 Text("Password Generator")
             }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, TextExtractorActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Extract Text")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
