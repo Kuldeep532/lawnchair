@@ -341,12 +341,13 @@ fun LawnQsbUi(
     val cornerRadius = with(density) { style.cornerRadiusPx.toDp() }
     val strokeWidth = with(density) { style.strokeWidthPx.toDp() }
     val shape = RoundedCornerShape(cornerRadius)
+    // Nexus signature: use the adaptive theme surface as a quiet glass layer.
 
     val containerModifier = modifier
         .fillMaxWidth()
         .semantics { contentDescription = state.contentDescription }
         .clip(shape)
-        .background(ComposeColor(style.backgroundColor).copy(alpha = style.backgroundAlpha), shape)
+        .background(MaterialTheme.colorScheme.surface.copy(alpha = style.backgroundAlpha), shape)
         .combinedClickable(
             onClick = actions.onQsbClick,
             onLongClick = actions.onQsbLongClick,
