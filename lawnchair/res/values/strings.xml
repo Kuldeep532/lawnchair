@@ -65,6 +65,12 @@
     <string name="nexus_launcher_era_os">Nexus Launcher running on Era OS 2.0</string>
     <string name="secure_vault_label">Secure Vault</string>
     <string name="secure_vault_description">Private space for protected files and shortcuts</string>
+    <string name="secure_world_label">Secure World</string>
+    <string name="secure_world_notes">Notes</string>
+    <string name="secure_world_documents">Documents</string>
+    <string name="secure_world_passwords">Passwords</string>
+    <string name="secure_world_unlock_title">Secure World</string>
+    <string name="secure_world_unlock_subtitle">Unlock your private space</string>
     <string name="launcher_advanced_label">Advanced controls</string>
     <string name="launcher_advanced_description">Performance, privacy, gestures and system integrations</string>
 
