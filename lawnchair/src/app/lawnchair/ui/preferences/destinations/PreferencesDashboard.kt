@@ -74,6 +74,7 @@ import app.lawnchair.ui.preferences.data.liveinfo.SyncLiveInformation
 import app.lawnchair.ui.preferences.navigation.About
 import app.lawnchair.ui.preferences.navigation.AppDrawer
 import app.lawnchair.ui.preferences.navigation.BackupAndRestore
+import app.lawnchair.ui.preferences.navigation.Books
 import app.lawnchair.ui.preferences.navigation.DebugMenu
 import app.lawnchair.ui.preferences.navigation.Dock
 import app.lawnchair.ui.preferences.navigation.ExperimentalFeatures
@@ -214,6 +215,14 @@ fun PreferencesDashboard(
                 iconResource = R.drawable.backup_restore,
                 onNavigate = { onNavigate(BackupAndRestore) },
                 isSelected = currentRoute is BackupAndRestore,
+            )
+
+            PreferenceCategory(
+                label = stringResource(R.string.books_label),
+                description = stringResource(R.string.books_description),
+                iconResource = R.drawable.ic_about,
+                onNavigate = { onNavigate(Books) },
+                isSelected = currentRoute is Books,
             )
 
             PreferenceCategory(
