@@ -51,6 +51,8 @@ class SearchResultIcon(context: Context, attrs: AttributeSet?) :
     override fun onFinishInflate() {
         super.onFinishInflate()
         setLongPressTimeoutFactor(1f)
+        setTextColor(launcher.deviceProfile.allAppsIconTextColor)
+        setIconTextSize(launcher.deviceProfile.allAppsIconTextSizePx.toFloat())
         onFocusChangeListener = launcher.focusHandler
         setOnClickListener(this)
         setOnLongClickListener(this)
