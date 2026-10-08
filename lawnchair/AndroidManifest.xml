@@ -129,9 +129,21 @@
 
         <activity
             android:name="app.lawnchair.tools.TextExtractorActivity"
-            android:exported="false"
-            android:label="@string/text_extractor"
-            android:theme="@style/Theme.Lawnchair" />
+            android:exported="true"
+            android:label="@string/image_ocr"
+            android:theme="@style/Theme.Lawnchair">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
