@@ -1,7 +1,6 @@
 package app.lawnchair.radio
 
 import android.os.Bundle
-import android.content.Intent
 import androidx.activity.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
