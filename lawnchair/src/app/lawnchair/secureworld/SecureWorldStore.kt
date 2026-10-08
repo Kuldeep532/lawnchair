@@ -16,6 +16,7 @@ data class SecureDocument(
     val ocrText: String = "",
 )
 data class SecurePassword(val id: String, val title: String, val username: String, val password: String, val category: String = "General")
+data class SecureCard(val id: String, val type: String, val holderName: String, val number: String, val expiry: String, val details: String = "")
 
 data class SecureMedia(
     val id: String,
@@ -149,6 +150,59 @@ class SecureWorldStore private constructor(context: Context) {
 
     fun deletePassword(id: String) = savePasswords(passwords().filterNot { it.id == id })
 
+    fun cards(): List<SecureCard> = decode("cards") { p ->
+        if (p.size >= 6) SecureCard(p[0], p[1], p[2], p[3], p[4], p.drop(5).joinToString(SEP))
+        else if (p.size >= 5) SecureCard(p[0], p[1], p[2], p[3], p[4], "")
+        else null
+    }
+
+    fun saveCard(
+        type: String,
+        holderName: String,
+        number: String,
+        expiry: String,
+        details: String = "",
+    ): SecureCard {
+        val normalized = number.filter(Char::isDigit)
+        require(isValidCardNumber(normalized)) { "Enter a valid card number." }
+        val item = SecureCard(
+            id = UUID.randomUUID().toString(),
+            type = type.trim(),
+            holderName = holderName.trim(),
+            number = normalized,
+            expiry = expiry.trim(),
+            details = details.trim(),
+        )
+        saveCards(cards() + item)
+        return item
+    }
+
+    fun deleteCard(id: String) = saveCards(cards().filterNot { it.id == id })
+
+    private fun saveCards(items: List<SecureCard>) {
+        val encoded = items.joinToString(RECORD) {
+            listOf(it.id, it.type, it.holderName, it.number, it.expiry, it.details)
+                .joinToString(SEP, transform = ::escape)
+        }
+        preferences.edit().putString("cards", encoded).apply()
+    }
+
+    private fun isValidCardNumber(number: String): Boolean {
+        if (number.length !in 13..19) return false
+        var sum = 0
+        var doubleDigit = false
+        for (index in number.lastIndex downTo 0) {
+            var digit = number[index] - '0'
+            if (doubleDigit) {
+                digit *= 2
+                if (digit > 9) digit -= 9
+            }
+            sum += digit
+            doubleDigit = !doubleDigit
+        }
+        return sum % 10 == 0
+    }
+
     private fun saveNotes(items: List<SecureNote>) {
         val encoded = items.joinToString(RECORD) {
             listOf(it.id, it.title, it.body, it.category).joinToString(SEP, transform = ::escape)
@@ -207,6 +261,8 @@ class SecureWorldStore private constructor(context: Context) {
             "Shopping",
             "Bills",
             "Wi-Fi & Network",
+            "Passwords",
+            "Credit & Debit Cards",
             "Other",
         )
 
