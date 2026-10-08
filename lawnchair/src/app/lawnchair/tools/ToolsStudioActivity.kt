@@ -94,6 +94,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, QrGeneratorActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("QR Code Generator")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Encrypt") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Decrypt") })
