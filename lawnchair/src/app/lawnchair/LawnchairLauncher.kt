@@ -251,6 +251,32 @@ class LawnchairLauncher : QuickstepLauncher() {
         reloadIconsIfNeeded()
 
         AppDatabase.INSTANCE.get(this).checkpointSync()
+        showNexusFirstLaunchWelcomeIfNeeded()
+
+    }
+
+    private fun showNexusFirstLaunchWelcomeIfNeeded() {
+        val welcomePrefs = getSharedPreferences("nexus_launcher_welcome", Context.MODE_PRIVATE)
+        if (welcomePrefs.getBoolean("shown", false)) return
+
+        ComposeBottomSheet.show(this) {
+            ModalBottomSheetContent(
+                title = { Text(text = getString(R.string.nexus_welcome_title)) },
+                text = {
+                    Text(text = getString(R.string.nexus_welcome_message))
+                },
+                buttons = {
+                    Button(
+                        onClick = {
+                            welcomePrefs.edit().putBoolean("shown", true).apply()
+                            close(true)
+                        },
+                    ) {
+                        Text(text = getString(R.string.nexus_welcome_continue))
+                    }
+                },
+            )
+        }
     }
 
     override fun onNewIntent(intent: Intent?) {
