@@ -192,102 +192,115 @@ class SecureWorldActivity : ComponentActivity() {
     private fun showSecureVault() {
         setContent {
             LawnchairTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    var selectedTab by remember { mutableIntStateOf(0) }
-                    var showNoteDialog by remember { mutableStateOf(false) }
-                    var showAddDocument by remember { mutableStateOf(false) }
-                    var showPasswordDialog by remember { mutableStateOf(false) }
-                    var showCloseDialog by remember { mutableStateOf(false) }
+                var selectedTab by remember { mutableIntStateOf(0) }
+                var showAddSheet by remember { mutableStateOf(false) }
+                var showNoteDialog by remember { mutableStateOf(false) }
+                var showDocumentChoice by remember { mutableStateOf(false) }
+                var showPasswordDialog by remember { mutableStateOf(false) }
+                var showCategoryDialog by remember { mutableStateOf(false) }
+                var showCloseDialog by remember { mutableStateOf(false) }
+                var selectedCategory by remember { mutableStateOf<String?>(null) }
 
-                    BackHandler { showCloseDialog = true }
+                BackHandler { showCloseDialog = true }
 
-                    val tabs = listOf("Notes", "Documents", "Passwords")
+                val allItems = buildList {
+                    store.notes().forEach { add(VaultListItem.NoteItem(it)) }
+                    store.documents().forEach { add(VaultListItem.DocumentItem(it)) }
+                    store.passwords().forEach { add(VaultListItem.PasswordItem(it)) }
+                }
 
-                    Column {
+                Scaffold(
+                    topBar = {
+                        androidx.compose.material3.TopAppBar(
+                            title = { Text("Secure Vault") },
+                            actions = {
+                                IconButton(onClick = { showAddSheet = true }) {
+                                    Icon(Icons.Rounded.Add, contentDescription = "Add new")
+                                }
+                                Icon(Icons.Rounded.Lock, contentDescription = "Protected Secure Vault")
+                            },
+                        )
+                    },
+                ) { padding ->
+                    Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("Secure Vault", style = MaterialTheme.typography.titleLarge)
-                            Icon(
-                                imageVector = Icons.Rounded.Lock,
-                                contentDescription = "Secure Vault protected area",
-                            )
+                            androidx.compose.material3.OutlinedButton(onClick = { showNoteDialog = true }) { Text("Add New Text") }
+                            androidx.compose.material3.OutlinedButton(onClick = { showDocumentChoice = true }) { Text("Add New Document") }
+                            androidx.compose.material3.OutlinedButton(onClick = { showPasswordDialog = true }) { Text("Add New Password") }
                         }
 
                         TabRow(selectedTabIndex = selectedTab) {
-                            tabs.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = selectedTab == index,
-                                    onClick = { selectedTab = index },
-                                    text = { Text(title) },
-                                )
-                            }
+                            Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("All") })
+                            Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("Categories") })
                         }
 
-                        when (selectedTab) {
-                            0 -> NotesTab(store.notes(), { showNoteDialog = true }, store::deleteNote)
-                            1 -> DocumentsTab(
-                                items = store.documents(),
-                                onAdd = { showAddDocument = true },
-                                onDelete = store::deleteDocument,
-                                onOpen = ::openDocument,
+                        if (selectedTab == 0) {
+                            SecureAllList(
+                                items = allItems,
+                                onDelete = { item -> deleteVaultItem(item); showSecureVault() },
+                                onOpenDocument = ::openDocument,
                             )
-                            else -> PasswordsTab(store.passwords(), { showPasswordDialog = true }, store::deletePassword)
+                        } else {
+                            SecureCategoriesTab(
+                                categories = store.categories(),
+                                selectedCategory = selectedCategory,
+                                onSelectCategory = { selectedCategory = it },
+                                onCreateCategory = { showCategoryDialog = true },
+                                onDeleteCategory = { store.deleteCategory(it); selectedCategory = null },
+                                items = allItems,
+                                onDelete = { item -> deleteVaultItem(item); showSecureVault() },
+                                onOpenDocument = ::openDocument,
+                            )
                         }
                     }
+                }
 
-                    if (showNoteDialog) {
-                        NoteDialog(
-                            onDismiss = { showNoteDialog = false },
-                            onSave = { title, body ->
-                                store.saveNote(title, body)
-                                showNoteDialog = false
-                            },
-                        )
-                    }
+                if (showAddSheet) {
+                    SecureAddBottomSheet(
+                        onDismiss = { showAddSheet = false },
+                        onAddText = { showAddSheet = false; showNoteDialog = true },
+                        onAddDocument = { showAddSheet = false; showDocumentChoice = true },
+                        onAddPassword = { showAddSheet = false; showPasswordDialog = true },
+                        onAddCategory = { showAddSheet = false; showCategoryDialog = true },
+                    )
+                }
 
-                    if (showAddDocument) {
-                        AddDocumentChoiceDialog(
-                            onDismiss = { showAddDocument = false },
-                            onUpload = {
-                                showAddDocument = false
-                                documentPicker.launch(arrayOf("*/*"))
-                            },
-                            onDetailsOnly = {
-                                showAddDocument = false
-                                showDocumentDialog("", "")
-                            },
-                        )
-                    }
+                if (showDocumentChoice) {
+                    AddDocumentChoiceDialog(
+                        onDismiss = { showDocumentChoice = false },
+                        onUpload = { showDocumentChoice = false; documentPicker.launch(arrayOf("*/*")) },
+                        onDetailsOnly = { showDocumentChoice = false; showDocumentDialog("", "") },
+                    )
+                }
 
-                    if (showCloseDialog) {
-                        CloseSecureVaultDialog(
-                            onDismiss = { showCloseDialog = false },
-                            onConfirm = {
-                                showCloseDialog = false
-                                finish()
-                            },
-                        )
-                    }
+                if (showNoteDialog) {
+                    NoteDialog(onDismiss = { showNoteDialog = false }, onSave = { title, body, category ->
+                        store.saveNote(title, body, category); showNoteDialog = false; showSecureVault()
+                    })
+                }
 
-                    if (showPasswordDialog) {
-                        PasswordDialog(
-                            onDismiss = { showPasswordDialog = false },
-                            onSave = { title, username, password ->
-                                store.savePassword(title, username, password)
-                                showPasswordDialog = false
-                            },
-                        )
-                    }
+                if (showPasswordDialog) {
+                    PasswordDialog(onDismiss = { showPasswordDialog = false }, onSave = { title, username, password, category ->
+                        store.savePassword(title, username, password, category); showPasswordDialog = false; showSecureVault()
+                    })
+                }
+
+                if (showCategoryDialog) {
+                    CategoryDialog(
+                        onDismiss = { showCategoryDialog = false },
+                        onSave = { store.addCategory(it); showCategoryDialog = false; showSecureVault() },
+                    )
+                }
+
+                if (showCloseDialog) {
+                    CloseSecureVaultDialog(onDismiss = { showCloseDialog = false }, onConfirm = { showCloseDialog = false; finish() })
                 }
             }
         }
     }
-
     private fun openDocument(uri: String) {
         if (uri.isBlank()) return
         val parsed = android.net.Uri.parse(uri)
