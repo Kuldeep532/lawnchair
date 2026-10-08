@@ -47,9 +47,15 @@
             launcher:pageIndicator="@+id/page_indicator" />
 
         <!-- DO NOT CHANGE THE ID -->
-        <include
+        <app.lawnchair.views.NexusDockSurface
             android:id="@+id/hotseat"
-            layout="@layout/hotseat" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="14dp"
+            android:importantForAccessibility="yes" />
 
         <!-- Keep these behind the workspace so that they are not visible when
          we go into AllApps -->
