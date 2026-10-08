@@ -7,47 +7,75 @@ import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.setPadding
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class NexusHomeOverlay @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : LinearLayout(context, attrs) {
 
+    private val clock = TextView(context)
+    private val date = TextView(context)
+
     init {
         orientation = VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(20, 16, 20, 8)
+        setPadding(22, 16, 22, 16)
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
 
         background = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
-            intArrayOf(Color.argb(92, 255, 255, 255), Color.argb(42, 255, 255, 255)),
+            intArrayOf(Color.argb(96, 255, 255, 255), Color.argb(40, 255, 255, 255)),
         ).apply {
             cornerRadius = 42f
-            setStroke(1, Color.argb(70, 255, 255, 255))
+            setStroke(1, Color.argb(72, 255, 255, 255))
         }
 
-        val title = TextView(context).apply {
-            text = "NEXUS"
-            textSize = 18f
+        clock.apply {
+            textSize = 27f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
-            letterSpacing = 0.18f
-            contentDescription = "Nexus launcher home"
-            isFocusable = true
+            letterSpacing = 0.02f
+            contentDescription = "Current time"
         }
-        addView(title, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        addView(clock, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
 
-        val subtitle = TextView(context).apply {
-            text = "Your space. Your control."
+        date.apply {
             textSize = 12f
-            setTextColor(Color.argb(215, 255, 255, 255))
+            setTextColor(Color.argb(218, 255, 255, 255))
             gravity = Gravity.CENTER
-            contentDescription = "Your space. Your control."
+            contentDescription = "Current date"
         }
-        addView(subtitle, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+        addView(date, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
             topMargin = 2
         })
+
+        val brand = TextView(context).apply {
+            text = "NEXUS • YOUR SPACE"
+            textSize = 10f
+            setTextColor(Color.argb(170, 255, 255, 255))
+            gravity = Gravity.CENTER
+            letterSpacing = 0.14f
+            contentDescription = "Nexus launcher"
+        }
+        addView(brand, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+            topMargin = 5
+        })
+
+        refresh()
+        postDelayed(object : Runnable {
+            override fun run() {
+                refresh()
+                postDelayed(this, 60_000L)
+            }
+        }, 60_000L)
+    }
+
+    private fun refresh() {
+        val now = Date()
+        clock.text = SimpleDateFormat("h:mm a", Locale.getDefault()).format(now)
+        date.text = SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(now)
     }
 }
