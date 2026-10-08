@@ -102,6 +102,39 @@ fun About(
         item { Spacer(modifier = Modifier.height(14.dp)) }
         item {
             Text(
+                text = stringResource(R.string.nexus_fusion_ui_version),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            )
+        }
+        item {
+            Text(
+                text = stringResource(R.string.nexus_fusion_ui_about),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+        }
+        item {
+            Text(
+                text = stringResource(R.string.nexus_fusion_ui_origin),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+        }
+        item {
+            Text(
+                text = stringResource(R.string.nexus_fusion_ui_framework_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+            )
+        }
+        item {
+            Text(
                 text = stringResource(R.string.nexus_about_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
