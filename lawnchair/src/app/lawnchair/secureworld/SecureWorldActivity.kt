@@ -2,8 +2,6 @@ package app.lawnchair.secureworld
 
 import android.content.Intent
 import android.os.Bundle
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
@@ -63,7 +64,9 @@ class SecureWorldActivity : ComponentActivity() {
                 ?.substringAfterLast('/')
                 ?.takeIf { it.isNotBlank() }
                 ?: "Document"
-            showDocumentDialog(uri.toString(), suggestedName)
+            extractDocumentText(uri) { extractedText ->
+                showDocumentDialog(uri.toString(), suggestedName, extractedText)
+            }
         }
     }
 
@@ -104,6 +107,24 @@ class SecureWorldActivity : ComponentActivity() {
                 .setConfirmationRequired(false)
                 .build(),
         )
+    }
+
+    private fun extractDocumentText(uri: Uri, onComplete: (String) -> Unit) {
+        val mimeType = contentResolver.getType(uri).orEmpty()
+        if (!mimeType.startsWith("image/")) {
+            onComplete("")
+            return
+        }
+
+        try {
+            val image = InputImage.fromFilePath(this, uri)
+            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                .process(image)
+                .addOnSuccessListener { result -> onComplete(result.text) }
+                .addOnFailureListener { onComplete("") }
+        } catch (_: Exception) {
+            onComplete("")
+        }
     }
 
     private fun showDocumentDialog(
