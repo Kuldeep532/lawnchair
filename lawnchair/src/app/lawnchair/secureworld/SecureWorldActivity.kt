@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -128,6 +129,9 @@ class SecureWorldActivity : ComponentActivity() {
                     var showNoteDialog by remember { mutableStateOf(false) }
                     var showAddDocument by remember { mutableStateOf(false) }
                     var showPasswordDialog by remember { mutableStateOf(false) }
+                    var showCloseDialog by remember { mutableStateOf(false) }
+
+                    BackHandler { showCloseDialog = true }
 
                     val tabs = listOf("Notes", "Documents", "Passwords")
 
@@ -185,6 +189,16 @@ class SecureWorldActivity : ComponentActivity() {
                             onDetailsOnly = {
                                 showAddDocument = false
                                 showDocumentDialog("", "")
+                            },
+                        )
+                    }
+
+                    if (showCloseDialog) {
+                        CloseSecureVaultDialog(
+                            onDismiss = { showCloseDialog = false },
+                            onConfirm = {
+                                showCloseDialog = false
+                                finish()
                             },
                         )
                     }
@@ -405,6 +419,24 @@ private fun DocumentDialog(
             ) {
                 Text("Save")
             }
+        },
+    )
+}
+
+@androidx.compose.runtime.Composable
+private fun CloseSecureVaultDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Do you want to close Secure Vault?") },
+        text = { Text("Secure Vault will lock when it closes. You will need fingerprint unlock to open it again.") },
+        dismissButton = {
+            Button(onClick = onDismiss) { Text("Cancel") }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) { Text("Close") }
         },
     )
 }
