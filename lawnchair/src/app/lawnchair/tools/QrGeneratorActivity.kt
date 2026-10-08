@@ -3,6 +3,13 @@ package app.lawnchair.tools
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Bundle
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.provider.MediaStore
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.BackHandler
@@ -15,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -115,7 +124,7 @@ private fun QrScreen(onBack: () -> Unit) {
                     Text("Generating QR code…")
                 }
             }
-            result != null -> ResultScreen(result!!, ::reset)
+            result != null -> ResultScreen(result!!, { saveQr(context, result!!) }, { downloadQr(context, result!!) }, { shareQr(context, result!!) }, ::reset)
             else -> Column(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -152,7 +161,13 @@ private fun field(label: String, value: String, onValueChange: (String) -> Unit)
 }
 
 @Composable
-private fun ResultScreen(bitmap: Bitmap, regenerate: () -> Unit) {
+private fun ResultScreen(
+    bitmap: Bitmap,
+    save: () -> Unit,
+    download: () -> Unit,
+    share: () -> Unit,
+    regenerate: () -> Unit,
+) {
     Column(
         Modifier.fillMaxSize().padding(20.dp).navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -160,7 +175,19 @@ private fun ResultScreen(bitmap: Bitmap, regenerate: () -> Unit) {
     ) {
         Image(bitmap.asImageBitmap(), contentDescription = "Generated QR code", modifier = Modifier.size(320.dp))
         Text("QR code generated successfully.")
-        OutlinedButton(onClick = { }, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(download, Modifier.weight(1f)) {
+                Icon(Icons.Rounded.Download, contentDescription = null)
+                Spacer(Modifier.width(6.dp))
+                Text("Download")
+            }
+            OutlinedButton(save, Modifier.weight(1f)) {
+                Icon(Icons.Rounded.Save, contentDescription = null)
+                Spacer(Modifier.width(6.dp))
+                Text("Save")
+            }
+        }
+        OutlinedButton(share, Modifier.fillMaxWidth()) {
             Icon(Icons.Rounded.Share, contentDescription = null)
             Spacer(Modifier.width(6.dp))
             Text("Share")
@@ -171,6 +198,49 @@ private fun ResultScreen(bitmap: Bitmap, regenerate: () -> Unit) {
             Text("Regenerate")
         }
     }
+}
+
+private fun saveQr(context: Context, bitmap: Bitmap) {
+    storeQr(context, bitmap, "Pictures/Nexus QR")
+}
+
+private fun downloadQr(context: Context, bitmap: Bitmap) {
+    storeQr(context, bitmap, "Download/Nexus QR")
+}
+
+private fun storeQr(context: Context, bitmap: Bitmap, path: String) {
+    val resolver = context.contentResolver
+    val values = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, "Nexus_QR_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.png")
+        put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+        put(MediaStore.Images.Media.RELATIVE_PATH, path)
+        put(MediaStore.Images.Media.IS_PENDING, 1)
+    }
+    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return
+    runCatching {
+        resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        values.clear()
+        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+    }.onFailure { resolver.delete(uri, null, null) }
+}
+
+private fun shareQr(context: Context, bitmap: Bitmap) {
+    val resolver = context.contentResolver
+    val values = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, "Nexus_QR_Share.png")
+        put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Nexus QR")
+        put(MediaStore.Images.Media.IS_PENDING, 1)
+    }
+    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return
+    runCatching {
+        resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        values.clear()
+        values.put(MediaStore.Images.Media.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share QR code"))
+    }.onFailure { resolver.delete(uri, null, null) }
 }
 
 private fun wifiEscape(value: String): String =
