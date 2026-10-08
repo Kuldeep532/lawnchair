@@ -4,6 +4,8 @@ import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import app.lawnchair.preferences2.firstCached
+import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.LawnchairLauncher
 import com.android.launcher3.R
 
@@ -13,6 +15,8 @@ class OpenQuickSettingsHandler(
 
     @SuppressLint("WrongConstant")
     override suspend fun onTrigger(launcher: LawnchairLauncher) {
+        val prefs = PreferenceManager2.getInstance(context)
+        if (!prefs.controlCenterQuickSettings.firstCached()) return
         try {
             Log.v(OpenQuickSettingsHandler::class.java.simpleName, "(Tried reflection)")
             Class.forName("android.app.StatusBarManager")
