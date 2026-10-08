@@ -127,6 +127,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) {
                 Text("Rename Files")
             }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, PasswordGeneratorActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Password Generator")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
