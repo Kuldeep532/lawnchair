@@ -1,5 +1,6 @@
 package app.lawnchair.tools
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.BackHandler
@@ -44,6 +45,12 @@ class TextExtractorActivity : ComponentActivity() {
         EdgeToEdge()
         setContent { LawnchairTheme { TextExtractorScreen(::finish) } }
     }
+
+    fun incomingImageUri(): Uri? = when (intent.action) {
+        Intent.ACTION_SEND, Intent.ACTION_VIEW -> intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            ?: intent.data
+        else -> null
+    }
 }
 
 @Composable
@@ -53,7 +60,7 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var extractedText by remember { mutableStateOf("") }
     var working by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }\n\n    LaunchedEffect(Unit) {\n        val incomingUri = (context as? TextExtractorActivity)?.incomingImageUri()\n        if (incomingUri != null) {\n            selectedUri = incomingUri\n            message = "Image ready. Tap Extract Text."\n        }\n    }
 
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -100,7 +107,7 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Text Extractor") },
+                title = { Text("Image OCR") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
@@ -116,7 +123,7 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Take text from an image on your phone. Your image stays on the device.")
+            Text("Extract text from an image. Your image stays on the device.")
 
             OutlinedButton(
                 onClick = { picker.launch(arrayOf("image/*")) },
@@ -157,7 +164,7 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
                 }
             } else {
                 Spacer(Modifier.height(8.dp))
-                Text("Select an image to get started.")
+                Text(if (selectedUri == null) "Select an image to get started." else "Your image is ready to read.")
             }
         }
     }
