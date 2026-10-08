@@ -178,6 +178,21 @@
             android:label="@string/online_radio"
             android:theme="@style/Theme.Lawnchair" />
 
+        <activity
+            android:name="app.lawnchair.livetv.LiveTvActivity"
+            android:exported="false"
+            android:label="Live TV"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <service
+            android:name="app.lawnchair.livetv.LiveTvPlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+
         <service
             android:name="app.lawnchair.radio.OnlineRadioService"
             android:exported="false"
