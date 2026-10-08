@@ -13,6 +13,7 @@ dagger = "2.60.1"
 libsu = "6.0.0"
 refine = "4.4.0"
 exifinterface = "1.4.2"
+androidx-media3 = "1.9.0"
 
 guava = "33.7.2-jre"
 junitVersion = "4.13.2"
@@ -64,6 +65,8 @@ androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 androidx-uiautomator = "androidx.test.uiautomator:uiautomator:2.4.0"
 androidx-window = "androidx.window:window:1.5.1"
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "androidx-media3" }
+androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "androidx-media3" }
 
 # Compose
 compose-bom = "androidx.compose:compose-bom:2026.09.00"
