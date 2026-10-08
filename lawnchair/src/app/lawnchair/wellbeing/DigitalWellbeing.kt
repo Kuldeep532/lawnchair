@@ -181,15 +181,21 @@ fun DigitalWellbeingSettings() {
 
 suspend fun runWellbeingTick(context: Context) {
     val controller = DigitalWellbeingController(context)
-    delay(250)
-    val foreground = controller.foregroundPackage() ?: return
-    if (!controller.isSocialApp(foreground)) return
-    val used = controller.packageUsageToday(foreground) / 60_000L
-    if (used >= controller.socialBlockMinutes()) {
-        context.startActivity(
-            Intent(context, DigitalWellbeingBlockedActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-        )
+    if (!controller.isUsageAccessGranted()) return
+    var lastBlockedPackage: String? = null
+    repeat(2) {
+        delay(750)
+        val foreground = controller.foregroundPackage()
+        if (foreground == null || foreground == context.packageName) return@repeat
+        if (!controller.isSocialApp(foreground)) return@repeat
+        val used = controller.packageUsageToday(foreground) / 60_000L
+        if (used >= controller.socialBlockMinutes() && foreground != lastBlockedPackage) {
+            lastBlockedPackage = foreground
+            context.startActivity(
+                Intent(context, DigitalWellbeingBlockedActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            )
+        }
     }
 }
 
