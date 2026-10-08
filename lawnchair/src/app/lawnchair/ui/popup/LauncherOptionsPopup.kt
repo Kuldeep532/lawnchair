@@ -166,7 +166,7 @@ object LauncherOptionsPopup {
     private fun startTools(v: View): Boolean {
         val launcher = Launcher.getLauncher(v.context)
         val intent = android.content.Intent(v.context, app.lawnchair.tools.ToolsStudioActivity::class.java)
-        launcher.startActivitySafely(v, intent, com.android.launcher3.views.OptionsPopupView.placeholderInfo(intent))
+        launcher.startActivity(intent)
         return true
     }
 
