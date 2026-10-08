@@ -17,6 +17,8 @@ data class SecureDocument(
 )
 data class SecurePassword(val id: String, val title: String, val username: String, val password: String, val category: String = "General")
 
+data class SecureVaultCategory(val id: String, val name: String, val isBuiltIn: Boolean = true)
+
 class SecureWorldStore private constructor(context: Context) {
     private val preferences = EncryptedSharedPreferences.create(
         context,
