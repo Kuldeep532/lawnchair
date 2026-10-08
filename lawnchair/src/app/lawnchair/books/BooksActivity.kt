@@ -393,8 +393,39 @@ private fun loadPdfPagePlaceholders(
         val renderer = android.graphics.pdf.PdfRenderer(descriptor.fileDescriptor)
         return try {
             (0 until renderer.pageCount).map { pageIndex ->
-                renderer.openPage(pageIndex).use {
-                    "PDF page ${pageIndex + 1}.\n\nPDF text extraction is not available yet. Use the system PDF reader for selectable text."
+                renderer.openPage(pageIndex).use { page ->
+                    val bitmap = android.graphics.Bitmap.createBitmap(
+                        (page.width * 1.5f).toInt().coerceAtLeast(1),
+                        (page.height * 1.5f).toInt().coerceAtLeast(1),
+                        android.graphics.Bitmap.Config.ARGB_8888,
+                    )
+                    try {
+                        page.render(
+                            bitmap,
+                            null,
+                            null,
+                            android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY,
+                        )
+                        val recognizer = com.google.mlkit.vision.text.TextRecognition.getClient(
+                            com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS,
+                        )
+                        try {
+                            val text = com.google.android.gms.tasks.Tasks.await(
+                                recognizer.process(
+                                    com.google.mlkit.vision.common.InputImage.fromBitmap(bitmap, 0),
+                                ),
+                            ).text.trim()
+                            if (text.isBlank()) {
+                                "PDF page ${pageIndex + 1}. No readable text was found."
+                            } else {
+                                text
+                            }
+                        } finally {
+                            recognizer.close()
+                        }
+                    } finally {
+                        bitmap.recycle()
+                    }
                 }
             }
         } finally {
