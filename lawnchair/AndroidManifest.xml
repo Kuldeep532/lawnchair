@@ -144,6 +144,11 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="app.lawnchair.tools.ImageToPdfActivity"
+            android:exported="false"
+            android:label="@string/image_to_pdf"
+            android:theme="@style/Theme.Lawnchair" />
 
         <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
