@@ -106,14 +106,20 @@ class SecureWorldActivity : ComponentActivity() {
         )
     }
 
-    private fun showDocumentDialog(uri: String, suggestedName: String) {
+    private fun showDocumentDialog(
+        uri: String,
+        suggestedName: String,
+        extractedText: String = "",
+    ) {
         setContent {
             LawnchairTheme {
                 DocumentDialog(
                     suggestedName = suggestedName,
+                    suggestedNumber = suggestDocumentNumber("Other", extractedText),
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
-                        store.saveDocument(category, number, name, details, uri)
+                        val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
+                        store.saveDocument(category, finalNumber, name, details, uri)
                         showSecureVault()
                     },
                 )
@@ -372,6 +378,7 @@ private fun AddDocumentChoiceDialog(
 @androidx.compose.runtime.Composable
 private fun DocumentDialog(
     suggestedName: String,
+    suggestedNumber: String,
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit,
 ) {
@@ -386,7 +393,7 @@ private fun DocumentDialog(
         "Other",
     )
     var category by remember { mutableStateOf(categories.first()) }
-    var number by remember { mutableStateOf("") }
+    var number by remember { mutableStateOf(suggestedNumber) }
     var name by remember { mutableStateOf(suggestedName) }
     var details by remember { mutableStateOf("") }
 
