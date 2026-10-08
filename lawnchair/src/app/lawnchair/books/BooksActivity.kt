@@ -195,90 +195,26 @@ private fun BooksLibraryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Books") },
-                actions = {
-                    IconButton(onClick = onImport) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Import book")
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        if (books.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Icon(Icons.Rounded.MenuBook, contentDescription = null)
-                Text("Your book library is empty.")
-                Text("Import a book to start reading.")
-            }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
-                items(books, key = { it.id }) { book ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onOpen(book) }.padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(book.title, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                if (book.lastPosition > 0) "Resume from saved position"
-                                else "Not started",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        IconButton(onClick = { onDelete(book) }) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Remove book")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@androidx.compose.runtime.Composable
-private fun BookReaderScreen(
-    book: BookItem,
-    onBack: () -> Unit,
-    onPositionChanged: (Int) -> Unit,
-) {
-    var lines by remember(book.uri) { mutableStateOf<List<String>>(emptyList()) }
-    var current by remember(book.uri) { mutableIntStateOf(book.lastPosition) }
-    var playing by remember { mutableStateOf(false) }
-    var pageNumber by remember { mutableStateOf("") }
-
-    val context = androidx.compose.ui.platform.LocalContext.current
-
-    LaunchedEffect(book.uri) {
-        runCatching {
-            val uri = Uri.parse(book.uri)
-            if (book.mimeType.startsWith("text/") || book.mimeType == "text/plain" || book.mimeType == "text/markdown") {
-                lines = BufferedReader(
-                    InputStreamReader(context.contentResolver.openInputStream(uri))
-                ).use { reader -> reader?.readLines().orEmpty() }
-            } else {
-                lines = listOf(
-                    "This book has been imported successfully.",
-                    "Full PDF and EPUB text extraction will be added in the next Books stage.",
-                    "You can still open the original file using your device's file viewer.",
-                )
-            }
-        }
-    }
-
-    BackHandler { onBack() }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to library")
                     }
                 },
-                title = { Text(book.title) },
+                title = { Text(book.title, maxLines = 1) },
+                actions = {
+                    IconButton(onClick = { showMore = true }) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = "More reader options")
+                    }
+                    DropdownMenu(
+                        expanded = showMore,
+                        onDismissRequest = { showMore = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Configure TTS & voice") },
+                            onClick = { showMore = false },
+                        )
+                    }
+                },
             )
         },
         bottomBar = {
