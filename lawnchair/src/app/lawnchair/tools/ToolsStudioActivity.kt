@@ -151,6 +151,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) {
                 Text("Image to PDF")
             }
+            Button(
+                onClick = {
+                    context.startActivity(Intent(context, app.lawnchair.radio.OnlineRadioActivity::class.java))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Online Radio")
+            }
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
