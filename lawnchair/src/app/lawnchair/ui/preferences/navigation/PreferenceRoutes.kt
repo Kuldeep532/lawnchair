@@ -98,6 +98,11 @@ data object SecureVault : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object Books : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/books"
+}
+
+@Serializable
 data object About : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/about"
 }
