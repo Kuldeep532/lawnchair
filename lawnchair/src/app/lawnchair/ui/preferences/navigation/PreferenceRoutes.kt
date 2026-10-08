@@ -93,6 +93,11 @@ data object Smartspace : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object SecureVault : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/secure-vault"
+}
+
+@Serializable
 data object About : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/about"
 }
