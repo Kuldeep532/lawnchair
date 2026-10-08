@@ -193,6 +193,21 @@
     <string name="gestures_label">Gestures</string>
     <string name="gestures_description">Taps and swipes</string>
 
+    <string name="control_center_notifications_label">Control Center &amp; Notifications</string>
+    <string name="control_center_notifications_description">Premium notifications, quick settings and status bar experience</string>
+    <string name="control_center_style_heading">Control Center style</string>
+    <string name="control_center_style_description">Use a clean, translucent surface with generous controls and adaptive colors</string>
+    <string name="control_center_glass_label">Glass surface</string>
+    <string name="control_center_glass_description">Use the premium translucent surface treatment</string>
+    <string name="control_center_large_tiles_label">Large quick controls</string>
+    <string name="control_center_large_tiles_description">Use bigger tiles with clearer touch targets</string>
+    <string name="control_center_panels_heading">Panels</string>
+    <string name="control_center_notifications_toggle">Notifications in Control Center</string>
+    <string name="control_center_notifications_toggle_description">Keep notifications available in the unified panel</string>
+    <string name="control_center_quick_settings_toggle">Quick Settings in Control Center</string>
+    <string name="control_center_quick_settings_toggle_description">Keep connectivity and device controls available in the unified panel</string>
+    <string name="control_center_system_note">The launcher can style its own experience and gesture entry points. Android continues to own the system-wide notification shade and Quick Settings for security and reliability.</string>
+
     <string name="quickstep_label">Recents screen</string>
     <string name="quickstep_description">Clear all button, corner radius</string>
 
