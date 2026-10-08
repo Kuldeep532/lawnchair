@@ -110,6 +110,12 @@
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
+            android:name="app.lawnchair.tools.ImageCompressorActivity"
+            android:exported="false"
+            android:label="@string/image_compressor"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
             android:exported="true"
             android:label="@string/secure_world_label"
