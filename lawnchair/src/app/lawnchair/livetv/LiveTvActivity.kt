@@ -1,5 +1,7 @@
 package app.lawnchair.livetv
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.BackHandler
@@ -8,6 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +22,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -25,16 +30,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.ui.PlayerView
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
-import androidx.media3.ui.PlayerView
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.media3.common.util.UnstableApi
+import com.google.common.util.concurrent.ListenableFuture
 
+@UnstableApi
 class LiveTvActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,28 +50,28 @@ class LiveTvActivity : ComponentActivity() {
 
 private enum class LiveTvPage { LIST, PLAYER }
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun LiveTvScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var page by remember { mutableStateOf(LiveTvPage.LIST) }
     var selected by remember { mutableStateOf<LiveTvChannel?>(null) }
-    val channels = remember { mutableStateOf(emptyList<LiveTvChannel>()) }
+    var channels by remember { mutableStateOf(emptyList<LiveTvChannel>()) }
 
     LaunchedEffect(Unit) {
-        channels.value = LiveTvPlaylist.load(context)
+        channels = LiveTvPlaylist.load(context)
     }
 
     fun open(channel: LiveTvChannel) {
-        selected.value?.let {}
         selected = channel
         page = LiveTvPage.PLAYER
         LiveTvController.play(context, channel)
     }
 
     fun closePlayer() {
+        LiveTvController.stop(context)
         selected = null
         page = LiveTvPage.LIST
-        LiveTvController.stop(context)
     }
 
     BackHandler {
@@ -88,97 +93,118 @@ private fun LiveTvScreen(onBack: () -> Unit) {
         },
     ) { padding ->
         if (page == LiveTvPage.PLAYER && selected != null) {
-            Column(
-                Modifier.fillMaxSize().padding(padding),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                LivePlayerSurface(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    channel = selected!!,
-                )
-                Text(
-                    "Playing live",
-                    Modifier.padding(horizontal = 16.dp),
-                )
-                IconButton(
-                    onClick = ::closePlayer,
-                    modifier = Modifier.padding(16.dp),
-                ) {
-                    Icon(Icons.Rounded.ArrowBack, contentDescription = "Close channel")
-                }
-            }
+            LivePlayerScreen(
+                padding = padding,
+                channel = selected!!,
+                onClose = ::closePlayer,
+            )
         } else {
-            if (channels.value.isEmpty()) {
-                Text("No live channels are available.", Modifier.padding(20.dp))
-            } else {
-                LazyColumn(
-                    Modifier.fillMaxSize().padding(padding),
-                ) {
-                    items(channels.value, key = { it.id + it.streamUrl }) { channel ->
-                        RowPlaceholder(channel, ::open)
-                    }
+            LiveChannelList(
+                padding = padding,
+                channels = channels,
+                onOpen = ::open,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LiveChannelList(
+    padding: PaddingValues,
+    channels: List<LiveTvChannel>,
+    onOpen: (LiveTvChannel) -> Unit,
+) {
+    if (channels.isEmpty()) {
+        Column(
+            Modifier.fillMaxSize().padding(padding).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("No live channels are available.")
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(padding),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        items(channels, key = { it.id + it.streamUrl }) { channel ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpen(channel) }
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.Rounded.PlayArrow, contentDescription = "Play")
+                Column(Modifier.weight(1f)) {
+                    Text(channel.name)
+                    if (channel.group.isNotBlank()) Text(channel.group)
                 }
             }
         }
     }
 }
 
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-private fun RowPlaceholder(channel: LiveTvChannel, onOpen: (LiveTvChannel) -> Unit) {
-    androidx.compose.foundation.layout.Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable { onOpen(channel) }
-            .padding(18.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(Icons.Rounded.PlayArrow, contentDescription = "Play")
-        Column(Modifier.weight(1f)) {
-            Text(channel.name)
-            if (channel.group.isNotBlank()) Text(channel.group)
-        }
-    }
-}
-
-@Composable
-private fun LivePlayerSurface(
-    modifier: Modifier,
+private fun LivePlayerScreen(
+    padding: PaddingValues,
     channel: LiveTvChannel,
+    onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    AndroidView(
-        modifier = modifier,
-        factory = {
-            PlayerView(context).apply {
-                useController = true
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                )
-                val token = SessionToken(context, android.content.ComponentName(context, LiveTvPlaybackService::class.java))
-                val controllerFuture = MediaController.Builder(context, token).buildAsync()
-                controllerFuture.addListener(
-                    { player = controllerFuture.get() },
-                    context.mainExecutor,
-                )
-            }
-        },
-        update = { view ->
-            view.contentDescription = channel.name
-        },
-    )
+    var controller by remember { mutableStateOf<MediaController?>(null) }
+    var future by remember { mutableStateOf<ListenableFuture<MediaController>?>(null) }
+
+    DisposableEffect(channel.streamUrl) {
+        val token = SessionToken(context, ComponentName(context, LiveTvPlaybackService::class.java))
+        val pending = MediaController.Builder(context, token).buildAsync()
+        future = pending
+        pending.addListener(
+            {
+                if (pending.isDone) controller = runCatching { pending.get() }.getOrNull()
+            },
+            context.mainExecutor,
+        )
+        onDispose {
+            controller?.release()
+            future?.let { MediaController.releaseFuture(it) }
+        }
+    }
+
+    Column(
+        Modifier.fillMaxSize().padding(padding),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AndroidView(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            factory = { PlayerView(it).apply { useController = true } },
+            update = { view ->
+                view.player = controller
+                view.contentDescription = channel.name
+            },
+        )
+        Text("Live • " + channel.name, Modifier.padding(horizontal = 16.dp))
+        OutlinedButton(
+            onClick = onClose,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        ) {
+            Text("Close Live TV")
+        }
+    }
 }
 
 private object LiveTvController {
-    fun play(context: android.content.Context, channel: LiveTvChannel) {
-        context.startService(
-            Intent(context, LiveTvPlaybackService::class.java).setAction(ACTION_PLAY)
-                .putExtra(EXTRA_URL, channel.streamUrl)
-                .putExtra(EXTRA_NAME, channel.name),
-        )
+    fun play(context: Context, channel: LiveTvChannel) {
+        val intent = Intent(context, LiveTvPlaybackService::class.java)
+            .setAction(ACTION_PLAY)
+            .putExtra(EXTRA_URL, channel.streamUrl)
+            .putExtra(EXTRA_NAME, channel.name)
+        context.startForegroundService(intent)
     }
 
-    fun stop(context: android.content.Context) {
+    fun stop(context: Context) {
         context.stopService(Intent(context, LiveTvPlaybackService::class.java))
     }
 
@@ -186,7 +212,3 @@ private object LiveTvController {
     const val EXTRA_URL = "url"
     const val EXTRA_NAME = "name"
 }
-
-private var MediaControllerBuilderHack: MediaController?
-    get() = null
-    set(value) {}
