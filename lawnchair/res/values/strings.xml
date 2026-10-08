@@ -1094,4 +1094,5 @@
     <string name="image_ocr">Image OCR</string>
     <string name="image_to_pdf">Image to PDF</string>
     <string name="online_radio">Online Radio</string>
+    <string name="pdf_reader">PDF Reader</string>
 </resources>
