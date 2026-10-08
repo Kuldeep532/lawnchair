@@ -87,6 +87,17 @@
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
+            android:name="app.lawnchair.tools.ToolsStudioActivity"
+            android:exported="true"
+            android:label="Tools Studio"
+            android:theme="@style/Theme.Lawnchair">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
             android:exported="true"
             android:label="@string/secure_world_label"
