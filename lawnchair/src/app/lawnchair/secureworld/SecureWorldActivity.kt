@@ -1,13 +1,13 @@
 package app.lawnchair.secureworld
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,20 +48,18 @@ class SecureWorldActivity : ComponentActivity() {
 
     private lateinit var promptExecutor: Executor
     private lateinit var store: SecureWorldStore
+
     private val documentPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             try {
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             } catch (_: SecurityException) {
             }
-            store.saveDocument(
-                name = uri.lastPathSegment?.substringAfterLast('/') ?: "Document",
-                uri = uri.toString(),
-            )
-            recreate()
+            val suggestedName = uri.lastPathSegment
+                ?.substringAfterLast('/')
+                ?.takeIf { it.isNotBlank() }
+                ?: "Document"
+            showDocumentDialog(uri.toString(), suggestedName)
         }
     }
 
@@ -70,14 +69,6 @@ class SecureWorldActivity : ComponentActivity() {
         store = SecureWorldStore.getInstance(this)
         promptExecutor = ContextCompat.getMainExecutor(this)
         authenticateAndShow()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (!isFinishing && ::promptExecutor.isInitialized && !isChangingConfigurations) {
-            // The initial unlock happens in onCreate. Re-authentication can be enabled
-            // for background timeout in a later stage without changing the workspace.
-        }
     }
 
     private fun authenticateAndShow() {
@@ -94,7 +85,7 @@ class SecureWorldActivity : ComponentActivity() {
             promptExecutor,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    showSecureWorld()
+                    showSecureVault()
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
@@ -103,15 +94,30 @@ class SecureWorldActivity : ComponentActivity() {
             },
         ).authenticate(
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle(getString(com.android.launcher3.R.string.secure_world_unlock_title))
-                .setSubtitle(getString(com.android.launcher3.R.string.secure_world_unlock_subtitle))
+                .setTitle("Secure Vault")
+                .setSubtitle("Unlock your private space")
                 .setNegativeButtonText("Cancel")
                 .setConfirmationRequired(false)
                 .build(),
         )
     }
 
-    private fun showSecureWorld() {
+    private fun showDocumentDialog(uri: String, suggestedName: String) {
+        setContent {
+            LawnchairTheme {
+                DocumentDialog(
+                    suggestedName = suggestedName,
+                    onDismiss = { showSecureVault() },
+                    onSave = { category, number, name, details ->
+                        store.saveDocument(category, number, name, details, uri)
+                        showSecureVault()
+                    },
+                )
+            }
+        }
+    }
+
+    private fun showSecureVault() {
         setContent {
             LawnchairTheme {
                 Surface(
@@ -120,28 +126,20 @@ class SecureWorldActivity : ComponentActivity() {
                 ) {
                     var selectedTab by remember { mutableIntStateOf(0) }
                     var showNoteDialog by remember { mutableStateOf(false) }
+                    var showAddDocument by remember { mutableStateOf(false) }
                     var showPasswordDialog by remember { mutableStateOf(false) }
 
-                    val tabs = listOf(
-                        getString(com.android.launcher3.R.string.secure_world_notes),
-                        getString(com.android.launcher3.R.string.secure_world_documents),
-                        getString(com.android.launcher3.R.string.secure_world_passwords),
-                    )
+                    val tabs = listOf("Notes", "Documents", "Passwords")
 
                     Column {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(
-                                text = getString(com.android.launcher3.R.string.secure_world_label),
-                                style = MaterialTheme.typography.titleLarge,
-                            )
+                            Text("Secure Vault", style = MaterialTheme.typography.titleLarge)
                             Icon(
                                 imageVector = Icons.Rounded.Lock,
-                                contentDescription = "Secure World locked area",
+                                contentDescription = "Secure Vault protected area",
                             )
                         }
 
@@ -156,23 +154,14 @@ class SecureWorldActivity : ComponentActivity() {
                         }
 
                         when (selectedTab) {
-                            0 -> NotesTab(
-                                items = store.notes(),
-                                onAdd = { showNoteDialog = true },
-                                onDelete = store::deleteNote,
-                            )
-
+                            0 -> NotesTab(store.notes(), { showNoteDialog = true }, store::deleteNote)
                             1 -> DocumentsTab(
                                 items = store.documents(),
-                                onAdd = { documentPicker.launch(arrayOf("*/*")) },
+                                onAdd = { showAddDocument = true },
                                 onDelete = store::deleteDocument,
+                                onOpen = ::openDocument,
                             )
-
-                            else -> PasswordsTab(
-                                items = store.passwords(),
-                                onAdd = { showPasswordDialog = true },
-                                onDelete = store::deletePassword,
-                            )
+                            else -> PasswordsTab(store.passwords(), { showPasswordDialog = true }, store::deletePassword)
                         }
                     }
 
@@ -182,6 +171,20 @@ class SecureWorldActivity : ComponentActivity() {
                             onSave = { title, body ->
                                 store.saveNote(title, body)
                                 showNoteDialog = false
+                            },
+                        )
+                    }
+
+                    if (showAddDocument) {
+                        AddDocumentChoiceDialog(
+                            onDismiss = { showAddDocument = false },
+                            onUpload = {
+                                showAddDocument = false
+                                documentPicker.launch(arrayOf("*/*"))
+                            },
+                            onDetailsOnly = {
+                                showAddDocument = false
+                                showDocumentDialog("", "")
                             },
                         )
                     }
@@ -198,6 +201,17 @@ class SecureWorldActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun openDocument(uri: String) {
+        if (uri.isBlank()) return
+        val parsed = android.net.Uri.parse(uri)
+        startActivity(
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(parsed, contentResolver.getType(parsed) ?: "*/*")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+        )
     }
 }
 
@@ -233,18 +247,41 @@ private fun DocumentsTab(
     items: List<SecureDocument>,
     onAdd: () -> Unit,
     onDelete: (String) -> Unit,
+    onOpen: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         ActionRow("Documents", onAdd)
         LazyColumn {
             items(items, key = { it.id }) { item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .clickable(enabled = item.uri.isNotBlank()) { onOpen(item.uri) },
                 ) {
-                    Text(item.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { onDelete(item.id) }) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "Delete document")
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                        ) {
+                            Text(item.name.ifBlank { "Document" }, style = MaterialTheme.typography.titleMedium)
+                            Text(item.category, style = MaterialTheme.typography.labelMedium)
+                            if (item.number.isNotBlank()) {
+                                Text("Number: ${item.number}", style = MaterialTheme.typography.bodyMedium)
+                            }
+                            if (item.details.isNotBlank()) {
+                                Text(item.details, style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (item.uri.isBlank()) {
+                                Text("Details only", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        IconButton(onClick = { onDelete(item.id) }) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Delete document")
+                        }
                     }
                 }
             }
@@ -290,6 +327,86 @@ private fun ActionRow(label: String, onAdd: () -> Unit) {
             Icon(Icons.Rounded.Add, contentDescription = "Add $label")
         }
     }
+}
+
+@androidx.compose.runtime.Composable
+private fun AddDocumentChoiceDialog(
+    onDismiss: () -> Unit,
+    onUpload: () -> Unit,
+    onDetailsOnly: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add document") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = onUpload, modifier = Modifier.fillMaxWidth()) {
+                    Text("Upload a file")
+                }
+                Button(onClick = onDetailsOnly, modifier = Modifier.fillMaxWidth()) {
+                    Text("Add details without a file")
+                }
+            }
+        },
+        confirmButton = {},
+    )
+}
+
+@androidx.compose.runtime.Composable
+private fun DocumentDialog(
+    suggestedName: String,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String) -> Unit,
+) {
+    val categories = listOf(
+        "Aadhaar Card",
+        "PAN Card",
+        "Driving Licence",
+        "Certificate",
+        "Passport",
+        "Voter ID",
+        "Insurance",
+        "Other",
+    )
+    var category by remember { mutableStateOf(categories.first()) }
+    var number by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(suggestedName) }
+    var details by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Document details") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Category", style = MaterialTheme.typography.labelLarge)
+                categories.forEach { option ->
+                    Text(
+                        text = option,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { category = option }
+                            .padding(vertical = 6.dp),
+                        style = if (category == option) {
+                            MaterialTheme.typography.titleSmall
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        },
+                    )
+                }
+                OutlinedTextField(number, { number = it }, label = { Text("Document number") })
+                OutlinedTextField(name, { name = it }, label = { Text("Document name") })
+                OutlinedTextField(details, { details = it }, label = { Text("Details") })
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = name.isNotBlank(),
+                onClick = { onSave(category, number, name, details) },
+            ) {
+                Text("Save")
+            }
+        },
+    )
 }
 
 @androidx.compose.runtime.Composable
