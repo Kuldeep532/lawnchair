@@ -1,6 +1,12 @@
 package app.lawnchair.tools
 
 import android.os.Bundle
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import app.lawnchair.secureworld.SecureWorldStore
 import androidx.activity.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -42,14 +49,19 @@ class PasswordGeneratorActivity : ComponentActivity() {
 
 @Composable
 private fun PasswordGeneratorScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val store = remember { SecureWorldStore.getInstance(context) }
     var length by remember { mutableFloatStateOf(16f) }
     var letters by remember { mutableStateOf(true) }
     var numbers by remember { mutableStateOf(true) }
     var symbols by remember { mutableStateOf(true) }
     var password by remember { mutableStateOf("") }
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var savedMessage by remember { mutableStateOf(false) }
 
     fun generate() {
+        savedMessage = false
         password = SecurePassword.generate(
             length = length.toInt(),
             letters = letters,
@@ -60,6 +72,17 @@ private fun PasswordGeneratorScreen(onBack: () -> Unit) {
 
     LaunchedEffect(Unit) { generate() }
     BackHandler(onBack = onBack)
+
+    if (showSaveDialog) {
+        SavePasswordDialog(
+            onDismiss = { showSaveDialog = false },
+            onSave = { title, username ->
+                store.savePassword(title, username, password, "Passwords")
+                showSaveDialog = false
+                savedMessage = true
+            },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -101,7 +124,24 @@ private fun PasswordGeneratorScreen(onBack: () -> Unit) {
                 Text("Symbols", Modifier.padding(top = 12.dp))
             }
 
-            Text(if (password.isEmpty()) "Choose at least one option." else password)
+            OutlinedTextField(
+                value = password,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Generated password") },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+            )
+
+            Button(
+                onClick = { showSaveDialog = true },
+                enabled = password.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Rounded.Lock, contentDescription = null)
+                Text(if (savedMessage) "Saved to Secure Vault" else "Save to Secure Vault")
+            }
 
             Row(
                 Modifier.fillMaxWidth(),
@@ -128,6 +168,46 @@ private fun PasswordGeneratorScreen(onBack: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+private fun SavePasswordDialog(
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Save to Secure Vault") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Account name") },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username or email") },
+                    singleLine = true,
+                )
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) { Text("Cancel") }
+        },
+        confirmButton = {
+            Button(
+                enabled = title.isNotBlank() && username.isNotBlank(),
+                onClick = { onSave(title.trim(), username.trim()) },
+            ) {
+                Text("Save")
+            }
+        },
+    )
 }
 
 private object SecurePassword {
