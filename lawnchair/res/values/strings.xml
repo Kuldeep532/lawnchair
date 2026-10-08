@@ -1091,4 +1091,5 @@
     <string name="pdf_to_image">PDF to Image Converter</string>
     <string name="image_compressor">Image Compressor</string>
     <string name="file_renamer">Rename Files</string>
+    <string name="image_ocr">Image OCR</string>
 </resources>
