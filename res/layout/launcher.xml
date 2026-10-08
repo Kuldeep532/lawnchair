@@ -46,16 +46,32 @@
             android:theme="@style/HomeScreenElementTheme"
             launcher:pageIndicator="@+id/page_indicator" />
 
-        <!-- DO NOT CHANGE THE ID -->
-        <app.lawnchair.views.NexusDockSurface
-            android:id="@+id/hotseat"
+        <!-- DO NOT CHANGE THE ID: Launcher code expects a real Hotseat here. -->
+        <FrameLayout
+            android:id="@+id/nexus_dock_frame"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="14dp"
-            android:importantForAccessibility="yes" />
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <app.lawnchair.views.NexusDockSurface
+                android:id="@+id/nexus_dock_surface"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:importantForAccessibility="no" />
+
+            <include
+                android:id="@+id/hotseat"
+                layout="@layout/hotseat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom" />
+        </FrameLayout>
 
         <!-- Keep these behind the workspace so that they are not visible when
          we go into AllApps -->
