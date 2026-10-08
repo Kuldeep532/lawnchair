@@ -50,6 +50,11 @@ data object HomeScreen : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object DigitalWellbeing : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/digital-wellbeing"
+}
+
+@Serializable
 data object Dock : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/dock"
 }
