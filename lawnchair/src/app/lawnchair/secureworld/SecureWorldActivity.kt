@@ -158,7 +158,14 @@ class SecureWorldActivity : ComponentActivity() {
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
                         val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
-                        store.saveDocument(category, finalNumber, name, details, uri)
+                        store.saveDocument(
+                            category = category,
+                            number = finalNumber,
+                            name = name,
+                            details = details.ifBlank { suggestDocumentDetails(category, extractedText) },
+                            uri = uri,
+                            ocrText = extractedText,
+                        )
                         showSecureVault()
                     },
                 )
