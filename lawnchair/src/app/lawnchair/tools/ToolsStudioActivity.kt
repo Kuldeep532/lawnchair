@@ -39,6 +39,14 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+
+
+@Composable
+private fun ToolsStudioQuickActions(onQr: () -> Unit) {
+    OutlinedButton(onClick = onQr, modifier = Modifier.fillMaxWidth()) {
+        Text("QR Code Generator")
+    }
+}
 private const val PREFIX = "NXT1"
 private const val TAG_BITS = 128
 private const val IV_BYTES = 12
