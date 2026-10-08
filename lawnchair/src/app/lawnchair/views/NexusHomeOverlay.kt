@@ -24,6 +24,7 @@ class NexusHomeOverlay @JvmOverloads constructor(
         gravity = Gravity.CENTER_HORIZONTAL
         setPadding(22, 16, 22, 16)
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        descendantFocusability = FOCUS_AFTER_DESCENDANTS
         isClickable = false
         isFocusable = false
         clipToOutline = true
