@@ -60,15 +60,36 @@
     <application>
         <activity
             android:name="app.lawnchair.books.BooksActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/books_label"
-            android:theme="@style/Theme.Lawnchair" />
+            android:theme="@style/Theme.Lawnchair"
+            android:excludeFromRecents="false"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="text/markdown" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name="app.lawnchair.secureworld.SecureWorldActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/secure_world_label"
-            android:theme="@style/Theme.Lawnchair" />
+            android:theme="@style/Theme.Lawnchair">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
