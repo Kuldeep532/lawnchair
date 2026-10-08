@@ -61,6 +61,11 @@
 
     <string name="managed_by_lawnchair">Managed by Nexus Launcher</string>
 
+    <string name="nexus_fusion_ui_version">Nexus Fusion UI v1.5</string>
+    <string name="nexus_fusion_ui_about">Nexus Fusion UI is the custom visual framework created for Nexus Launcher. It brings together a unified home surface, dock, search presentation, accessibility-first interaction, adaptive surfaces, and a consistent visual language while preserving the launcher engine underneath.</string>
+    <string name="nexus_fusion_ui_origin">Nexus Fusion UI started almost by accident. The original goal was simply to design a custom launcher interface. During that work, the interface grew into reusable surfaces, layout rules, interaction patterns, and accessibility behavior — effectively becoming the foundation of a UI framework.</string>
+    <string name="nexus_fusion_ui_framework_note">The long-term goal is to evolve Nexus Fusion UI into a standalone reusable framework that can power more Nexus products and experiences without depending on a single launcher screen.</string>
+
     <string name="nexus_launcher_name">Nexus Launcher</string>
     <string name="nexus_launcher_era_os">Nexus Launcher running on Era OS 2.0</string>
     <string name="secure_vault_label">Secure Vault</string>
