@@ -21,7 +21,7 @@
     <skip />
 
     <!-- Application name -->
-    <string name="app_name">Launcher3</string>
+    <string name="app_name">Nexus Launcher</string>
     <!-- Work folder name -->
     <string name="work_folder_name">Work</string>
     <!-- Displayed when user selects a shortcut for an app that was uninstalled [CHAR_LIMIT=none]-->
@@ -566,4 +566,14 @@
     <string name="seven_sided_cookie_shape_title">7-sided cookie</string>
     <!-- label for arch shape option in customization picker -->
     <string name="arch_shape_title">Arch</string>
-</resources>
+
+    <string name="nexus_creator_line">Designed and developed by Kuldeep Kumar Yadav</string>
+    <string name="nexus_about_description">Nexus Launcher is a personal, accessibility-first Android launcher focused on a clean, original experience.</string>
+    <string name="nexus_contact_heading">Contact</string>
+    <string name="nexus_contact_email">kuldeepky538@gmail.com</string>
+    <string name="nexus_social_heading">Connect with Kuldeep</string>
+    <string name="nexus_legal_heading">Privacy &amp; Terms</string>
+    <string name="nexus_privacy_policy_text">Privacy: Nexus Launcher is designed to keep launcher settings and personal launcher data under your control. Third-party services may apply their own privacy practices when you open external links or use optional integrations.</string>
+    <string name="nexus_terms_text">Terms: Nexus Launcher is provided for personal use. Use of Android, Google, or other third-party services remains subject to their respective terms and policies.</string>
+    <string name="nexus_personal_use_notice">Nexus Launcher — personal edition by Kuldeep Kumar Yadav.</string>
+\n</resources>
