@@ -84,7 +84,6 @@ import app.lawnchair.ui.preferences.navigation.HomeScreen
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.Search
-import app.lawnchair.ui.preferences.navigation.SecureVault
 import app.lawnchair.ui.preferences.navigation.Smartspace
 import app.lawnchair.ui.util.addIf
 import app.lawnchair.util.isDefaultLauncher
@@ -214,14 +213,6 @@ fun PreferencesDashboard(
                 iconResource = R.drawable.backup_restore,
                 onNavigate = { onNavigate(BackupAndRestore) },
                 isSelected = currentRoute is BackupAndRestore,
-            )
-
-            PreferenceCategory(
-                label = stringResource(R.string.secure_vault_label),
-                description = stringResource(R.string.secure_vault_description),
-                iconResource = R.drawable.ic_about,
-                onNavigate = { onNavigate(SecureVault) },
-                isSelected = currentRoute is SecureVault,
             )
 
             PreferenceCategory(
