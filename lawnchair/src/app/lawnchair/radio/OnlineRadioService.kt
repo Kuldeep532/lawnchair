@@ -12,6 +12,7 @@ import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.IBinder
+import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 import app.lawnchair.R
 
@@ -59,7 +60,7 @@ class OnlineRadioService : Service() {
             setOnPreparedListener {
                 it.start()
                 store.setCurrent(station, true)
-                startForeground(NOTIFICATION_ID, notification(station, true))
+                promoteToForeground(station, true)
             }
             setOnCompletionListener {
                 store.setCurrent(station, false)
@@ -73,7 +74,7 @@ class OnlineRadioService : Service() {
             }
             prepareAsync()
         }
-        startForeground(NOTIFICATION_ID, notification(station, false))
+        promoteToForeground(station, false)
     }
 
     private fun pause() {
@@ -122,7 +123,20 @@ class OnlineRadioService : Service() {
     }
 
     private fun updateNotification() {
-        store.current()?.let { startForeground(NOTIFICATION_ID, notification(it, store.isPlaying())) }
+        store.current()?.let { promoteToForeground(it, store.isPlaying()) }
+    }
+
+    private fun promoteToForeground(station: RadioStation, playing: Boolean) {
+        val notification = notification(station, playing)
+        if (Build.VERSION.SDK_INT >= 29) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
     }
 
     private fun notification(station: RadioStation, playing: Boolean): Notification =
