@@ -45,7 +45,7 @@ import javax.crypto.spec.SecretKeySpec
 @Suppress("UNUSED_PARAMETER")
 private fun ToolsStudioQuickActions(onQr: () -> Unit) {
     OutlinedButton(onClick = onQr, modifier = Modifier.fillMaxWidth()) {
-        Text("QR Code Generator")
+        Text("QR Code")
     }
 }
 private const val PREFIX = "NXT1"
@@ -84,10 +84,10 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to Tools")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
-                title = { Text("Tools Studio") },
+                title = { Text("Tools") },
             )
         },
     ) { padding ->
@@ -109,7 +109,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("PDF to Image Converter")
+                Text("PDF to Images")
             }
             Button(
                 onClick = {
@@ -117,7 +117,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Image Compressor")
+                Text("Compress Image")
             }
             Button(
                 onClick = {
@@ -128,8 +128,8 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 Text("Rename Files")
             }
             TabRow(selectedTabIndex = tab) {
-                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Encrypt") })
-                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Decrypt") })
+                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
+                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
             }
 
             if (tab == 0) {
@@ -137,14 +137,14 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     value = input,
                     onValueChange = { input = it; output = ""; error = null },
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    label = { Text("Enter text") },
-                    placeholder = { Text("Type or paste text to encrypt") },
+                    label = { Text("Text") },
+                    placeholder = { Text("Type or paste text") },
                 )
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Password (optional)") },
+                    label = { Text("Password") },
                     singleLine = true,
                 )
                 Button(
@@ -158,17 +158,17 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     enabled = input.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Encrypt text")
+                    Text("Protect Text")
                 }
             } else {
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it; error = null; output = "" },
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    label = { Text("Encrypted text") },
-                    placeholder = { Text("Paste encrypted text here") },
+                    label = { Text("Protected Text") },
+                    placeholder = { Text("Paste protected text here") },
                 )
-                Text("Password is only needed when this encrypted text was created with a password.")
+                Text("Enter a password only when the protected text uses one.")
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -186,7 +186,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     enabled = input.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Decrypt text")
+                    Text("Open Text")
                 }
             }
 
@@ -199,7 +199,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                         onValueChange = {},
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text(if (tab == 0) "Encrypted text" else "Decrypted text") },
+                        label = { Text(if (tab == 0) "Protected Text" else "Opened Text") },
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -229,7 +229,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                         }
                     }
                     if (tab == 0) {
-                        Text(if (encryptedWithPassword) "Encrypted with a password." else "Encrypted without a password.")
+                        Text(if (encryptedWithPassword) "Password protected" else "Saved without a password")
                     }
                 }
             }
