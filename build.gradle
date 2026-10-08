@@ -139,8 +139,8 @@ final def isReleaseBuild = ciBuild
         || ciRef.endsWith("-stable"))
 final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
 
-final def version = "16"
-final def releaseName = "Beta 1"
+final def version = "1"
+final def releaseName = "Stable"
 final def versionDisplayName = "${version}.${isReleaseBuild ? releaseName : devReleaseName}"
 final def majorVersion = versionDisplayName.split("\\.")[0]
 
