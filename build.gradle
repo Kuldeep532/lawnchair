@@ -463,6 +463,7 @@ dependencies {
     implementation libs.kdrag0n.colorkt
     implementation libs.coil.compose
     implementation libs.xdrop.fuzzywuzzy
+    implementation libs.zxing.core
 
     implementation libs.bundles.opto
     implementation libs.androidx.datastore.preferences
