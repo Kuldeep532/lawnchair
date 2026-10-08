@@ -73,6 +73,11 @@ data object Folders : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object ControlCenter : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/control-center"
+}
+
+@Serializable
 data object Quickstep : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/quickstep"
 }
