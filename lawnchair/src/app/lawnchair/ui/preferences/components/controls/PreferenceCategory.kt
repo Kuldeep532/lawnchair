@@ -67,7 +67,7 @@ fun PreferenceCategory(
             ) {
                 Icon(
                     painter = painterResource(id = iconResource),
-                    contentDescription = null,
+                    contentDescription = label,
                     modifier = Modifier.size(24.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
