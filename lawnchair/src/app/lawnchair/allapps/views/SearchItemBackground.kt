@@ -66,6 +66,7 @@ class SearchItemBackground(
         if (color == 0) return
 
         paint.color = color
+        paint.style = Paint.Style.FILL
 
         var left = child.left.toFloat() + searchDecorationPadding
         var top = child.top.toFloat() + searchDecorationPadding
