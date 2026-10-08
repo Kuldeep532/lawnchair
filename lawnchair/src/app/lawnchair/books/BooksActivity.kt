@@ -183,13 +183,15 @@ private fun BookReaderScreen(
     var playing by remember { mutableStateOf(false) }
     var pageNumber by remember { mutableStateOf("") }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     LaunchedEffect(book.uri) {
         runCatching {
             val uri = Uri.parse(book.uri)
             if (book.mimeType.startsWith("text/") || book.mimeType == "text/plain" || book.mimeType == "text/markdown") {
-                lines = BufferedReader(InputStreamReader(
-                    androidx.compose.ui.platform.LocalContext.current.contentResolver.openInputStream(uri)
-                )).use { reader -> reader?.readLines().orEmpty() }
+                lines = BufferedReader(
+                    InputStreamReader(context.contentResolver.openInputStream(uri))
+                ).use { reader -> reader?.readLines().orEmpty() }
             } else {
                 lines = listOf(
                     "This book has been imported successfully.",
