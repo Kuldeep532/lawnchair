@@ -1,30 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - '*-dev'
-    paths-ignore:
-      - '.idea/**'
-      - '.gitattributes'
-      - '.github/**.json'
-      - '.gitignore'
-      - '.gitmodules'
-      - '**.md'
-      - 'LICENSE'
-      - 'NOTICE'
-  pull_request:
-    paths-ignore:
-      - '.idea/**'
-      - '.gitattributes'
-      - '.github/**.json'
-      - '.gitignore'
-      - '.gitmodules'
-      - '**.md'
-      - 'LICENSE'
-      - 'NOTICE'
   workflow_dispatch:
-  workflow_call:
 
 env:
   PUBLISH_NIGHTLY: true
