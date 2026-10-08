@@ -56,6 +56,7 @@ import com.android.launcher3.folder.Folder;
 import com.android.launcher3.folder.FolderIcon;
 import com.android.launcher3.logging.InstanceId;
 import com.android.launcher3.logging.InstanceIdSequence;
+import app.lawnchair.nexuslauncher.NexusAppUsageTracker;
 import com.android.launcher3.logging.StatsLogManager;
 import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.AppPairInfo;
@@ -447,6 +448,9 @@ public class ItemClickHandler {
             FloatingIconView.fetchIcon(launcher, v, item, true /* isOpening */);
         }
         launcher.startActivitySafely(v, intent, item);
+        if (item.getTargetComponent() != null) {
+            NexusAppUsageTracker.recordLaunch(launcher, item.getTargetComponent());
+        }
     }
 
     /**
