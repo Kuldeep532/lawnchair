@@ -193,7 +193,7 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Extract text from an image. Your image stays on the device.")
+            Text("Extract text from an image and keep the result ready to copy, share, or save.")
 
             OutlinedButton(
                 onClick = { picker.launch(arrayOf("image/*")) },
