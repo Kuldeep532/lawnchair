@@ -1071,4 +1071,5 @@
     <string name="lawnchair_action_failed">Failed to trigger action</string>
 
     <string name="please_wait">Please wait…</string>
+    <string name="tools_studio">Tools Studio</string>
 </resources>
