@@ -148,13 +148,10 @@ final def quickstepMinSdk = "35"
 final def quickstepMaxSdk = "36"
 
 android {
-    namespace "com.android.launcher3"
+    namespace "com.nexuswebtech.nexuslauncher"
     defaultConfig {
-        /*
-         * Lawnchair Launcher 16.0 Beta 1.0
-         * see https://docs.lawnchair.app/developers/standards/development-workflow#versioning-scheme
-         */
-        versionCode 16_00_02_01_00
+        /* Nexus Launcher 1.0 */
+        versionCode 1_00_00_01_00
         versionName "${versionDisplayName}"
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -227,7 +224,7 @@ android {
 
         debug {
             applicationIdSuffix ".debug"
-            resValue("string", "derived_app_name", "Lawnchair (Debug)")
+            resValue("string", "derived_app_name", "Nexus Launcher (Debug)")
 
             manifestPlaceholders.quickstepMinSdk = "0"
             manifestPlaceholders.quickstepMaxSdk = "100000"
@@ -236,7 +233,7 @@ android {
         }
 
         release {
-            resValue("string", "derived_app_name", "Lawnchair")
+            resValue("string", "derived_app_name", "Nexus Launcher")
             minifyEnabled true
             shrinkResources true
             pseudoLocalesEnabled false
@@ -267,17 +264,17 @@ android {
         }
 
         github {
-            applicationId 'app.lawnchair'
+            applicationId "com.nexuswebtech.nexuslauncher"
             dimension "channel"
         }
 
         nightly {
-            applicationId 'app.lawnchair.nightly'
+            applicationId "com.nexuswebtech.nexuslauncher.nightly"
             dimension "channel"
         }
 
         play {
-            applicationId "app.lawnchair.play"
+            applicationId "com.nexuswebtech.nexuslauncher.play"
             dimension "channel"
             isDefault true
         }
@@ -349,7 +346,7 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         def channel = variant.productFlavors.last().second
         variant.outputs.forEach { output ->
-            output.outputFileName.set("Lawnchair.${output.versionName.get()}.$channel.${variant.buildType}.apk")
+            output.outputFileName.set("NexusLauncher.${output.versionName.get()}.$channel.${variant.buildType}.apk")
         }
 
         // Lawnchair-TODO: A better way to sync proto file to the IDE preventing missing or outdated result. Please remove if this is the best solution we have right now
