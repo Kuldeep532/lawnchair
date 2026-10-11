@@ -1,6 +1,5 @@
 package app.lawnchair.tools
 
-import android.content.Intent
 import android.os.Bundle
 import android.text.format.DateUtils
 import androidx.activity.ComponentActivity
