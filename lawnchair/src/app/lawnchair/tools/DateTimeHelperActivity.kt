@@ -60,46 +60,46 @@ private fun DateTimeHelperScreen(onBack: () -> Unit) {
         message = ""
         result = runCatching {
             val value = input.trim()
-            require(value.isNotEmpty())
-            val date = try {
-                Date(value.toLong().let { if (value.length <= 10) it * 1000L else it })
-            } catch (_: NumberFormatException) {
+            require(value.isNotEmpty()) { "A date or timestamp is required." }
+            val numeric = value.toLongOrNull()
+            val date = if (numeric != null) {
+                val milliseconds = if (value.length <= 10) Math.multiplyExact(numeric, 1000L) else numeric
+                Date(milliseconds)
+            } else {
                 val patterns = listOf(
                     "yyyy-MM-dd'T'HH:mm:ssXXX",
                     "yyyy-MM-dd'T'HH:mmXXX",
                     "yyyy-MM-dd HH:mm:ss",
+                    "yyyy-MM-dd HH:mm",
                     "yyyy-MM-dd",
                     "dd-MM-yyyy HH:mm",
                     "dd-MM-yyyy",
                 )
                 var parsed: Date? = null
-                var usedPattern = ""
                 for (pattern in patterns) {
                     val parser = SimpleDateFormat(pattern, Locale.ROOT).apply {
                         isLenient = false
+                        timeZone = TimeZone.getDefault()
                     }
                     val attempt = runCatching { parser.parse(value) }.getOrNull()
                     if (attempt != null) {
                         parsed = attempt
-                        usedPattern = pattern
                         break
                     }
                 }
-                requireNotNull(parsed) { "Use a supported date or timestamp format." }
+                requireNotNull(parsed) { "Unsupported date format." }
             }
-            val local = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.getDefault())
-                .format(date)
+            val local = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.getDefault()).format(date)
             val utc = SimpleDateFormat("yyyy-MM-dd HH:mm:ss 'UTC'", Locale.ROOT).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
             }.format(date)
-            val epochSeconds = date.time / 1000L
-            val epochMillis = date.time
+            val epochSeconds = Math.floorDiv(date.time, 1000L)
             val relative = DateUtils.getRelativeTimeSpanString(
                 date.time,
                 System.currentTimeMillis(),
                 DateUtils.MINUTE_IN_MILLIS,
             ).toString()
-            "Local time: $local\nUTC: $utc\nUnix timestamp (seconds): $epochSeconds\nUnix timestamp (milliseconds): $epochMillis\nRelative time: $relative"
+            "Local time: $local\nUTC: $utc\nUnix timestamp (seconds): $epochSeconds\nUnix timestamp (milliseconds): ${date.time}\nRelative time: $relative"
         }.getOrElse {
             message = "Enter a supported date/time or Unix timestamp. Examples: 2026-10-11 16:30, 11-10-2026, or a Unix timestamp."
             ""
