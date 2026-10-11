@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -39,15 +40,6 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-
-
-@Composable
-@Suppress("UNUSED_PARAMETER")
-private fun ToolsStudioQuickActions(onQr: () -> Unit) {
-    OutlinedButton(onClick = onQr, modifier = Modifier.fillMaxWidth()) {
-        Text("QR Code")
-    }
-}
 private const val PREFIX = "NXT1"
 private const val TAG_BITS = 128
 private const val IV_BYTES = 12
@@ -87,94 +79,59 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                     }
                 },
-                title = { Text("Tools") },
+                title = { Text("Tools Studio") },
             )
         },
     ) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, QrGeneratorActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, QuickUtilityActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("QR Code Generator")
-            }
+            ) { Text("Quick Utility Hub") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, PdfToImageActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, QrGeneratorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("PDF to Images")
-            }
+            ) { Text("QR Code Generator") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, ImageCompressorActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, PdfToImageActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Compress Image")
-            }
+            ) { Text("PDF to Images") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, FileRenamerActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, ImageCompressorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Rename Files")
-            }
+            ) { Text("Compress Image") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, PasswordGeneratorActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, FileRenamerActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Password Generator")
-            }
+            ) { Text("Rename Files") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, TextExtractorActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, PasswordGeneratorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Image OCR")
-            }
+            ) { Text("Password Generator") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, ImageToPdfActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, TextExtractorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Image to PDF")
-            }
+            ) { Text("Image OCR") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, PdfReaderActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, ImageToPdfActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("PDF Reader")
-            }
+            ) { Text("Image to PDF") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, app.lawnchair.radio.OnlineRadioActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, PdfReaderActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Online Radio")
-            }
+            ) { Text("PDF Reader") }
             Button(
-                onClick = {
-                    context.startActivity(Intent(context, app.lawnchair.livetv.LiveTvActivity::class.java))
-                },
+                onClick = { context.startActivity(Intent(context, app.lawnchair.radio.OnlineRadioActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Live TV")
-            }
+            ) { Text("Online Radio") }
+            Button(
+                onClick = { context.startActivity(Intent(context, app.lawnchair.livetv.LiveTvActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Live TV") }
+
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
@@ -205,9 +162,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     },
                     enabled = input.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Protect Text")
-                }
+                ) { Text("Protect Text") }
             } else {
                 OutlinedTextField(
                     value = input,
@@ -233,13 +188,10 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     },
                     enabled = input.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Open Text")
-                }
+                ) { Text("Open Text") }
             }
 
             error?.let { Text(it) }
-
             if (output.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
@@ -255,29 +207,23 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     ) {
                         IconButton(onClick = {
                             clipboard.setText(androidx.compose.ui.text.AnnotatedString(output))
-                        }) {
-                            Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy")
-                        }
+                        }) { Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy") }
                         IconButton(onClick = {
                             val share = Intent(Intent.ACTION_SEND)
                                 .setType("text/plain")
                                 .putExtra(Intent.EXTRA_TEXT, output)
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
                             context.startActivity(Intent.createChooser(share, "Share text"))
-                        }) {
-                            Icon(Icons.Rounded.IosShare, contentDescription = "Share")
-                        }
+                        }) { Icon(Icons.Rounded.IosShare, contentDescription = "Share") }
                         IconButton(onClick = {
                             input = ""
                             password = ""
                             output = ""
                             error = null
-                        }) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Clear")
-                        }
+                        }) { Icon(Icons.Rounded.Delete, contentDescription = "Clear") }
                     }
                     if (tab == 0) {
-                        Text(if (encryptedWithPassword) "Password protected" else "Saved without a password")
+                        Text(if (encryptedWithPassword) "Password protected" else "Protected without a separate password")
                     }
                 }
             }
@@ -326,9 +272,7 @@ private object TextCrypto {
     private fun deriveKey(password: String, salt: ByteArray): ByteArray {
         var result = salt
         val secret = (if (password.isEmpty()) "NexusToolsStudio".toByteArray() else password.toByteArray(Charsets.UTF_8))
-        repeat(15000) {
-            result = hmac(secret, result)
-        }
+        repeat(15000) { result = hmac(secret, result) }
         return result.copyOf(KEY_BITS / 8)
     }
 
