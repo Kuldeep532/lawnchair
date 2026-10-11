@@ -126,6 +126,12 @@
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
+            android:name="app.lawnchair.tools.DateTimeHelperActivity"
+            android:exported="false"
+            android:label="Date &amp; Time Converter"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.nexuslauncher.tools.QrGeneratorActivity"
             android:exported="false"
             android:label="@string/qr_generator"
