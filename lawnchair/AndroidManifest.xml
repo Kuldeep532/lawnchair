@@ -120,6 +120,12 @@
         </activity>
 
         <activity
+            android:name="app.lawnchair.tools.QuickUtilityActivity"
+            android:exported="false"
+            android:label="Quick Utility Hub"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.nexuslauncher.tools.QrGeneratorActivity"
             android:exported="false"
             android:label="@string/qr_generator"
@@ -183,13 +189,6 @@
             </intent-filter>
         </activity>
 
-
-        <activity
-            android:name="app.lawnchair.radio.OnlineRadioActivity"
-            android:exported="false"
-            android:label="@string/online_radio"
-            android:theme="@style/Theme.Lawnchair" />
-
         <activity
             android:name="app.lawnchair.livetv.LiveTvActivity"
             android:exported="false"
@@ -241,7 +240,6 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
                 <data android:scheme="lawnchair" android:host="settings" android:pathPrefix="/" />
             </intent-filter>
         </activity>
@@ -267,7 +265,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
 
         <activity
             android:name="com.android.launcher3.secondarydisplay.SecondaryDisplayLauncher"
