@@ -1,7 +1,6 @@
 package app.lawnchair.tools
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -12,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -57,55 +58,51 @@ private fun QuickUtilityScreen(onBack: () -> Unit) {
     fun transform() {
         message = ""
         result = when (tab) {
-            0 -> {
-                val candidate = text.trim()
-                val normalized = if (candidate.isNotEmpty() &&
-                    !candidate.startsWith("https://", true) &&
-                    !candidate.startsWith("http://", true)
-                ) "https://$candidate" else candidate
-                runCatching {
-                    val uri = URI(normalized)
-                    val host = uri.host ?: throw IllegalArgumentException()
-                    val domain = host.lowercase(Locale.ROOT).removePrefix("www.")
-                    val clean = URI(
-                        uri.scheme?.lowercase(Locale.ROOT) ?: "https",
-                        uri.userInfo,
-                        host.lowercase(Locale.ROOT),
-                        uri.port,
-                        uri.path,
-                        uri.query,
-                        null,
-                    ).toASCIIString()
-                    "Domain: $domain\nClean link: $clean"
-                }.getOrElse {
-                    message = "Enter a valid web address, such as example.com."
-                    ""
-                }
+            0 -> runCatching {
+                val source = normalizeWebAddress(text)
+                val uri = URI(source)
+                val host = uri.host ?: throw IllegalArgumentException()
+                val cleaned = URI(
+                    uri.scheme.lowercase(Locale.ROOT),
+                    null, // Never preserve user-info credentials in a shared URL.
+                    host.lowercase(Locale.ROOT),
+                    uri.port,
+                    uri.path.ifBlank { "/" },
+                    uri.query,
+                    null, // Drop the fragment; preserve the query exactly.
+                ).toASCIIString()
+                "Domain: ${host.lowercase(Locale.ROOT).removePrefix("www.")}\nClean link: $cleaned"
+            }.getOrElse {
+                message = "Enter a valid web address, such as example.com."
+                ""
             }
             1 -> {
                 val cleaned = text
                     .replace(Regex("[\\t\\x0B\\f\\r ]+"), " ")
                     .replace(Regex(" *\\n *"), "\n")
                     .trim()
-                "Clean text:\n$cleaned\n\nWords: ${if (cleaned.isBlank()) 0 else cleaned.trim().split(Regex("\\s+")).size}\nCharacters: ${cleaned.length}\nCharacters (excluding spaces): ${cleaned.count { !it.isWhitespace() }}"
+                val wordCount = Regex("[\\p{L}\\p{N}]+(?:['’][\\p{L}\\p{N}]+)*")
+                    .findAll(cleaned).count()
+                val codePoints = cleaned.codePointCount(0, cleaned.length)
+                val noWhitespaceCodePoints = cleaned.codePoints()
+                    .filter { cp -> !Character.isWhitespace(cp) }
+                    .count()
+                "Clean text:\n$cleaned\n\nWords: $wordCount\nCharacters: $codePoints\nCharacters (excluding spaces): $noWhitespaceCodePoints"
             }
-            else -> {
-                val normalized = text.trim().replace(Regex("\\s+"), "")
-                if (normalized.isBlank()) {
-                    message = "Paste a link first."
-                    ""
-                } else {
-                    val uri = runCatching {
-                        URI(if (normalized.startsWith("http", true)) normalized else "https://$normalized")
-                    }.getOrNull()
-                    val host = uri?.host
-                    if (host == null) {
-                        message = "That link doesn’t look valid. Check it and try again."
-                        ""
-                    } else {
-                        "Website: ${host.removePrefix("www.")}\nProtocol: ${uri.scheme}\nPath: ${uri.path.ifBlank { "/" }}"
-                    }
+            else -> runCatching {
+                val uri = URI(normalizeWebAddress(text))
+                val host = uri.host ?: throw IllegalArgumentException()
+                val path = uri.rawPath?.takeIf { it.isNotBlank() } ?: "/"
+                buildString {
+                    append("Website: ${host.lowercase(Locale.ROOT).removePrefix("www.")}")
+                    append("\nProtocol: ${uri.scheme.lowercase(Locale.ROOT)}")
+                    append("\nPath: $path")
+                    if (!uri.rawQuery.isNullOrBlank()) append("\nQuery parameters: ${uri.rawQuery.split('&').size}")
+                    if (!uri.rawFragment.isNullOrBlank()) append("\nFragment: present")
                 }
+            }.getOrElse {
+                message = "That link doesn’t look valid. Check it and try again."
+                ""
             }
         }
     }
@@ -122,10 +119,10 @@ private fun QuickUtilityScreen(onBack: () -> Unit) {
         )
     }) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).padding(20.dp),
+            Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Handy everyday tools in one place. These tools work on your device and do not show ads.")
+            Text("Useful everyday helpers in one place. Processing happens on your device; no ads or website upload is needed.")
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0; result = ""; message = "" }, text = { Text("Clean Link") })
                 Tab(selected = tab == 1, onClick = { tab = 1; result = ""; message = "" }, text = { Text("Clean Text") })
@@ -134,7 +131,7 @@ private fun QuickUtilityScreen(onBack: () -> Unit) {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it; result = ""; message = "" },
-                modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                modifier = Modifier.fillMaxWidth(),
                 label = { Text(if (tab == 1) "Text to clean" else "Website address or link") },
                 placeholder = { Text(if (tab == 1) "Paste text here" else "example.com or paste a link") },
                 minLines = if (tab == 1) 5 else 2,
@@ -150,6 +147,7 @@ private fun QuickUtilityScreen(onBack: () -> Unit) {
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Result") },
+                    minLines = 2,
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
@@ -174,14 +172,24 @@ private fun QuickUtilityScreen(onBack: () -> Unit) {
                 }
             }
             OutlinedButton(
-                onClick = {
-                    text = ""
-                    result = ""
-                    message = ""
-                },
+                onClick = { text = ""; result = ""; message = "" },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = text.isNotEmpty() || result.isNotEmpty(),
             ) { Text("Clear") }
         }
     }
+}
+
+private fun normalizeWebAddress(raw: String): String {
+    val candidate = raw.trim()
+    require(candidate.isNotBlank()) { "Address is empty" }
+    require(!candidate.any { it.isWhitespace() }) { "Address contains spaces" }
+    val normalized = if (
+        candidate.startsWith("https://", ignoreCase = true) ||
+        candidate.startsWith("http://", ignoreCase = true)
+    ) candidate else "https://$candidate"
+    val uri = URI(normalized)
+    require(uri.scheme.equals("https", true) || uri.scheme.equals("http", true))
+    require(!uri.host.isNullOrBlank())
+    return uri.toASCIIString()
 }
