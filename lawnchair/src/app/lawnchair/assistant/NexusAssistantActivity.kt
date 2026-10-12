@@ -1,14 +1,12 @@
 package app.lawnchair.assistant
 
 import android.Manifest
-import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -36,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
@@ -46,14 +43,15 @@ import java.util.Locale
 /**
  * Nexus Assistant v1.
  *
- * The assistant never downloads executable code. It can download an openly hosted TTS
- * voice/model into app-owned storage and uses Android's speech recognizer for input.
- * A neural voice runtime can be wired in later without increasing the base APK.
+ * The assistant never downloads executable code. It uses Android speech recognition
+ * for input and Android TextToSpeech for spoken output while a licence-compatible neural
+ * voice asset and its inference runtime are evaluated.
  */
 class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var output: ((String) -> Unit)? = null
+    private var speechResultHandler: ((String) -> Unit)? = null
 
     private val speechLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -61,7 +59,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         val spoken = result.data
             ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             ?.firstOrNull()
-        if (!spoken.isNullOrBlank()) output?.invoke(spoken)
+        if (!spoken.isNullOrBlank()) speechResultHandler?.invoke(spoken)
     }
 
     private val microphonePermission = registerForActivityResult(
@@ -80,11 +78,12 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 NexusAssistantScreen(
                     onBack = ::finish,
                     onListen = { onRecognized ->
-                        output = { recognized ->
+                        speechResultHandler = { recognized ->
                             val answer = handleCommand(recognized)
                             onRecognized(answer)
                             speak(answer)
                         }
+                        output = onRecognized
                         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                             == PackageManager.PERMISSION_GRANTED
                         ) startSpeechRecognition()
@@ -97,12 +96,9 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                         speak(response)
                     },
                     onSpeak = ::speak,
-                    onDownloadVoice = ::downloadVoiceModel,
                 )
             }
         }
-        // Start downloading the optional voice model as soon as the assistant opens.
-        downloadVoiceModel()
     }
 
     override fun onInit(status: Int) {
@@ -191,51 +187,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         if (!current) "Flashlight turned on." else "Flashlight turned off."
     }.getOrElse { "I could not change the flashlight. Check camera permission and try again." }
 
-    private fun downloadVoiceModel() {
-        val prefs = getSharedPreferences("nexus_assistant", MODE_PRIVATE)
-        val modelName = "hi_IN-pratham-medium.onnx"
-        val configName = "$modelName.json"
-        val downloads = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir
-        val modelFile = java.io.File(downloads, modelName)
-        val configFile = java.io.File(downloads, configName)
-
-        // Resume-friendly behavior: ask Android Download Manager only for missing assets.
-        if (prefs.getBoolean("voice_model_requested", false) &&
-            modelFile.exists() && modelFile.length() > 0L &&
-            configFile.exists() && configFile.length() > 0L
-        ) return
-
-        val modelUrl = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx"
-        val configUrl = "$modelUrl.json"
-        runCatching {
-            val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            if (!modelFile.exists() || modelFile.length() == 0L) {
-                val request = DownloadManager.Request(Uri.parse(modelUrl))
-                    .setTitle("Nexus Assistant Hindi voice")
-                    .setDescription("Downloading the Hindi voice model from Hugging Face.")
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    .setAllowedOverMetered(true)
-                    .setAllowedOverRoaming(false)
-                    .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, modelName)
-                manager.enqueue(request)
-            }
-            if (!configFile.exists() || configFile.length() == 0L) {
-                val configRequest = DownloadManager.Request(Uri.parse(configUrl))
-                    .setTitle("Nexus Assistant Hindi voice settings")
-                    .setDescription("Downloading voice settings needed by the speech engine.")
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    .setAllowedOverMetered(true)
-                    .setAllowedOverRoaming(false)
-                    .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, configName)
-                manager.enqueue(configRequest)
-            }
-            prefs.edit().putBoolean("voice_model_requested", true).apply()
-        }.onFailure {
-            // Do not mark the model as requested if the device cannot enqueue downloads.
-            prefs.edit().putBoolean("voice_model_requested", false).apply()
-        }
-    }
-
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
@@ -246,12 +197,10 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
     onBack: () -> Unit,
-    onListen: (String) -> Unit,
+    onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
     onSpeak: (String) -> Unit,
-    onDownloadVoice: () -> Unit,
 ) {
-    val context = LocalContext.current
     var query by remember { mutableStateOf("") }
     var response by remember {
         mutableStateOf("Hello! I'm Nexus Assistant. You can ask me to search the web, turn on the flashlight, open settings, or use voice input.")
@@ -274,7 +223,7 @@ private fun NexusAssistantScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Free on-device controls with web search. Voice model resources download when you open the assistant.")
+            Text("Free assistant controls with web search and spoken replies. Neural voice downloads will be enabled after model licensing and offline playback are verified.")
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
@@ -291,16 +240,12 @@ private fun NexusAssistantScreen(
                 enabled = query.isNotBlank(),
             ) { Text("Send command") }
             Button(
-                onClick = { onListen(query) },
+                onClick = { onListen { response = it } },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Rounded.Mic, contentDescription = "Voice input")
                 Text("  Speak")
             }
-            Button(
-                onClick = { onDownloadVoice() },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Download voice model again") }
             Text("Assistant response")
             Text(response)
             Button(
