@@ -196,16 +196,26 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         if (prefs.getBoolean("voice_model_requested", false)) return
         // Public Hugging Face repository with an English Piper voice. App uses Android TTS
         // as the working fallback until a Sherpa-ONNX/Piper runtime is integrated.
-        val modelUrl = "https://huggingface.co/remiai3/TTS_MODELS_FOR_APP/resolve/main/hi_IN-pratham-medium.onnx"
+        val modelUrl = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx"
+        val configUrl = "$modelUrl.json"
         val request = DownloadManager.Request(Uri.parse(modelUrl))
-            .setTitle("Nexus Assistant voice model")
-            .setDescription("Downloading voice resources for future offline speech.")
+            .setTitle("Nexus Assistant Hindi voice")
+            .setDescription("Downloading the Hindi voice model from Hugging Face.")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(false)
-            .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "nexus-hi-voice.onnx")
+            .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "hi_IN-pratham-medium.onnx")
         runCatching {
-            (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+            val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            manager.enqueue(request)
+            val configRequest = DownloadManager.Request(Uri.parse(configUrl))
+                .setTitle("Nexus Assistant Hindi voice settings")
+                .setDescription("Downloading voice settings needed by the speech engine.")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(false)
+                .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "hi_IN-pratham-medium.onnx.json")
+            manager.enqueue(configRequest)
             prefs.edit().putBoolean("voice_model_requested", true).apply()
         }
     }
