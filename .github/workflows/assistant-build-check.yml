@@ -10,6 +10,8 @@ on:
       - "gradle/**"
       - "lawnchair/src/app/lawnchair/assistant/**"
       - "lawnchair/src/app/lawnchair/books/BooksVoiceSettingsActivity.kt"
+      - "lawnchair/src/app/lawnchair/books/BooksActivity.kt"
+      - "lawnchair/AndroidManifest.xml"
       - ".github/workflows/assistant-build-check.yml"
 
 permissions:
