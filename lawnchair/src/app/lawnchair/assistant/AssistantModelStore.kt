@@ -8,14 +8,16 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * On-demand model asset downloads. These assets are stored in private app storage.
- * Downloaded model files do not become an active speech or chat engine until a
- * compatible inference runtime successfully loads them.
+ * Downloads model assets to app-private storage. A completed file download is not equivalent
+ * to a model being ready for inference; the runtime must load the model before enabling chat
+ * or neural speech output.
  */
 object AssistantModelStore {
     const val LOCAL_MODEL_REPO = "mobiletransformers/SmolLM2-135M-Instruct"
     const val CHATTERBOX_REPO = "onnx-community/chatterbox-ONNX"
 
+    // This manifest belongs to the Android-specific package; the SDK is currently distributed
+    // as a locally-published AAR and must be integrated separately before this model can run.
     private const val LOCAL_MODEL_MANIFEST_URL =
         "https://huggingface.co/mobiletransformers/SmolLM2-135M-Instruct/resolve/main/manifest.json"
 
@@ -33,8 +35,7 @@ object AssistantModelStore {
         "onnx/language_model_q4.onnx_data",
         "onnx/speech_encoder.onnx",
         "onnx/speech_encoder.onnx_data",
-        "onnx/speech_decoder.onnx",
-        "onnx/speech_decoder.onnx_data",
+        "onnx/speech_tokenizer.onnx",
     )
 
     enum class AssetState { MISSING, PARTIAL, DOWNLOADED }
@@ -52,9 +53,9 @@ object AssistantModelStore {
     fun localState(context: Context): AssetState {
         val dir = localDirectory(context)
         val manifest = File(dir, "manifest.json")
-        val sentinel = File(dir, ".download_complete")
+        val complete = File(dir, ".manifest_download_complete")
         return when {
-            sentinel.isFile && manifest.isFile && manifest.length() > 0L -> AssetState.DOWNLOADED
+            complete.isFile && manifest.isFile && manifest.length() > 0L -> AssetState.DOWNLOADED
             dir.listFiles()?.any { it.isFile && it.length() > 0L } == true -> AssetState.PARTIAL
             else -> AssetState.MISSING
         }
@@ -62,12 +63,14 @@ object AssistantModelStore {
 
     fun voiceState(context: Context): AssetState {
         val dir = voiceDirectory(context)
-        val sentinel = File(dir, ".download_complete")
+        val complete = File(dir, ".download_complete")
         val essentials = listOf("config.json", "tokenizer.json", "generation_config.json")
-        val essentialsPresent = essentials.all { File(dir, it).isFile && File(dir, it).length() > 0L }
+        val allEssentialsPresent = essentials.all {
+            File(dir, it).isFile && File(dir, it).length() > 0L
+        }
         return when {
-            sentinel.isFile && essentialsPresent -> AssetState.DOWNLOADED
-            dir.listFiles()?.isNotEmpty() == true -> AssetState.PARTIAL
+            complete.isFile && allEssentialsPresent -> AssetState.DOWNLOADED
+            dir.walkTopDown().any { it.isFile && it.length() > 0L } -> AssetState.PARTIAL
             else -> AssetState.MISSING
         }
     }
@@ -88,7 +91,7 @@ object AssistantModelStore {
                 temp.copyTo(manifest, overwrite = true)
                 temp.delete()
             }
-            File(dir, ".download_complete").writeText("manifest-downloaded")
+            File(dir, ".manifest_download_complete").writeText("manifest-downloaded")
             onProgress(DownloadProgress("Local assistant model", 100, "Model manifest downloaded."))
         } finally {
             localBusy.set(false)
@@ -121,7 +124,7 @@ object AssistantModelStore {
                 onProgress(DownloadProgress("Chatterbox voice", completed * 100 / chatterboxFiles.size, "Downloaded " + target.name))
             }
             File(dir, ".download_complete").writeText("model-assets-downloaded")
-            onProgress(DownloadProgress("Chatterbox voice", 100, "Voice model assets downloaded."))
+            onProgress(DownloadProgress("Chatterbox voice", 100, "Chatterbox model assets downloaded."))
         } finally {
             voiceBusy.set(false)
         }
@@ -166,9 +169,9 @@ object AssistantModelStore {
                 destination.delete()
                 throw IllegalStateException("The downloaded file was empty. Please try again.")
             }
-        } catch (e: Exception) {
+        } catch (error: Exception) {
             destination.delete()
-            throw e
+            throw error
         } finally {
             connection.disconnect()
         }
