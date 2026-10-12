@@ -493,7 +493,7 @@ dependencies {
     implementation libs.androidx.window
 
     // On-device GGUF inference for the lightweight local Nexus Assistant model.
-    implementation("com.llamatik:library:1.10.1")
+    implementation("com.llamatik:library-android:1.10.1")
 
     ksp libs.dagger.compiler
     implementation libs.dagger.hilt.android
