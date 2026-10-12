@@ -342,7 +342,8 @@ private fun NexusAssistantScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Free assistant with voice input, spoken replies, web search and quick phone actions.")
-            Text("Voice: Android text-to-speech is active. A Hugging Face voice download does not automatically activate a new voice until its speech engine is installed.")
+            Text("Voice: Android text-to-speech is active. Hugging Face model downloads will be offered after a compatible speech engine and redistribution licence are verified.")
+            Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
