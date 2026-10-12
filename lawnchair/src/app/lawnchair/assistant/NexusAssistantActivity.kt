@@ -127,49 +127,56 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             command.contains("flashlight") || command.contains("torch") ||
                 command.contains("टॉर्च") || command.contains("फ्लैशलाइट") -> toggleFlashlight()
             command.contains("wifi") || command.contains("wi-fi") ||
-                command.contains("वाई फाई") || command.contains("वाई-फाई") -> {
-                startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
-                "Internet settings opened. Choose Wi-Fi there."
-            }
+                command.contains("वाई फाई") || command.contains("वाई-फाई") ||
+                command.contains("वाईफाई") -> openInternetPanel()
             command.startsWith("search ") || command.startsWith("सर्च ") ||
-                command.startsWith("खोज ") || command.startsWith("ढूंढो ") -> {
-                val q = raw.substringAfter(' ').trim()
-                val search = Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", q)
-                runCatching { startActivity(search) }.getOrElse {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                        "https://www.google.com/search?q=" + Uri.encode(q)
-                    )))
-                }
-                "Searching the web for $q"
-            }
-            command.startsWith("open ") || command.startsWith("खोलो ") -> {
-                val term = raw.substringAfter(' ').trim()
+                command.startsWith("खोज ") || command.startsWith("ढूंढो ") ||
+                command.startsWith("खोजो ") -> openSearch(raw.substringAfter(' ').trim())
+            command.startsWith("open ") || command.startsWith("खोलो ") ||
+                command.startsWith("launch ") || command.startsWith("चलाओ ") ||
+                command.startsWith("start ") -> {
+                val term = when {
+                    command.startsWith("open ") -> raw.substringAfter(' ')
+                    command.startsWith("खोलो ") -> raw.substringAfter(' ')
+                    command.startsWith("launch ") -> raw.substringAfter(' ')
+                    command.startsWith("चलाओ ") -> raw.substringAfter(' ')
+                    else -> raw.substringAfter(' ')
+                }.trim()
                 val launch = resolveInstalledApp(term)
-                if (launch != null) {
+                if (launch != null) runCatching {
                     startActivity(launch)
-                    "Opening $term"
-                } else {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                        "https://www.google.com/search?q=" + Uri.encode(term)
-                    )))
-                    "I could not find that app by name, so I searched for it."
-                }
+                    "Opening $term."
+                }.getOrElse { "I could not open $term. Please try again." }
+                else openSearch(term)
             }
-            command.contains("settings") || command.contains("सेटिंग") -> {
-                startActivity(Intent(Settings.ACTION_SETTINGS))
-                "Opening settings."
+            command.contains("settings") || command.contains("सेटिंग") ||
+                command.contains("सेटिंग्स") -> runCatching {
+                    startActivity(Intent(Settings.ACTION_SETTINGS))
+                    "Opening settings."
+                }.getOrElse { "I could not open settings on this device." }
+            command.contains("bluetooth") || command.contains("ब्लूटूथ") -> runCatching {
+                startActivity(Intent(Settings.Panel.ACTION_BLUETOOTH))
+                "Bluetooth controls opened."
+            }.getOrElse {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+                    "Bluetooth settings opened."
+                }.getOrElse { "I could not open Bluetooth settings on this device." }
             }
+            command.contains("mobile data") || command.contains("मोबाइल डेटा") ||
+                command.contains("internet") || command.contains("इंटरनेट") -> openInternetPanel()
+            command.contains("alarm") || command.contains("अलार्म") -> runCatching {
+                startActivity(Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS))
+                "Opening alarms."
+            }.getOrElse { "I could not open alarms on this device." }
+            command.contains("timer") || command.contains("टाइमर") -> runCatching {
+                startActivity(Intent(android.provider.AlarmClock.ACTION_SET_TIMER)
+                    .putExtra(android.provider.AlarmClock.EXTRA_LENGTH, 60))
+                "Opening a one-minute timer."
+            }.getOrElse { "I could not open the timer on this device." }
             command.contains("time") || command.contains("समय") ->
                 "The time is " + java.text.SimpleDateFormat("h:mm a", Locale.getDefault()).format(java.util.Date())
-            else -> {
-                val search = Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", raw)
-                runCatching { startActivity(search) }.getOrElse {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                        "https://www.google.com/search?q=" + Uri.encode(raw)
-                    )))
-                }
-                "I searched the web for: $raw"
-            }
+            else -> openSearch(raw)
         }
     }
 
