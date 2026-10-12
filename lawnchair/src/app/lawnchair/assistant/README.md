@@ -9,7 +9,7 @@ Nexus Assistant is integrated into the Lawnchair app source tree under `app.lawn
 - Flashlight toggle through Android's camera torch API.
 - Internet settings panel for Wi-Fi controls, because Android 10+ does not let ordinary apps directly enable/disable Wi-Fi.
 - Android TextToSpeech fallback so spoken responses work without bundling a speech engine in the base APK.
-- On first launch, attempts to download a public Piper ONNX voice file from Hugging Face to app-specific external storage. Download is user-visible via Android's Download Manager.
+- Does not yet download a neural voice model. The candidate Hindi Hugging Face model shows a non-commercial licence, so a suitable model and its permissions must be verified before adding it.
 
 ## Important limitation
 
