@@ -1,6 +1,7 @@
 package app.lawnchair.books
 
 import android.content.Intent
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -45,12 +46,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import app.lawnchair.assistant.AssistantModelStore
+import app.lawnchair.assistant.ChatterboxOnnxEngine
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Locale
@@ -259,6 +266,8 @@ private fun BookReaderScreen(
     var showMore by remember { mutableStateOf(false) }
     var speech by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
     var speaking by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val audioPlayer = remember { arrayOfNulls<MediaPlayer>(1) }
     var ocrBusy by remember { mutableStateOf(false) }
     var ocrMessage by remember { mutableStateOf<String?>(null) }
 
@@ -273,6 +282,8 @@ private fun BookReaderScreen(
         onDispose {
             engine.stop()
             engine.shutdown()
+            audioPlayer[0]?.release()
+            audioPlayer[0] = null
             speech = null
         }
     }
@@ -346,12 +357,60 @@ private fun BookReaderScreen(
                             if (engine == null || text.isBlank()) return@IconButton
                             if (speaking) {
                                 engine.stop()
+                                audioPlayer[0]?.runCatching { stop() }
+                                audioPlayer[0]?.release()
+                                audioPlayer[0] = null
                                 speaking = false
                                 playing = false
                             } else {
-                                engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
                                 speaking = true
                                 playing = true
+                                val canUseChatterbox = text.all { it.code < 128 } &&
+                                    AssistantModelStore.voiceState(context) == AssistantModelStore.AssetState.DOWNLOADED
+                                if (canUseChatterbox) {
+                                    coroutineScope.launch {
+                                        val audioFile = withContext(Dispatchers.IO) {
+                                            runCatching {
+                                                ChatterboxOnnxEngine.synthesizeToWav(context, text)
+                                            }.getOrNull()
+                                        }
+                                        if (!speaking) {
+                                            audioFile?.delete()
+                                            return@launch
+                                        }
+                                        if (audioFile == null) {
+                                            engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
+                                            return@launch
+                                        }
+                                        runCatching {
+                                            val player = MediaPlayer()
+                                            audioPlayer[0] = player
+                                            player.setDataSource(audioFile.absolutePath)
+                                            player.setOnPreparedListener { it.start() }
+                                            player.setOnCompletionListener {
+                                                it.release()
+                                                audioPlayer[0] = null
+                                                audioFile.delete()
+                                                speaking = false
+                                                playing = false
+                                            }
+                                            player.setOnErrorListener { failedPlayer, _, _ ->
+                                                failedPlayer.release()
+                                                audioPlayer[0] = null
+                                                audioFile.delete()
+                                                engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
+                                                true
+                                            }
+                                            player.prepareAsync()
+                                        }.onFailure {
+                                            audioFile.delete()
+                                            audioPlayer[0] = null
+                                            engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
+                                        }
+                                    }
+                                } else {
+                                    engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
+                                }
                             }
                         }) {
                             Icon(if (speaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (speaking) "Pause reading" else "Read page aloud")
