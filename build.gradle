@@ -546,6 +546,8 @@ licensee {
     allowUrl("https://github.com/patrykmichalik/opto/blob/master/LICENSE")
     allowUrl("https://github.com/RikkaApps/HiddenApiRefinePlugin/blob/main/LICENSE")
     allowUrl("https://opensource.org/licenses/mit-license.php")
+    allowUrl("https://developer.android.com/studio/terms.html")
+    allowUrl("https://developers.google.com/ml-kit/terms")
 
     bundleAndroidAsset = true
     androidAssetReportPath = 'licenses.json'
