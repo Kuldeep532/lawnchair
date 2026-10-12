@@ -234,10 +234,9 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         }
     }
 
-    private fun openAppOrSearch(appName: String): String {
-        val term = appName.trim()
-        if (term.isBlank()) return "Tell me which app to open."
-        val normalized = term.lowercase(Locale.ROOT)
+    private fun resolveInstalledApp(label: String): Intent? {
+        val normalized = label.trim().lowercase(Locale.ROOT)
+        if (normalized.isBlank()) return null
         val aliases = mapOf(
             "youtube" to "com.google.android.youtube",
             "यूट्यूब" to "com.google.android.youtube",
@@ -254,18 +253,56 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             "मैप्स" to "com.google.android.apps.maps",
         )
         val packageName = aliases[normalized]
-        val intent = if (packageName != null) {
-            packageManager.getLaunchIntentForPackage(packageName)
-        } else {
-            packageManager.getLaunchIntentForPackage(term)
+        if (packageName != null) {
+            packageManager.getLaunchIntentForPackage(packageName)?.let { return it }
         }
-        if (intent != null) {
-            return runCatching {
-                startActivity(intent)
-                "Opening $term."
-            }.getOrElse { "I could not open $term. Please try again." }
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return packageManager.queryIntentActivities(launcherIntent, 0)
+            .firstOrNull { it.loadLabel(packageManager).toString().trim().lowercase(Locale.ROOT) == normalized }
+            ?.activityInfo
+            ?.let { Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+                .setClassName(it.packageName, it.name) }
+    }
+
+    private fun openInternetPanel(): String = runCatching {
+        startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
+        "Internet controls opened. You can choose Wi-Fi or mobile data there."
+    }.recoverCatching {
+        startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+    }.fold(
+        onSuccess = { "Internet settings opened. Choose Wi-Fi there." },
+        onFailure = { "I could not open Internet settings on this device." },
+    )
+
+    private fun openSearch(rawQuery: String): String {
+        val query = rawQuery.trim()
+        if (query.isBlank()) return "Tell me what you want to search for."
+        return runCatching {
+            startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", query))
+            "Searching the web for $query."
+        }.getOrElse {
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                    "https://www.google.com/search?q=" + Uri.encode(query)
+                )))
+                "Searching the web for $query."
+            }.getOrElse { "Search could not be opened. Please try again." }
         }
-        return openSearch(term)
+    }
+
+    private fun toggleFlashlight(): String = runCatching {
+        val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cameraId = manager.cameraIdList.firstOrNull { id ->
+            manager.getCameraCharacteristics(id).get(
+                android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE
+            ) == true
+        } ?: return "This device does not have a supported flashlight."
+        val current = getPreferences(MODE_PRIVATE).getBoolean("flash_on", false)
+        manager.setTorchMode(cameraId, !current)
+        getPreferences(MODE_PRIVATE).edit().putBoolean("flash_on", !current).apply()
+        if (!current) "Flashlight turned on." else "Flashlight turned off."
+    }.getOrElse {
+        "The flashlight could not be changed right now. Close apps using the camera and try again."
     }
 
     override fun onDestroy() {
