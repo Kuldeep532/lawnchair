@@ -112,11 +112,20 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
     private fun startSpeechRecognition() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag().ifBlank { "hi-IN" })
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "hi-IN")
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to Nexus Assistant")
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
         }
         runCatching { speechLauncher.launch(intent) }
-            .onFailure { output?.invoke("Voice input is not available on this device.") }
+            .onFailure {
+                runCatching {
+                    startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))
+                    output?.invoke("Voice input is not available right now. Voice input settings opened.")
+                }.onFailure {
+                    output?.invoke("Voice input is not available on this device. You can still type a command.")
+                }
+            }
     }
 
     private fun handleCommand(raw: String): String {
