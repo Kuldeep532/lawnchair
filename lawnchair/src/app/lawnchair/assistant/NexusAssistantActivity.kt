@@ -85,6 +85,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 var showRequiredDownload by remember { mutableStateOf(false) }
                 var modelState by remember { mutableStateOf(AssistantModelStore.localState(this)) }
                 var voiceState by remember { mutableStateOf(AssistantModelStore.voiceState(this)) }
+                var localRuntimeReady by remember { mutableStateOf(LocalAssistantEngine.isLoaded) }
                 var downloading by remember { mutableStateOf(false) }
                 var downloadProgress by remember { mutableIntStateOf(0) }
                 var downloadLabel by remember { mutableStateOf("") }
@@ -94,13 +95,14 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 LaunchedEffect(Unit) {
                     modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
                     voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
-                    if (modelState == AssistantModelStore.AssetState.DOWNLOADED) {
+                    localRuntimeReady = if (modelState == AssistantModelStore.AssetState.DOWNLOADED) {
                         withContext(Dispatchers.IO) {
                             LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                         }
-                    }
+                    } else false
                     showRequiredDownload = modelState != AssistantModelStore.AssetState.DOWNLOADED ||
-                        voiceState != AssistantModelStore.AssetState.DOWNLOADED
+                        voiceState != AssistantModelStore.AssetState.DOWNLOADED ||
+                        !localRuntimeReady
                 }
 
                 NexusAssistantScreen(
@@ -136,9 +138,12 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                     else "Chatterbox high-quality voice is not downloaded yet."
                                 )
                                 Text(
-                                    if (modelState == AssistantModelStore.AssetState.DOWNLOADED)
-                                        "Local chat model has already been downloaded."
-                                    else "Local chat model files are not installed yet."
+                                    when {
+                                        modelState != AssistantModelStore.AssetState.DOWNLOADED ->
+                                            "Local chat model is not downloaded yet."
+                                        localRuntimeReady -> "Local chat model has already been downloaded and loaded."
+                                        else -> "Local chat model is downloaded, but could not be loaded. Tap Download to retry."
+                                    }
                                 )
                                 if (downloading) {
                                     Text(downloadLabel)
@@ -172,20 +177,21 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                             }
                                             modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
                                             voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
-                                            val localReady = withContext(Dispatchers.IO) {
+                                            localRuntimeReady = withContext(Dispatchers.IO) {
                                                 LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                                             }
                                             if (modelState == AssistantModelStore.AssetState.DOWNLOADED &&
-                                                voiceState == AssistantModelStore.AssetState.DOWNLOADED
+                                                voiceState == AssistantModelStore.AssetState.DOWNLOADED &&
+                                                localRuntimeReady
                                             ) {
                                                 showRequiredDownload = false
-                                                downloadMessage = if (localReady) {
-                                                    "Local chat model is loaded. Chatterbox assets are downloaded; neural voice playback still needs its runtime."
-                                                } else {
-                                                    "Model assets downloaded, but the local chat model could not be loaded on this device."
-                                                }
+                                                downloadMessage = "Local chat model is loaded. Chatterbox assets are downloaded, but its neural voice playback still needs its inference pipeline."
                                             } else {
-                                                downloadError = "Downloads finished, but one or more model assets are missing."
+                                                downloadError = if (!localRuntimeReady) {
+                                                    "Downloads are present, but the local chat model could not be loaded on this device. Please try again or use web search."
+                                                } else {
+                                                    "Downloads finished, but one or more model assets are missing."
+                                                }
                                             }
                                         } catch (error: Exception) {
                                             downloadError = error.message ?: "The download could not finish. Please try again."
