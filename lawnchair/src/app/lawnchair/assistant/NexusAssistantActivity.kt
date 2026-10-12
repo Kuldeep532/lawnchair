@@ -185,7 +185,72 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         manager.setTorchMode(cameraId, !current)
         getPreferences(MODE_PRIVATE).edit().putBoolean("flash_on", !current).apply()
         if (!current) "Flashlight turned on." else "Flashlight turned off."
-    }.getOrElse { "I could not change the flashlight. Check camera permission and try again." }
+    }.getOrElse {
+        // Some devices can block torch access while another camera app is active.
+        "The flashlight could not be changed right now. Close apps using the camera and try again."
+    }
+
+    private fun openInternetPanel(): String = runCatching {
+        startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
+        "Internet controls opened. You can choose Wi-Fi or mobile data there."
+    }.recoverCatching {
+        startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+    }.fold(
+        onSuccess = { "Internet settings opened. Choose Wi-Fi there." },
+        onFailure = { "I could not open Internet settings on this device." },
+    )
+
+    private fun openSearch(rawQuery: String): String {
+        val query = rawQuery.trim()
+        if (query.isBlank()) return "Tell me what you want to search for."
+        return runCatching {
+            startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", query))
+            "Searching the web for $query."
+        }.getOrElse {
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                    "https://www.google.com/search?q=" + Uri.encode(query)
+                )))
+                "Searching the web for $query."
+            }.getOrElse {
+                "Search could not be opened. Please try again."
+            }
+        }
+    }
+
+    private fun openAppOrSearch(appName: String): String {
+        val term = appName.trim()
+        if (term.isBlank()) return "Tell me which app to open."
+        val normalized = term.lowercase(Locale.ROOT)
+        val aliases = mapOf(
+            "youtube" to "com.google.android.youtube",
+            "यूट्यूब" to "com.google.android.youtube",
+            "chrome" to "com.android.chrome",
+            "क्रोम" to "com.android.chrome",
+            "settings" to "com.android.settings",
+            "सेटिंग्स" to "com.android.settings",
+            "phone" to "com.google.android.dialer",
+            "फोन" to "com.google.android.dialer",
+            "camera" to "com.android.camera2",
+            "कैमरा" to "com.android.camera2",
+            "google maps" to "com.google.android.apps.maps",
+            "maps" to "com.google.android.apps.maps",
+            "मैप्स" to "com.google.android.apps.maps",
+        )
+        val packageName = aliases[normalized]
+        val intent = if (packageName != null) {
+            packageManager.getLaunchIntentForPackage(packageName)
+        } else {
+            packageManager.getLaunchIntentForPackage(term)
+        }
+        if (intent != null) {
+            return runCatching {
+                startActivity(intent)
+                "Opening $term."
+            }.getOrElse { "I could not open $term. Please try again." }
+        }
+        return openSearch(term)
+    }
 
     override fun onDestroy() {
         tts?.stop()
