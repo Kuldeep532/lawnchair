@@ -71,7 +71,7 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                         Text("Nexus Assistant — Chatterbox High Quality", style = MaterialTheme.typography.titleLarge)
                         Text(
                             when (assistantVoiceState) {
-                                AssistantModelStore.AssetState.DOWNLOADED -> "Chatterbox voice assets have already been downloaded."
+                                AssistantModelStore.AssetState.DOWNLOADED -> "Chatterbox voice has already been downloaded."
                                 AssistantModelStore.AssetState.PARTIAL -> "Chatterbox voice download is incomplete. Download again to continue."
                                 AssistantModelStore.AssetState.MISSING -> "Chatterbox high-quality voice is not downloaded yet."
                             },
@@ -111,7 +111,7 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                             },
                         ) { Text(if (assistantVoiceState == AssistantModelStore.AssetState.DOWNLOADED) "Download voice again" else "Download Chatterbox voice") }
                         Text(
-                            "Chatterbox model files are large. Downloading them does not activate neural speech until a compatible runtime is available.",
+                            "The Chatterbox high-quality voice assets are large. Android text-to-speech remains active until Chatterbox playback is fully integrated.",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         HorizontalDivider()
