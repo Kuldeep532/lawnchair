@@ -87,6 +87,11 @@ object ChatterboxOnnxEngine {
     }
 
     @Synchronized
+    fun release() {
+        releaseSessions()
+    }
+
+    @Synchronized
     private fun releaseSessions() {
         runCatching { conditionalDecoder?.close() }
         runCatching { languageModel?.close() }
