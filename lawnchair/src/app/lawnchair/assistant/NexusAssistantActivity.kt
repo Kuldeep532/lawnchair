@@ -79,8 +79,12 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             LawnchairTheme {
                 NexusAssistantScreen(
                     onBack = ::finish,
-                    onListen = { query ->
-                        output = { recognized -> handleCommand(recognized, it = null) }
+                    onListen = { onRecognized ->
+                        output = { recognized ->
+                            val answer = handleCommand(recognized)
+                            onRecognized(answer)
+                            speak(answer)
+                        }
                         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                             == PackageManager.PERMISSION_GRANTED
                         ) startSpeechRecognition()
@@ -120,7 +124,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             .onFailure { output?.invoke("Voice input is not available on this device.") }
     }
 
-    private fun handleCommand(raw: String, it: Any? = null): String {
+    private fun handleCommand(raw: String): String {
         val command = raw.trim().lowercase(Locale.ROOT)
         if (command.isBlank()) return "Please say or type a command."
 
@@ -192,14 +196,14 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         if (prefs.getBoolean("voice_model_requested", false)) return
         // Public Hugging Face repository with an English Piper voice. App uses Android TTS
         // as the working fallback until a Sherpa-ONNX/Piper runtime is integrated.
-        val modelUrl = "https://huggingface.co/remiai3/TTS_MODELS_FOR_APP/resolve/main/en_US-lessac-medium.onnx"
+        val modelUrl = "https://huggingface.co/remiai3/TTS_MODELS_FOR_APP/resolve/main/hi_IN-pratham-medium.onnx"
         val request = DownloadManager.Request(Uri.parse(modelUrl))
             .setTitle("Nexus Assistant voice model")
             .setDescription("Downloading voice resources for future offline speech.")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(false)
-            .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "nexus-en-voice.onnx")
+            .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "nexus-hi-voice.onnx")
         runCatching {
             (getSystemService(DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
             prefs.edit().putBoolean("voice_model_requested", true).apply()
