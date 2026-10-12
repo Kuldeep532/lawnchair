@@ -16,10 +16,10 @@ object AssistantModelStore {
     const val LOCAL_MODEL_REPO = "mobiletransformers/SmolLM2-135M-Instruct"
     const val CHATTERBOX_REPO = "onnx-community/chatterbox-ONNX"
 
-    // This manifest belongs to the Android-specific package; the SDK is currently distributed
-    // as a locally-published AAR and must be integrated separately before this model can run.
-    private const val LOCAL_MODEL_MANIFEST_URL =
-        "https://huggingface.co/mobiletransformers/SmolLM2-135M-Instruct/resolve/main/manifest.json"
+    // A small, public model card/config is downloaded first. The full model still requires
+    // the mobiletransformers Android AAR and its package downloader to execute inference.
+    private const val LOCAL_MODEL_CONFIG_URL =
+        "https://huggingface.co/unsloth/SmolLM2-135M-Instruct/resolve/main/config.json"
 
     private val chatterboxFiles = listOf(
         "config.json",
@@ -52,8 +52,8 @@ object AssistantModelStore {
 
     fun localState(context: Context): AssetState {
         val dir = localDirectory(context)
-        val manifest = File(dir, "manifest.json")
-        val complete = File(dir, ".manifest_download_complete")
+        val manifest = File(dir, "model-config.json")
+        val complete = File(dir, ".config_download_complete")
         return when {
             complete.isFile && manifest.isFile && manifest.length() > 0L -> AssetState.DOWNLOADED
             dir.listFiles()?.any { it.isFile && it.length() > 0L } == true -> AssetState.PARTIAL
@@ -84,15 +84,15 @@ object AssistantModelStore {
         check(localBusy.compareAndSet(false, true)) { "The local model download is already in progress." }
         try {
             val dir = localDirectory(context)
-            val temp = File(dir, "manifest.json.part")
-            downloadFile(LOCAL_MODEL_MANIFEST_URL, temp, "Local assistant model", onProgress)
-            val manifest = File(dir, "manifest.json")
-            if (!temp.renameTo(manifest)) {
-                temp.copyTo(manifest, overwrite = true)
+            val temp = File(dir, "model-config.json.part")
+            downloadFile(LOCAL_MODEL_CONFIG_URL, temp, "Local assistant model", onProgress)
+            val config = File(dir, "model-config.json")
+            if (!temp.renameTo(config)) {
+                temp.copyTo(config, overwrite = true)
                 temp.delete()
             }
-            File(dir, ".manifest_download_complete").writeText("manifest-downloaded")
-            onProgress(DownloadProgress("Local assistant model", 100, "Model manifest downloaded."))
+            File(dir, ".config_download_complete").writeText("config-downloaded")
+            onProgress(DownloadProgress("Local assistant model", 100, "Model config downloaded; runtime setup is still required."))
         } finally {
             localBusy.set(false)
         }
