@@ -145,7 +145,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             }
             command.startsWith("open ") || command.startsWith("खोलो ") -> {
                 val term = raw.substringAfter(' ').trim()
-                val launch = packageManager.getLaunchIntentForPackage(term)
+                val launch = resolveInstalledApp(term)
                 if (launch != null) {
                     startActivity(launch)
                     "Opening $term"
@@ -172,6 +172,16 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 "I searched the web for: $raw"
             }
         }
+    }
+
+    private fun resolveInstalledApp(label: String): Intent? {
+        val normalized = label.trim().lowercase(Locale.ROOT)
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return packageManager.queryIntentActivities(launcherIntent, 0)
+            .firstOrNull { it.loadLabel(packageManager).toString().lowercase(Locale.ROOT) == normalized }
+            ?.activityInfo
+            ?.let { Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+                .setClassName(it.packageName, it.name) }
     }
 
     private fun toggleFlashlight(): String = runCatching {
