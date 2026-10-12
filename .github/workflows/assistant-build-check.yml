@@ -1,0 +1,41 @@
+name: Nexus Assistant Build Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 16-dev
+    paths:
+      - "build.gradle"
+      - "gradle/**"
+      - "lawnchair/src/app/lawnchair/assistant/**"
+      - "lawnchair/src/app/lawnchair/books/BooksVoiceSettingsActivity.kt"
+      - ".github/workflows/assistant-build-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-assistant:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout launcher source
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Install Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: "21"
+
+      - name: Configure Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Compile Android debug APK
+        run: ./gradlew --no-daemon assembleLawnWithQuickstepGithubDebug
+
+      - name: Check formatting
+        run: ./gradlew --no-daemon spotlessCheck
