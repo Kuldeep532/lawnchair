@@ -111,7 +111,7 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                             },
                         ) { Text(if (assistantVoiceState == AssistantModelStore.AssetState.DOWNLOADED) "Download voice again" else "Download Chatterbox voice") }
                         Text(
-                            "The Chatterbox high-quality voice assets are large. Android text-to-speech remains active until Chatterbox playback is fully integrated.",
+                            "Chatterbox can read English book pages when its model loads successfully. Hindi text and phones that cannot load this large model use the phone's voice instead.",
                             style = MaterialTheme.typography.bodySmall,
                         )
                         HorizontalDivider()
