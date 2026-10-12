@@ -264,21 +264,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
     }
 
 
-    private fun toggleFlashlight(): String = runCatching {
-        val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        val cameraId = manager.cameraIdList.firstOrNull { id ->
-            manager.getCameraCharacteristics(id).get(
-                android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE
-            ) == true
-        } ?: return "This device does not have a supported flashlight."
-        val current = getPreferences(MODE_PRIVATE).getBoolean("flash_on", false)
-        manager.setTorchMode(cameraId, !current)
-        getPreferences(MODE_PRIVATE).edit().putBoolean("flash_on", !current).apply()
-        if (!current) "Flashlight turned on." else "Flashlight turned off."
-    }.getOrElse {
-        "The flashlight could not be changed right now. Close apps using the camera and try again."
-    }
-
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
