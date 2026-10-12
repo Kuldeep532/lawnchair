@@ -189,16 +189,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         }
     }
 
-    private fun resolveInstalledApp(label: String): Intent? {
-        val normalized = label.trim().lowercase(Locale.ROOT)
-        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(launcherIntent, 0)
-            .firstOrNull { it.loadLabel(packageManager).toString().lowercase(Locale.ROOT) == normalized }
-            ?.activityInfo
-            ?.let { Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-                .setClassName(it.packageName, it.name) }
-    }
-
     private fun toggleFlashlight(): String = runCatching {
         val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val cameraId = manager.cameraIdList.firstOrNull { id ->
@@ -273,31 +263,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 .setClassName(it.packageName, it.name) }
     }
 
-    private fun openInternetPanel(): String = runCatching {
-        startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
-        "Internet controls opened. You can choose Wi-Fi or mobile data there."
-    }.recoverCatching {
-        startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
-    }.fold(
-        onSuccess = { "Internet settings opened. Choose Wi-Fi there." },
-        onFailure = { "I could not open Internet settings on this device." },
-    )
-
-    private fun openSearch(rawQuery: String): String {
-        val query = rawQuery.trim()
-        if (query.isBlank()) return "Tell me what you want to search for."
-        return runCatching {
-            startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", query))
-            "Searching the web for $query."
-        }.getOrElse {
-            runCatching {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                    "https://www.google.com/search?q=" + Uri.encode(query)
-                )))
-                "Searching the web for $query."
-            }.getOrElse { "Search could not be opened. Please try again." }
-        }
-    }
 
     private fun toggleFlashlight(): String = runCatching {
         val manager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
