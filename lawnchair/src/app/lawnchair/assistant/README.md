@@ -1,27 +1,25 @@
 # Nexus Assistant
 
-Nexus Assistant is embedded in the Nexus Launcher codebase at `lawnchair/src/app/lawnchair/assistant`.
+Nexus Assistant is embedded in the Nexus Launcher app.
 
-## Currently implemented
+## Implemented in source
 
-- Screen-reader-friendly Compose interface for text and voice input.
-- Hindi speech recognition through the Android speech recognizer.
-- Spoken responses through Android TextToSpeech when a Hindi voice is available on the device.
-- Web search, with a browser search fallback.
-- Flashlight control through Android's camera torch API.
-- Wi-Fi and mobile Internet controls via the Android Internet panel (regular apps cannot directly toggle Wi-Fi on modern Android versions).
-- Opening installed apps by their visible launcher label, plus common app aliases.
-- Bluetooth, system settings, alarms and timer shortcuts.
-- Safe error messages if Android cannot start the requested action.
+- Accessible Compose assistant screen with text and voice input.
+- Hindi speech recognition through Android's recognizer, with a system settings fallback if unavailable.
+- Android TextToSpeech spoken output.
+- Device command routing for web search, opening apps by label, flashlight control, Internet/Wi-Fi settings, Bluetooth settings, general settings, alarms, and timers.
+- On-demand download prompt for a lightweight local GGUF chat model and Chatterbox ONNX voice assets.
+- Download progress, app-private storage, partial-file cleanup, retry behavior, and shared voice-download state in Book Library.
+- Local chat wrapper using Llamatik's Android llama.cpp artifact. It loads the downloaded GGUF model and routes free-form prompts to on-device generation.
 
-## Voice-model status
+## Models
 
-The currently active voice engine is Android TextToSpeech. The earlier Hugging Face download request was not an end-to-end speech solution: a downloaded ONNX file alone cannot synthesize speech. To fulfil offline neural voice calls, the project still needs a compatible ONNX runtime such as Sherpa-ONNX, validated model/config downloads, language/voice selection, and playback tests across supported Android ABIs.
+**Local chat model:** [SmolLM2-135M-Instruct Q4_K_M](https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF), approximately 105 MB. It is a small model suited to a lightweight on-device chat proof of concept, not a high-capability assistant model.
 
-## What “free and unlimited” means
+**High-quality voice assets:** [Chatterbox ONNX](https://huggingface.co/onnx-community/chatterbox-ONNX). The selected Q4 ONNX assets are over 1 GB combined. The model card is MIT-licensed and currently provides English speech-generation assets.
 
-Local command handling and Android TextToSpeech do not require a per-call AI API. Web search and the Android recognizer may rely on Internet access or device/system services. A truly offline general-purpose conversational model would require downloading a language model to the phone and accounting for device storage, RAM, heat, and battery use. No cloud service can be promised unlimited and free without provider limits.
+## Important remaining limitation
 
-## Safety boundaries
+Downloading the Chatterbox model files is implemented, but actual neural speech generation from those files is **not yet integrated**. Chatterbox needs an end-to-end ONNX pipeline for text tokenization, model inputs, voice conditioning, decoding and waveform output; merely including ONNX Runtime or downloading the files does not make speech playback work. Android TextToSpeech remains the active voice engine until that pipeline is implemented and tested.
 
-Android restricts several device controls to system apps, device-owner privileges, or explicit user confirmation. The assistant opens system panels for settings it cannot change directly. It does not attempt to bypass Android permission or privacy controls.
+The first download prompt currently tracks whether model assets exist and can be loaded as a local chat model. A finished APK build and tests on a real Android device are still required before claiming release readiness. Android may use network services for speech recognition; voice input is not guaranteed to be offline or unlimited. Normal apps cannot directly toggle Wi-Fi on modern Android, so the assistant opens the system panel.
