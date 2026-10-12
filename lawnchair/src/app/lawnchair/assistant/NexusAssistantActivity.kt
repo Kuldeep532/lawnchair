@@ -193,30 +193,46 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
     private fun downloadVoiceModel() {
         val prefs = getSharedPreferences("nexus_assistant", MODE_PRIVATE)
-        if (prefs.getBoolean("voice_model_requested", false)) return
-        // Public Hugging Face repository with an English Piper voice. App uses Android TTS
-        // as the working fallback until a Sherpa-ONNX/Piper runtime is integrated.
+        val modelName = "hi_IN-pratham-medium.onnx"
+        val configName = "$modelName.json"
+        val downloads = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir
+        val modelFile = java.io.File(downloads, modelName)
+        val configFile = java.io.File(downloads, configName)
+
+        // Resume-friendly behavior: ask Android Download Manager only for missing assets.
+        if (prefs.getBoolean("voice_model_requested", false) &&
+            modelFile.exists() && modelFile.length() > 0L &&
+            configFile.exists() && configFile.length() > 0L
+        ) return
+
         val modelUrl = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/hi/hi_IN/pratham/medium/hi_IN-pratham-medium.onnx"
         val configUrl = "$modelUrl.json"
-        val request = DownloadManager.Request(Uri.parse(modelUrl))
-            .setTitle("Nexus Assistant Hindi voice")
-            .setDescription("Downloading the Hindi voice model from Hugging Face.")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(false)
-            .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "hi_IN-pratham-medium.onnx")
         runCatching {
             val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-            manager.enqueue(request)
-            val configRequest = DownloadManager.Request(Uri.parse(configUrl))
-                .setTitle("Nexus Assistant Hindi voice settings")
-                .setDescription("Downloading voice settings needed by the speech engine.")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setAllowedOverMetered(true)
-                .setAllowedOverRoaming(false)
-                .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, "hi_IN-pratham-medium.onnx.json")
-            manager.enqueue(configRequest)
+            if (!modelFile.exists() || modelFile.length() == 0L) {
+                val request = DownloadManager.Request(Uri.parse(modelUrl))
+                    .setTitle("Nexus Assistant Hindi voice")
+                    .setDescription("Downloading the Hindi voice model from Hugging Face.")
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .setAllowedOverMetered(true)
+                    .setAllowedOverRoaming(false)
+                    .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, modelName)
+                manager.enqueue(request)
+            }
+            if (!configFile.exists() || configFile.length() == 0L) {
+                val configRequest = DownloadManager.Request(Uri.parse(configUrl))
+                    .setTitle("Nexus Assistant Hindi voice settings")
+                    .setDescription("Downloading voice settings needed by the speech engine.")
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .setAllowedOverMetered(true)
+                    .setAllowedOverRoaming(false)
+                    .setDestinationInExternalFilesDir(this, Environment.DIRECTORY_DOWNLOADS, configName)
+                manager.enqueue(configRequest)
+            }
             prefs.edit().putBoolean("voice_model_requested", true).apply()
+        }.onFailure {
+            // Do not mark the model as requested if the device cannot enqueue downloads.
+            prefs.edit().putBoolean("voice_model_requested", false).apply()
         }
     }
 
