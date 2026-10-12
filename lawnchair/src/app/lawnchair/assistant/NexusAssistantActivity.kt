@@ -135,13 +135,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             command.startsWith("open ") || command.startsWith("खोलो ") ||
                 command.startsWith("launch ") || command.startsWith("चलाओ ") ||
                 command.startsWith("start ") -> {
-                val term = when {
-                    command.startsWith("open ") -> raw.substringAfter(' ')
-                    command.startsWith("खोलो ") -> raw.substringAfter(' ')
-                    command.startsWith("launch ") -> raw.substringAfter(' ')
-                    command.startsWith("चलाओ ") -> raw.substringAfter(' ')
-                    else -> raw.substringAfter(' ')
-                }.trim()
+                val term = raw.substringAfter(' ').trim()
                 val launch = resolveInstalledApp(term)
                 if (launch != null) runCatching {
                     startActivity(launch)
