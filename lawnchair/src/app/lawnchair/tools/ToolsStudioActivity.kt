@@ -88,6 +88,11 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Button(
+                onClick = { context.startActivity(app.lawnchair.assistant.NexusAssistantLauncher.intent(context)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Nexus Assistant") }
+
+            Button(
                 onClick = { context.startActivity(Intent(context, QuickUtilityActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Quick Utility Hub") }
