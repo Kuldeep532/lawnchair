@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -57,6 +58,7 @@ import java.util.Locale
 class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var voicePlayer: MediaPlayer? = null
     private var output: ((String) -> Unit)? = null
     private var speechResultHandler: ((String) -> Unit)? = null
 
@@ -220,7 +222,82 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
     }
 
     private fun speak(message: String) {
-        if (ttsReady) tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "nexus-assistant")
+        if (!ttsReady || message.isBlank()) return
+
+        // Chatterbox is an English voice. Keep Hindi and other scripts on the device TTS voice.
+        val useChatterbox = message.all { it.code < 128 } &&
+            AssistantModelStore.voiceState(this) == AssistantModelStore.AssetState.DOWNLOADED
+
+        if (!useChatterbox) {
+            speakWithPhoneVoice(message)
+            return
+        }
+
+        lifecycleScope.launch {
+            val audioFile = withContext(Dispatchers.IO) {
+                runCatching {
+                    ChatterboxOnnxEngine.synthesizeToWav(this@NexusAssistantActivity, message)
+                }.getOrNull()
+            }
+            if (isFinishing || isDestroyed) {
+                audioFile?.delete()
+                return@launch
+            }
+            if (audioFile != null) {
+                playChatterboxAudio(audioFile, message)
+            } else {
+                speakWithPhoneVoice(message)
+            }
+        }
+    }
+
+    private fun speakWithPhoneVoice(message: String) {
+        if (ttsReady) {
+            tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "nexus-assistant-fallback")
+        }
+    }
+
+    private fun playChatterboxAudio(file: java.io.File, fallbackText: String) {
+        runCatching {
+            voicePlayer?.setOnPreparedListener(null)
+            voicePlayer?.setOnCompletionListener(null)
+            voicePlayer?.setOnErrorListener(null)
+            voicePlayer?.release()
+            voicePlayer = null
+
+            val player = MediaPlayer()
+            voicePlayer = player
+            player.setDataSource(file.absolutePath)
+            player.setOnPreparedListener {
+                runCatching { it.start() }.onFailure {
+                    cleanupGeneratedAudio(file)
+                    speakWithPhoneVoice(fallbackText)
+                }
+            }
+            player.setOnCompletionListener {
+                cleanupGeneratedAudio(file)
+            }
+            player.setOnErrorListener { _, _, _ ->
+                cleanupGeneratedAudio(file)
+                speakWithPhoneVoice(fallbackText)
+                true
+            }
+            player.prepareAsync()
+        }.onFailure {
+            cleanupGeneratedAudio(file)
+            speakWithPhoneVoice(fallbackText)
+        }
+    }
+
+    private fun cleanupGeneratedAudio(file: java.io.File) {
+        runCatching {
+            voicePlayer?.setOnPreparedListener(null)
+            voicePlayer?.setOnCompletionListener(null)
+            voicePlayer?.setOnErrorListener(null)
+            voicePlayer?.release()
+        }
+        voicePlayer = null
+        file.delete()
     }
 
     private fun startSpeechRecognition() {
@@ -427,6 +504,10 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
     override fun onDestroy() {
         tts?.stop()
         tts?.shutdown()
+        runCatching { voicePlayer?.release() }
+        voicePlayer = null
+        ChatterboxOnnxEngine.release()
+        LocalAssistantEngine.release()
         super.onDestroy()
     }
 }
