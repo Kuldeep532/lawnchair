@@ -236,6 +236,52 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             }
     }
 
+    private fun isSystemCommand(raw: String): Boolean {
+        val command = raw.trim().lowercase(Locale.ROOT)
+        return command.contains("flashlight") || command.contains("torch") ||
+            command.contains("टॉर्च") || command.contains("फ्लैशलाइट") ||
+            command.contains("wifi") || command.contains("wi-fi") ||
+            command.contains("वाई फाई") || command.contains("वाई-फाई") || command.contains("वाईफाई") ||
+            command.startsWith("search ") || command.startsWith("सर्च ") ||
+            command.startsWith("खोज ") || command.startsWith("ढूंढो ") || command.startsWith("खोजो ") ||
+            command.startsWith("open ") || command.startsWith("खोलो ") ||
+            command.startsWith("launch ") || command.startsWith("चलाओ ") || command.startsWith("start ") ||
+            command.contains("settings") || command.contains("सेटिंग") || command.contains("सेटिंग्स") ||
+            command.contains("bluetooth") || command.contains("ब्लूटूथ") ||
+            command.contains("mobile data") || command.contains("मोबाइल डेटा") ||
+            command.contains("internet") || command.contains("इंटरनेट") ||
+            command.contains("alarm") || command.contains("अलार्म") ||
+            command.contains("timer") || command.contains("टाइमर") ||
+            command.contains("time") || command.contains("समय")
+    }
+
+    private fun processInput(raw: String, onResult: (String) -> Unit) {
+        if (isSystemCommand(raw)) {
+            val answer = handleCommand(raw)
+            onResult(answer)
+            speak(answer)
+            return
+        }
+        lifecycleScope.launch {
+            val localAnswer = withContext(Dispatchers.IO) {
+                if (!LocalAssistantEngine.isLoaded) {
+                    LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
+                }
+                if (LocalAssistantEngine.isLoaded) {
+                    runCatching { LocalAssistantEngine.reply(raw) }.getOrNull()
+                } else null
+            }
+            if (!localAnswer.isNullOrBlank()) {
+                onResult(localAnswer)
+                speak(localAnswer)
+            } else {
+                val fallback = handleCommand(raw)
+                onResult(fallback)
+                speak(fallback)
+            }
+        }
+    }
+
     private fun handleCommand(raw: String): String {
         val command = raw.trim().lowercase(Locale.ROOT)
         if (command.isBlank()) return "Please say or type a command."
