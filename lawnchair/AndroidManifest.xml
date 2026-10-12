@@ -20,6 +20,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -60,6 +61,12 @@
 
     <application>
         <activity
+            android:name="app.lawnchair.assistant.NexusAssistantActivity"
+            android:exported="false"
+            android:label="Nexus Assistant"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.books.BooksActivity"
             android:exported="true"
             android:label="@string/books_label"
@@ -84,7 +91,7 @@
         <activity
             android:name="app.lawnchair.books.BooksVoiceSettingsActivity"
             android:exported="false"
-            android:label="TTS & Voice"
+            android:label="TTS &amp; Voice"
             android:theme="@style/Theme.Lawnchair" />
 
         <service
@@ -320,62 +327,5 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
-        <provider
-            android:name="app.lawnchair.bugreport.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths" />
-        </provider>
-
-        <provider
-            android:name="app.lawnchair.search.LawnchairRecentSuggestionProvider"
-            android:authorities="${applicationId}.search.LawnchairRecentSuggestionProvider"
-            android:syncable="true"
-            android:exported="false" />
-
-        <receiver
-            android:name="app.lawnchair.bugreport.BugReportReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="${applicationId}.bugreport.COPY" />
-                <action android:name="${applicationId}.bugreport.UPLOAD" />
-                <action android:name="${applicationId}.bugreport.UPLOAD_COMPLETE" />
-            </intent-filter>
-        </receiver>
-
-        <service
-            android:name="app.lawnchair.bugreport.UploaderService"
-            android:enabled="true"
-            android:exported="false"
-            android:process=":bugReport"
-            android:foregroundServiceType="dataSync" />
-
-        <receiver
-            android:name="app.lawnchair.smartspace.SmartspaceAppWidgetProvider"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/smartspace_appwidget_info" />
-        </receiver>
-
-        <meta-data
-            android:name="xyz.paphonb.quickstepswitcher.minSdk"
-            android:value="${quickstepMinSdk}" />
-
-        <meta-data
-            android:name="xyz.paphonb.quickstepswitcher.maxSdk"
-            android:value="${quickstepMaxSdk}" />
-
-        <provider
-            android:name="org.chickenhook.restrictionbypass.BypassProvider"
-            android:authorities="${applicationId}.restrictionbypass"
-            tools:node="remove"/>
     </application>
 </manifest>
