@@ -137,7 +137,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                 )
                                 Text(
                                     if (modelState == AssistantModelStore.AssetState.DOWNLOADED)
-                                        "Local model manifest has already been downloaded."
+                                        "Local chat model has already been downloaded."
                                     else "Local chat model files are not installed yet."
                                 )
                                 if (downloading) {
@@ -149,7 +149,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                     Text(downloadMessage)
                                 }
                                 downloadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                                Text("Chatterbox downloads several gigabytes and needs free storage and Wi-Fi. Downloads are saved inside Nexus Launcher.")
+                                Text("Chatterbox is a large download (over 1 GB for the selected Q4 files). Connect to Wi-Fi and keep enough free storage. Downloaded model assets do not mean Chatterbox speech playback is active yet.")
                             }
                         },
                         confirmButton = {
@@ -455,7 +455,7 @@ private fun NexusAssistantScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Free assistant with voice input, spoken replies, web search and quick phone actions.")
-            Text("Voice: Android text-to-speech is active. Hugging Face model downloads will be offered after a compatible speech engine and redistribution licence are verified.")
+            Text("Voice: Android text-to-speech is active. Chatterbox voice assets can be downloaded from the required-model dialog; its neural playback pipeline is not connected yet.")
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
                 value = query,
