@@ -13,6 +13,10 @@ import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -74,6 +82,22 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         tts = TextToSpeech(this, this)
         setContent {
             LawnchairTheme {
+                var showRequiredDownload by remember { mutableStateOf(false) }
+                var modelState by remember { mutableStateOf(AssistantModelStore.localState(this)) }
+                var voiceState by remember { mutableStateOf(AssistantModelStore.voiceState(this)) }
+                var downloading by remember { mutableStateOf(false) }
+                var downloadProgress by remember { mutableIntStateOf(0) }
+                var downloadLabel by remember { mutableStateOf("") }
+                var downloadMessage by remember { mutableStateOf("") }
+                var downloadError by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(Unit) {
+                    modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
+                    voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
+                    showRequiredDownload = modelState != AssistantModelStore.AssetState.DOWNLOADED ||
+                        voiceState != AssistantModelStore.AssetState.DOWNLOADED
+                }
+
                 NexusAssistantScreen(
                     onBack = ::finish,
                     onListen = { onRecognized ->
@@ -96,6 +120,81 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     },
                     onSpeak = ::speak,
                 )
+
+                if (showRequiredDownload) {
+                    AlertDialog(
+                        onDismissRequest = { if (!downloading) showRequiredDownload = false },
+                        title = { Text("Download required models") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("This assistant needs to download local model first.")
+                                Text("This feature is required to download local model and local voice first.")
+                                Text(
+                                    if (voiceState == AssistantModelStore.AssetState.DOWNLOADED)
+                                        "Chatterbox voice has already been downloaded."
+                                    else "Chatterbox high-quality voice is not downloaded yet."
+                                )
+                                Text(
+                                    if (modelState == AssistantModelStore.AssetState.DOWNLOADED)
+                                        "Local model manifest has already been downloaded."
+                                    else "Local chat model files are not installed yet."
+                                )
+                                if (downloading) {
+                                    Text(downloadLabel)
+                                    LinearProgressIndicator(
+                                        progress = { downloadProgress / 100f },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    Text(downloadMessage)
+                                }
+                                downloadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                                Text("Chatterbox downloads several gigabytes and needs free storage and Wi-Fi. Downloads are saved inside Nexus Launcher.")
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                enabled = !downloading,
+                                onClick = {
+                                    downloading = true
+                                    downloadError = null
+                                    downloadProgress = 0
+                                    lifecycleScope.launch {
+                                        try {
+                                            withContext(Dispatchers.IO) {
+                                                AssistantModelStore.downloadRequired(this@NexusAssistantActivity) { progress ->
+                                                    runOnUiThread {
+                                                        downloadLabel = progress.label
+                                                        downloadProgress = progress.percent
+                                                        downloadMessage = progress.message
+                                                    }
+                                                }
+                                            }
+                                            modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
+                                            voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
+                                            if (modelState == AssistantModelStore.AssetState.DOWNLOADED &&
+                                                voiceState == AssistantModelStore.AssetState.DOWNLOADED
+                                            ) {
+                                                showRequiredDownload = false
+                                            } else {
+                                                downloadError = "Downloads finished, but the model files are not ready to run yet."
+                                            }
+                                        } catch (error: Exception) {
+                                            downloadError = error.message ?: "The download could not finish. Please try again."
+                                        } finally {
+                                            downloading = false
+                                        }
+                                    }
+                                },
+                            ) { Text(if (downloading) "Downloading…" else "Download") }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                enabled = !downloading,
+                                onClick = { showRequiredDownload = false },
+                            ) { Text("Later") }
+                        },
+                    )
+                }
             }
         }
     }
