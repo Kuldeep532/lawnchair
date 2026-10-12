@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import app.lawnchair.assistant.AssistantModelStore
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -43,6 +44,9 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                 var downloading by remember { mutableStateOf<String?>(null) }
                 var progress by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
+                var assistantVoiceState by remember { mutableStateOf(AssistantModelStore.voiceState(this@BooksVoiceSettingsActivity)) }
+                var assistantVoiceDownloading by remember { mutableStateOf(false) }
+                var assistantVoiceProgress by remember { mutableIntStateOf(0) }
                 DisposableEffect(Unit) {
                     onDispose { executor.shutdownNow() }
                 }
@@ -63,6 +67,54 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
                         Text("Download Piper voices for offline book reading.", style = MaterialTheme.typography.titleMedium)
+                        HorizontalDivider()
+                        Text("Nexus Assistant — Chatterbox High Quality", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            when (assistantVoiceState) {
+                                AssistantModelStore.AssetState.DOWNLOADED -> "Chatterbox voice assets have already been downloaded."
+                                AssistantModelStore.AssetState.PARTIAL -> "Chatterbox voice download is incomplete. Download again to continue."
+                                AssistantModelStore.AssetState.MISSING -> "Chatterbox high-quality voice is not downloaded yet."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        if (assistantVoiceDownloading) {
+                            LinearProgressIndicator(
+                                progress = { assistantVoiceProgress / 100f },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        Button(
+                            enabled = !assistantVoiceDownloading,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                assistantVoiceDownloading = true
+                                error = null
+                                assistantVoiceProgress = 0
+                                executor.execute {
+                                    runCatching {
+                                        AssistantModelStore.downloadChatterboxVoice(this@BooksVoiceSettingsActivity) { item ->
+                                            runOnUiThread { assistantVoiceProgress = item.percent }
+                                        }
+                                    }.onSuccess {
+                                        runOnUiThread {
+                                            assistantVoiceState = AssistantModelStore.voiceState(this@BooksVoiceSettingsActivity)
+                                            assistantVoiceDownloading = false
+                                        }
+                                    }.onFailure { exception ->
+                                        runOnUiThread {
+                                            error = exception.message ?: "Chatterbox voice download failed. Please try again."
+                                            assistantVoiceState = AssistantModelStore.voiceState(this@BooksVoiceSettingsActivity)
+                                            assistantVoiceDownloading = false
+                                        }
+                                    }
+                                }
+                            },
+                        ) { Text(if (assistantVoiceState == AssistantModelStore.AssetState.DOWNLOADED) "Download voice again" else "Download Chatterbox voice") }
+                        Text(
+                            "Chatterbox model files are large. Downloading them does not activate neural speech until a compatible runtime is available.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        HorizontalDivider()
                         Button(onClick = { selected = "Phone default TTS" }) {
                             Text(if (selected == "Phone default TTS") "Using phone default TTS" else "Use phone default TTS")
                         }
