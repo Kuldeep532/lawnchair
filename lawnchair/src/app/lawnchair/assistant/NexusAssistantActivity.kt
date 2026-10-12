@@ -335,7 +335,8 @@ private fun NexusAssistantScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Free assistant controls with web search and spoken replies. Neural voice downloads will be enabled after model licensing and offline playback are verified.")
+            Text("Free assistant with voice input, spoken replies, web search and quick phone actions.")
+            Text("Voice: Android text-to-speech is active. A Hugging Face voice download does not automatically activate a new voice until its speech engine is installed.")
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
