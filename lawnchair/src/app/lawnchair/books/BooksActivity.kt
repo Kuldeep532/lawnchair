@@ -357,7 +357,7 @@ private fun BookReaderScreen(
                             if (engine == null || text.isBlank()) return@IconButton
                             if (speaking) {
                                 engine.stop()
-                                audioPlayer[0]?.runCatching { stop() }
+                                runCatching { audioPlayer[0]?.stop() }
                                 audioPlayer[0]?.release()
                                 audioPlayer[0] = null
                                 speaking = false
