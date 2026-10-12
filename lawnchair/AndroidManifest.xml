@@ -104,10 +104,7 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name="app.lawnchair.radio.OnlineRadioService"
-            android:exported="false"
-            android:enabled="false" />
+
 
         <activity
             android:name="app.lawnchair.radio.OnlineRadioActivity"
