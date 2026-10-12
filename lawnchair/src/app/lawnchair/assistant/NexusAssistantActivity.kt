@@ -94,6 +94,11 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 LaunchedEffect(Unit) {
                     modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
                     voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
+                    if (modelState == AssistantModelStore.AssetState.DOWNLOADED) {
+                        withContext(Dispatchers.IO) {
+                            LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
+                        }
+                    }
                     showRequiredDownload = modelState != AssistantModelStore.AssetState.DOWNLOADED ||
                         voiceState != AssistantModelStore.AssetState.DOWNLOADED
                 }
@@ -102,9 +107,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     onBack = ::finish,
                     onListen = { onRecognized ->
                         speechResultHandler = { recognized ->
-                            val answer = handleCommand(recognized)
-                            onRecognized(answer)
-                            speak(answer)
+                            processInput(recognized, onRecognized)
                         }
                         output = onRecognized
                         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
@@ -114,9 +117,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     },
                     onCommand = { query, setResponse ->
                         output = setResponse
-                        val response = handleCommand(query)
-                        setResponse(response)
-                        speak(response)
+                        processInput(query, setResponse)
                     },
                     onSpeak = ::speak,
                 )
@@ -171,12 +172,20 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                             }
                                             modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
                                             voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
+                                            val localReady = withContext(Dispatchers.IO) {
+                                                LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
+                                            }
                                             if (modelState == AssistantModelStore.AssetState.DOWNLOADED &&
                                                 voiceState == AssistantModelStore.AssetState.DOWNLOADED
                                             ) {
                                                 showRequiredDownload = false
+                                                downloadMessage = if (localReady) {
+                                                    "Local chat model is loaded. Chatterbox assets are downloaded; neural voice playback still needs its runtime."
+                                                } else {
+                                                    "Model assets downloaded, but the local chat model could not be loaded on this device."
+                                                }
                                             } else {
-                                                downloadError = "Downloads finished, but the model files are not ready to run yet."
+                                                downloadError = "Downloads finished, but one or more model assets are missing."
                                             }
                                         } catch (error: Exception) {
                                             downloadError = error.message ?: "The download could not finish. Please try again."
