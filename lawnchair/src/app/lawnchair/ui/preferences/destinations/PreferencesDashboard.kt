@@ -145,18 +145,6 @@ fun PreferencesDashboard(
                 isSelected = false,
             )
             PreferenceCategory(
-                label = "Privacy Policy & Terms",
-                description = "Review account and online-service terms",
-                iconResource = R.drawable.ic_about,
-                onNavigate = {
-                    // Local copy of the documents remains readable without network access.
-                    runCatching {
-                        context.startActivity(Intent(context, NexusAccountActivity::class.java))
-                    }
-                },
-                isSelected = false,
-            )
-            PreferenceCategory(
                 label = stringResource(R.string.general_label),
                 description = stringResource(R.string.general_description),
                 iconResource = R.drawable.ic_general,
