@@ -95,11 +95,14 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
     val coroutineScope = rememberCoroutineScope()
 
     DisposableEffect(context) {
-        val engine = TextToSpeech(context) { status ->
+        lateinit var engine: TextToSpeech
+        engine = TextToSpeech(context) { status ->
             voiceReady = status == TextToSpeech.SUCCESS
             if (status == TextToSpeech.SUCCESS) {
-                val result = engineSafeSetLanguage(speech, Locale.getDefault())
-                if (!result) readerVoiceMessage = "Phone voice is ready; its preferred language may need to be installed."
+                val languageResult = engine.setLanguage(Locale.getDefault())
+                if (languageResult < TextToSpeech.LANG_AVAILABLE) {
+                    readerVoiceMessage = "Phone voice is ready; its preferred language may need to be installed."
+                }
             } else {
                 readerVoiceMessage = "Phone voice is not ready. Check Android voice settings."
             }
@@ -471,8 +474,3 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
     }
 }
 
-private fun engineSafeSetLanguage(engine: TextToSpeech?, locale: Locale): Boolean {
-    if (engine == null) return false
-    val result = engine.setLanguage(locale)
-    return result >= TextToSpeech.LANG_AVAILABLE
-}
