@@ -82,26 +82,10 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         else output?.invoke("Microphone permission is needed for voice input.")
     }
 
-    private fun secureAssistantPreferences(): SharedPreferences {
-        return try {
-            val masterKey = MasterKey.Builder(this)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-            EncryptedSharedPreferences.create(
-                this,
-                "nexus_assistant_cloud",
-                masterKey,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-            )
-        } catch (_: Exception) {
-            getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
-        }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+        override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EdgeToEdge()
+        runCatching { AssistantPreferences.migrateLegacySession(this) }
         tts = TextToSpeech(this, this)
         setContent {
             LawnchairTheme {
@@ -130,7 +114,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 var selectedProvider by remember { mutableStateOf(NexusCloudAssistant.provider(this@NexusAssistantActivity)) }
                 var selectedVoiceProvider by remember {
                     mutableStateOf(
-                        getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
+                        AssistantPreferences.secure(this@NexusAssistantActivity)
                             .getString("voice_provider", "local") ?: "local"
                     )
                 }
@@ -141,7 +125,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     selectedVoiceProvider = selectedVoiceProvider,
                     onVoiceProviderChange = { provider ->
                         selectedVoiceProvider = provider
-                        getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
+                        AssistantPreferences.secure(this@NexusAssistantActivity)
                             .edit().putString("voice_provider", provider).apply()
                     },
                     onCloudSettings = { showCloudSettings = true },
@@ -292,8 +276,8 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
     private fun speak(message: String) {
         if (message.isBlank()) return
-        val provider = getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
-            .getString("voice_provider", "local") ?: "local"
+        val provider = AssistantPreferences.secure(this@NexusAssistantActivity)
+                            .getString("voice_provider", "local") ?: "local"
         if (provider == "elevenlabs") {
             lifecycleScope.launch {
                 val audioUrl = withContext(Dispatchers.IO) {
