@@ -51,8 +51,7 @@ import java.util.Locale
  * Nexus Assistant v1.
  *
  * The assistant never downloads executable code. It uses Android speech recognition
- * for input and Android TextToSpeech for spoken output while a licence-compatible neural
- * voice asset and its inference runtime are evaluated.
+ * for input; spoken playback is intentionally reserved for Books Reader and PDF Reader.
  */
 class NexusAssistantActivity : ComponentActivity() {
     private var output: ((String) -> Unit)? = null
