@@ -318,28 +318,31 @@ private fun BookReaderScreen(
     }
 
     LaunchedEffect(book.uri) {
-        pages = runCatching {
-            val uri = Uri.parse(book.uri)
-            when {
-                book.mimeType == "application/pdf" || book.uri.endsWith(".pdf", true) -> loadPdfPagePlaceholders(context, uri)
-                book.mimeType == "application/epub+zip" || book.uri.endsWith(".epub", true) -> loadEpubPages(context, uri)
-                else -> loadPlainTextPages(context, uri)
-            }
-        }.getOrElse { listOf("This book could not be read.") }.ifEmpty { listOf("No readable text was found in this book.") }
-        currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
-    }
-
-    if (book.mimeType == "application/pdf" || book.uri.endsWith(".pdf", true)) {
-        LaunchedEffect(Unit) {
+        val isPdf = book.mimeType == "application/pdf" || book.uri.endsWith(".pdf", true)
+        if (isPdf) {
             ocrBusy = true
             ocrMessage = "Reading PDF with OCR…"
-            val result = runCatching { loadPdfPagePlaceholders(context, Uri.parse(book.uri)) }
-            result.onSuccess {
-                if (it.isNotEmpty()) pages = it
-                currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
-                ocrMessage = "OCR is ready for this PDF."
-            }.onFailure {
-                ocrMessage = "This PDF could not be read with OCR."
+        }
+
+        val result = withContext(Dispatchers.IO) {
+            runCatching {
+                val uri = Uri.parse(book.uri)
+                when {
+                    isPdf -> loadPdfPagePlaceholders(context, uri)
+                    book.mimeType == "application/epub+zip" || book.uri.endsWith(".epub", true) -> loadEpubPages(context, uri)
+                    else -> loadPlainTextPages(context, uri)
+                }
+            }
+        }
+        pages = result.getOrElse { listOf("This book could not be read.") }
+            .ifEmpty { listOf("No readable text was found in this book.") }
+        currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
+
+        if (isPdf) {
+            ocrMessage = if (result.isSuccess) {
+                "OCR is ready for this PDF."
+            } else {
+                "This PDF could not be read with OCR."
             }
             ocrBusy = false
         }
