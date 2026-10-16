@@ -54,6 +54,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import app.lawnchair.LawnchairApp
+import app.lawnchair.account.NexusAccountActivity
+import app.lawnchair.account.NexusAccountStore
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.observeAsState
@@ -87,6 +89,7 @@ import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.ControlCenter
 import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
+import android.content.ActivityNotFoundException
 import app.lawnchair.ui.util.addIf
 import app.lawnchair.util.isDefaultLauncher
 import app.lawnchair.util.restartLauncher
@@ -128,6 +131,31 @@ fun PreferencesDashboard(
 
         val deckLayout = prefs2.deckLayout.getAdapter()
         PreferenceGroup {
+            val account = runCatching { NexusAccountStore.account(context) }.getOrNull()
+            PreferenceCategory(
+                label = "Nexus Account",
+                description = account?.name?.takeIf { it.isNotBlank() }?.let { "Signed in as $it" }
+                    ?: "Login is optional; launcher works without an account",
+                iconResource = R.drawable.ic_about,
+                onNavigate = {
+                    runCatching {
+                        context.startActivity(Intent(context, NexusAccountActivity::class.java))
+                    }
+                },
+                isSelected = false,
+            )
+            PreferenceCategory(
+                label = "Privacy Policy & Terms",
+                description = "Review account and online-service terms",
+                iconResource = R.drawable.ic_about,
+                onNavigate = {
+                    // Local copy of the documents remains readable without network access.
+                    runCatching {
+                        context.startActivity(Intent(context, NexusAccountActivity::class.java))
+                    }
+                },
+                isSelected = false,
+            )
             PreferenceCategory(
                 label = stringResource(R.string.general_label),
                 description = stringResource(R.string.general_description),
