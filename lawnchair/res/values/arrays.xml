@@ -46,4 +46,6 @@
         <item>com.android.launcher3.DEFAULT_MINUTE</item>
         <item>10</item>
     </array>
+    <!-- Empty means all compatible widgets may be featured. -->
+    <string-array name="default_featured_widget_apps" />
 </resources>
