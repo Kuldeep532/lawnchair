@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -87,7 +89,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
         },
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Button(
@@ -136,6 +138,11 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 onClick = { context.startActivity(Intent(context, PdfReaderActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("PDF Reader") }
+
+            Button(
+                onClick = { context.startActivity(Intent(context, app.lawnchair.books.BooksVoiceSettingsActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("TTS & Voice Settings") }
             Button(
                 onClick = { context.startActivity(Intent(context, app.lawnchair.radio.OnlineRadioActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -154,7 +161,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it; output = ""; error = null },
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     label = { Text("Text") },
                     placeholder = { Text("Type or paste text") },
                 )
