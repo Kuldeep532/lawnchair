@@ -1101,4 +1101,5 @@
     <string name="image_to_pdf">Image to PDF</string>
     <string name="online_radio">Online Radio</string>
     <string name="pdf_reader">PDF Reader</string>
+    <string name="widget_button_text">Widgets</string>
 </resources>
