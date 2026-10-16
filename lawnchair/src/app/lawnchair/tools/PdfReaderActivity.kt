@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.content.Intent
 import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import androidx.activity.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -94,6 +95,19 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
                 readerVoiceMessage = "Phone voice is not ready. Check Android voice settings."
             }
         }
+        engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) = Unit
+            override fun onDone(utteranceId: String?) {
+                if (utteranceId?.startsWith("pdf-reader") == true) {
+                    speaking = false
+                    readerVoiceMessage = "Finished reading this page."
+                }
+            }
+            override fun onError(utteranceId: String?) {
+                speaking = false
+                readerVoiceMessage = "Phone voice could not read this text."
+            }
+        })
         speech = engine
         onDispose {
             runCatching { engine.stop() }
@@ -282,6 +296,7 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(uri, page) {
+        if (speaking) stopReading()
         uri?.let { render(it, page) }
     }
 
@@ -414,14 +429,15 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
                             modifier = Modifier.weight(1f),
                         ) { Text("Stop") }
                     }
-                    TextButton(
-                        onClick = {
-                            context.startActivity(Intent(context, app.lawnchair.books.BooksVoiceSettingsActivity::class.java))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Reader Voice settings") }
-                    Text(readerVoiceMessage, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                 }
+
+                TextButton(
+                    onClick = {
+                        context.startActivity(Intent(context, app.lawnchair.books.BooksVoiceSettingsActivity::class.java))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Reader Voice settings") }
+                Text(readerVoiceMessage, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
 
                 message?.let { Text(it) }
             }
