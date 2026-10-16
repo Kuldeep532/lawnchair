@@ -107,7 +107,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             LawnchairTheme {
                 var showRequiredDownload by remember { mutableStateOf(false) }
                 var modelState by remember { mutableStateOf(AssistantModelStore.localState(this)) }
-                var voiceState by remember { mutableStateOf(AssistantModelStore.voiceState(this)) }
                 var localRuntimeReady by remember { mutableStateOf(LocalAssistantEngine.isLoaded) }
                 var downloading by remember { mutableStateOf(false) }
                 var downloadProgress by remember { mutableIntStateOf(0) }
@@ -117,7 +116,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
                 LaunchedEffect(Unit) {
                     modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
-                    voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
                     localRuntimeReady = if (modelState == AssistantModelStore.AssetState.DOWNLOADED) {
                         withContext(Dispatchers.IO) {
                             LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
@@ -214,13 +212,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                         title = { Text("Download required models") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("This assistant needs to download local model first.")
-                                Text("This feature is required to download local model and local voice first.")
-                                Text(
-                                    if (voiceState == AssistantModelStore.AssetState.DOWNLOADED)
-                                        "Chatterbox voice has already been downloaded."
-                                    else "Chatterbox high-quality voice is not downloaded yet."
-                                )
+                                Text("Download the optional local chat model to enable offline chat. Voice output uses the phone's installed TTS voice and does not require a huge voice download.")
                                 Text(
                                     when {
                                         modelState != AssistantModelStore.AssetState.DOWNLOADED ->
@@ -238,7 +230,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                     Text(downloadMessage)
                                 }
                                 downloadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                                Text("Chatterbox is a large download (over 1 GB for the selected Q4 files). Connect to Wi-Fi and keep enough free storage. Downloaded model assets do not mean Chatterbox speech playback is active yet.")
                             }
                         },
                         confirmButton = {
@@ -260,17 +251,12 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                                 }
                                             }
                                             modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
-                                            voiceState = AssistantModelStore.voiceState(this@NexusAssistantActivity)
                                             localRuntimeReady = withContext(Dispatchers.IO) {
                                                 LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                                             }
                                             if (modelState == AssistantModelStore.AssetState.DOWNLOADED && localRuntimeReady) {
                                                 showRequiredDownload = false
-                                                downloadMessage = if (voiceState == AssistantModelStore.AssetState.DOWNLOADED) {
-                                                    "Local chat is ready. Chatterbox voice assets are present and will be used when the device can load them."
-                                                } else {
-                                                    "Local chat is ready. You can download the optional Chatterbox voice later from TTS & Voice settings."
-                                                }
+                                                downloadMessage = "Local chat is ready. Spoken output uses the lightweight phone TTS voice; no large neural voice pack was downloaded."
                                             } else {
                                                 downloadError = if (!localRuntimeReady) {
                                                     "The local chat model could not be loaded on this device. You can still use phone commands or sign in for online AI."
@@ -326,28 +312,9 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         }
     }
 
-    /** Local/offline voice path: Chatterbox for supported English text, Android TTS otherwise. */
+    /** Lightweight offline voice path. Uses the installed Android TTS voice without large model downloads. */
     private fun speakWithLocalVoice(message: String) {
-        if (!ttsReady) return
-        val useChatterbox = message.all { it.code < 128 } &&
-            AssistantModelStore.voiceState(this) == AssistantModelStore.AssetState.DOWNLOADED
-        if (!useChatterbox) {
-            speakWithPhoneVoice(message)
-            return
-        }
-        lifecycleScope.launch {
-            val audioFile = withContext(Dispatchers.IO) {
-                runCatching {
-                    ChatterboxOnnxEngine.synthesizeToWav(this@NexusAssistantActivity, message)
-                }.getOrNull()
-            }
-            if (isFinishing || isDestroyed) {
-                audioFile?.delete()
-                return@launch
-            }
-            if (audioFile != null) playChatterboxAudio(audioFile, message)
-            else speakWithPhoneVoice(message)
-        }
+        speakWithPhoneVoice(message)
     }
 
     private fun playRemoteAudio(audioUrl: String, fallbackText: String) {
@@ -648,7 +615,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         tts?.shutdown()
         runCatching { voicePlayer?.release() }
         voicePlayer = null
-        ChatterboxOnnxEngine.release()
         LocalAssistantEngine.release()
         super.onDestroy()
     }
