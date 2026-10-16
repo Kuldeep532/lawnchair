@@ -2,7 +2,6 @@ package app.lawnchair.assistant
 
 import android.Manifest
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
@@ -14,8 +13,6 @@ import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.RadioButton
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.material3.AlertDialog
@@ -82,7 +79,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         else output?.invoke("Microphone permission is needed for voice input.")
     }
 
-        override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EdgeToEdge()
         runCatching { AssistantPreferences.migrateLegacySession(this) }
