@@ -346,6 +346,14 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             return
         }
         lifecycleScope.launch {
+            val cloudAnswer = withContext(Dispatchers.IO) {
+                runCatching { NexusCloudAssistant.reply(this@NexusAssistantActivity, raw) }.getOrNull()
+            }
+            if (!cloudAnswer.isNullOrBlank()) {
+                onResult(cloudAnswer)
+                speak(cloudAnswer)
+                return@launch
+            }
             val localAnswer = withContext(Dispatchers.IO) {
                 if (!LocalAssistantEngine.isLoaded) {
                     LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
@@ -358,7 +366,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 onResult(localAnswer)
                 speak(localAnswer)
             } else {
-                val fallback = handleCommand(raw)
+                val fallback = "I couldn't reach the online assistant or load the local model. Please check your internet connection, or use a phone command such as ‘open YouTube’."
                 onResult(fallback)
                 speak(fallback)
             }
