@@ -103,8 +103,8 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                             LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                         }
                     } else false
+                    // A missing optional local model or neural voice must not block cloud and phone actions.
                     showRequiredDownload = modelState != AssistantModelStore.AssetState.DOWNLOADED ||
-                        voiceState != AssistantModelStore.AssetState.DOWNLOADED ||
                         !localRuntimeReady
                 }
 
@@ -232,17 +232,18 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                             localRuntimeReady = withContext(Dispatchers.IO) {
                                                 LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                                             }
-                                            if (modelState == AssistantModelStore.AssetState.DOWNLOADED &&
-                                                voiceState == AssistantModelStore.AssetState.DOWNLOADED &&
-                                                localRuntimeReady
-                                            ) {
+                                            if (modelState == AssistantModelStore.AssetState.DOWNLOADED && localRuntimeReady) {
                                                 showRequiredDownload = false
-                                                downloadMessage = "Local chat model is loaded. Chatterbox assets are downloaded, but its neural voice playback still needs its inference pipeline."
+                                                downloadMessage = if (voiceState == AssistantModelStore.AssetState.DOWNLOADED) {
+                                                    "Local chat is ready. Chatterbox voice assets are present and will be used when the device can load them."
+                                                } else {
+                                                    "Local chat is ready. You can download the optional Chatterbox voice later from TTS & Voice settings."
+                                                }
                                             } else {
                                                 downloadError = if (!localRuntimeReady) {
-                                                    "Downloads are present, but the local chat model could not be loaded on this device. Please try again or use web search."
+                                                    "The local chat model could not be loaded on this device. You can still use phone commands or sign in for online AI."
                                                 } else {
-                                                    "Downloads finished, but one or more model assets are missing."
+                                                    "The local model download is incomplete. Please try again."
                                                 }
                                             }
                                         } catch (error: Exception) {
