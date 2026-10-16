@@ -29,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -92,7 +93,15 @@ class NexusAccountActivity : ComponentActivity() {
                         )
 
                         if (account != null) {
-                            Text("Signed in as ${account?.email.orEmpty()}")
+                            Text("Name: ${account?.name.orEmpty()}")
+                            Text("Email: ${account?.email.orEmpty()}")
+                            HorizontalDivider()
+                            Text("Privacy Policy and Terms", style = MaterialTheme.typography.titleMedium)
+                            Text("Read these documents at any time. Acceptance is required only to use Nexus Account services; it is not needed for ordinary launcher use.")
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextButton(onClick = { showPrivacy = true }) { Text("Read Privacy Policy") }
+                                TextButton(onClick = { showTerms = true }) { Text("Read Terms") }
+                            }
                             Button(
                                 onClick = {
                                     NexusAccountStore.signOut(context)
