@@ -63,7 +63,7 @@ object NexusCloudAssistant {
      */
     fun reply(context: Context, message: String): String {
         require(message.isNotBlank()) { "Please enter a question." }
-        val prefs = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val prefs = AssistantPreferences.secure(context)
         val token = prefs.getString(TOKEN_KEY, null)?.takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Sign in to your Nexus account to use the online assistant.")
         val provider = prefs.getString(PROVIDER_KEY, "gemini") ?: "gemini"
