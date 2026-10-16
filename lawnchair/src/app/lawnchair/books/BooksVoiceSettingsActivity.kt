@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import app.lawnchair.assistant.AssistantModelStore
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -44,9 +43,6 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                 var downloading by remember { mutableStateOf<String?>(null) }
                 var progress by remember { mutableIntStateOf(0) }
                 var error by remember { mutableStateOf<String?>(null) }
-                var assistantVoiceState by remember { mutableStateOf(AssistantModelStore.voiceState(this@BooksVoiceSettingsActivity)) }
-                var assistantVoiceDownloading by remember { mutableStateOf(false) }
-                var assistantVoiceProgress by remember { mutableIntStateOf(0) }
                 DisposableEffect(Unit) {
                     onDispose { executor.shutdownNow() }
                 }
@@ -68,51 +64,10 @@ class BooksVoiceSettingsActivity : ComponentActivity() {
                     ) {
                         Text("Download Piper voices for offline book reading.", style = MaterialTheme.typography.titleMedium)
                         HorizontalDivider()
-                        Text("Nexus Assistant — Chatterbox High Quality", style = MaterialTheme.typography.titleLarge)
+                        Text("Nexus Assistant voice", style = MaterialTheme.typography.titleLarge)
                         Text(
-                            when (assistantVoiceState) {
-                                AssistantModelStore.AssetState.DOWNLOADED -> "Chatterbox voice has already been downloaded."
-                                AssistantModelStore.AssetState.PARTIAL -> "Chatterbox voice download is incomplete. Download again to continue."
-                                AssistantModelStore.AssetState.MISSING -> "Chatterbox high-quality voice is not downloaded yet."
-                            },
+                            "Assistant voice uses the phone's installed offline Text-to-Speech voice by default. Choose ElevenLabs in Nexus Assistant for online neural speech. The multi-gigabyte Chatterbox download has been removed.",
                             style = MaterialTheme.typography.bodyMedium,
-                        )
-                        if (assistantVoiceDownloading) {
-                            LinearProgressIndicator(
-                                progress = { assistantVoiceProgress / 100f },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                        Button(
-                            enabled = !assistantVoiceDownloading,
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                                assistantVoiceDownloading = true
-                                error = null
-                                assistantVoiceProgress = 0
-                                executor.execute {
-                                    runCatching {
-                                        AssistantModelStore.downloadChatterboxVoice(this@BooksVoiceSettingsActivity) { item ->
-                                            runOnUiThread { assistantVoiceProgress = item.percent }
-                                        }
-                                    }.onSuccess {
-                                        runOnUiThread {
-                                            assistantVoiceState = AssistantModelStore.voiceState(this@BooksVoiceSettingsActivity)
-                                            assistantVoiceDownloading = false
-                                        }
-                                    }.onFailure { exception ->
-                                        runOnUiThread {
-                                            error = exception.message ?: "Chatterbox voice download failed. Please try again."
-                                            assistantVoiceState = AssistantModelStore.voiceState(this@BooksVoiceSettingsActivity)
-                                            assistantVoiceDownloading = false
-                                        }
-                                    }
-                                }
-                            },
-                        ) { Text(if (assistantVoiceState == AssistantModelStore.AssetState.DOWNLOADED) "Download voice again" else "Download Chatterbox voice") }
-                        Text(
-                            "Chatterbox can read English book pages when its model loads successfully. Hindi text and phones that cannot load this large model use the phone's voice instead.",
-                            style = MaterialTheme.typography.bodySmall,
                         )
                         HorizontalDivider()
                         Button(onClick = { selected = "Phone default TTS" }) {
