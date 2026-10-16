@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.RadioButton
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.material3.AlertDialog
@@ -114,10 +115,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     cloudSignedIn = NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity),
                     selectedProvider = selectedProvider,
                     onCloudSettings = { showCloudSettings = true },
-                    onProviderChanged = { provider ->
-                        selectedProvider = provider
-                        NexusCloudAssistant.setProvider(this@NexusAssistantActivity, provider)
-                    },
                     onBack = ::finish,
                     onListen = { onRecognized ->
                         speechResultHandler = { recognized ->
@@ -151,11 +148,21 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                 )
                                 Text("AI provider")
                                 listOf("gemini" to "Gemini", "openai" to "OpenAI", "anthropic" to "Anthropic").forEach { (id, label) ->
-                                    TextButton(onClick = {
-                                        selectedProvider = id
-                                        NexusCloudAssistant.setProvider(this@NexusAssistantActivity, id)
-                                    }) {
-                                        Text(if (selectedProvider == id) "Selected: $label" else "Use $label")
+                                    androidx.compose.foundation.layout.Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                    ) {
+                                        RadioButton(
+                                            selected = selectedProvider == id,
+                                            onClick = {
+                                                selectedProvider = id
+                                                NexusCloudAssistant.setProvider(this@NexusAssistantActivity, id)
+                                            },
+                                        )
+                                        TextButton(onClick = {
+                                            selectedProvider = id
+                                            NexusCloudAssistant.setProvider(this@NexusAssistantActivity, id)
+                                        }) { Text(label) }
                                     }
                                 }
                                 Text(
@@ -568,7 +575,6 @@ private fun NexusAssistantScreen(
     cloudSignedIn: Boolean,
     selectedProvider: String,
     onCloudSettings: () -> Unit,
-    onProviderChanged: (String) -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
