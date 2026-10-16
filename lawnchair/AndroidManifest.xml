@@ -136,7 +136,7 @@
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
-            android:name="app.lawnchair.nexuslauncher.tools.QrGeneratorActivity"
+            android:name="app.lawnchair.tools.QrGeneratorActivity"
             android:exported="false"
             android:label="@string/qr_generator"
             android:theme="@style/Theme.Lawnchair" />
