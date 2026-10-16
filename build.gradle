@@ -272,6 +272,20 @@ android {
         includeInBundle = false
     }
 
+    // Do not produce an unsigned or debug-signed release artifact when the private
+    // release keystore has not been configured. Debug builds remain unaffected.
+    tasks.configureEach {
+        if (name ==~ /(assemble|bundle|package).+Release/) {
+            doFirst {
+                if (releaseSigning == null) {
+                    throw new GradleException(
+                        "Release build blocked: add a valid keystore.properties and release keystore first."
+                    )
+                }
+            }
+        }
+    }
+
     // See: https://developer.android.com/studio/build/build-variants#flavor-dimensions
     flavorDimensions += ["app", "recents", "channel"]
 
