@@ -75,10 +75,45 @@ private fun QrScreen(onBack: () -> Unit) {
     }
 
     fun payload(): String = when (mode) {
-        QrMode.TEXT -> input
-        QrMode.URL -> input
-        QrMode.WIFI -> "WIFI:T:$wifiSecurity;S:${wifiEscape(input)};P:${wifiEscape(wifiPassword)};;"
-        QrMode.UPI -> "upi://pay?pa=${Uri.encode(upiId.trim())}&pn=${Uri.encode(upiName.trim())}&am=${amount.trim()}&cu=INR&tn=${Uri.encode(notes.trim())}"
+        QrMode.TEXT -> input.trim()
+        QrMode.URL -> normalizeQrUrl(input)
+        QrMode.WIFI -> {
+            val ssid = input.trim()
+            require(ssid.isNotEmpty()) { "Enter the Wi-Fi network name (SSID)." }
+            require(wifiSecurity in setOf("WPA", "WEP", "nopass")) { "Choose WPA, WEP or no password." }
+            if (wifiSecurity != "nopass") {
+                require(wifiPassword.isNotEmpty()) { "Enter the Wi-Fi password or choose no password." }
+            }
+            val passwordPart = if (wifiSecurity == "nopass") "" else "P:${wifiEscape(wifiPassword)};"
+            "WIFI:T:$wifiSecurity;S:${wifiEscape(ssid)};$passwordPart;"
+        }
+        QrMode.UPI -> {
+            val payeeId = upiId.trim()
+            require(Regex("^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+$").matches(payeeId)) {
+                "Enter a valid UPI ID, such as name@bank."
+            }
+            val normalizedAmount = amount.trim()
+            if (normalizedAmount.isNotEmpty()) {
+                require(Regex("^\\d+(\\.\\d{1,2})?$").matches(normalizedAmount)) {
+                    "Enter a valid amount with up to two decimal places."
+                }
+                require((normalizedAmount.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO) > java.math.BigDecimal.ZERO) {
+                    "Amount must be greater than zero."
+                }
+            }
+            Uri.Builder()
+                .scheme("upi")
+                .authority("pay")
+                .appendQueryParameter("pa", payeeId)
+                .appendQueryParameter("cu", "INR")
+                .apply {
+                    if (upiName.isNotBlank()) appendQueryParameter("pn", upiName.trim())
+                    if (normalizedAmount.isNotEmpty()) appendQueryParameter("am", normalizedAmount)
+                    if (notes.isNotBlank()) appendQueryParameter("tn", notes.trim())
+                }
+                .build()
+                .toString()
+        }
     }
 
     fun generate() {
@@ -137,8 +172,19 @@ private fun QrScreen(onBack: () -> Unit) {
                     QrMode.URL -> field("URL", input) { input = it }
                     QrMode.WIFI -> {
                         field("Wi-Fi SSID", input) { input = it }
-                        field("Security: WPA, WEP or nopass", wifiSecurity) { wifiSecurity = it }
-                        field("Wi-Fi password", wifiPassword) { wifiPassword = it }
+                        Text("Security")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("WPA", "WEP", "nopass").forEach { security ->
+                                FilterChip(
+                                    selected = wifiSecurity == security,
+                                    onClick = { wifiSecurity = security },
+                                    label = { Text(security) },
+                                )
+                            }
+                        }
+                        if (wifiSecurity != "nopass") {
+                            field("Wi-Fi password", wifiPassword) { wifiPassword = it }
+                        }
                     }
                     QrMode.UPI -> {
                         field("Payee name", upiName) { upiName = it }
@@ -241,6 +287,23 @@ private fun shareQr(context: Context, bitmap: Bitmap) {
         resolver.update(uri, values, null, null)
         context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share QR code"))
     }.onFailure { resolver.delete(uri, null, null) }
+}
+
+private fun normalizeQrUrl(value: String): String {
+    val candidate = value.trim()
+    require(candidate.isNotEmpty()) { "Enter a website URL." }
+    require(!candidate.any(Char::isWhitespace)) { "URL cannot contain spaces." }
+    val normalized = if (
+        candidate.startsWith("https://", ignoreCase = true) ||
+        candidate.startsWith("http://", ignoreCase = true)
+    ) candidate else "https://$candidate"
+    val uri = runCatching { java.net.URI(normalized) }
+        .getOrElse { throw IllegalArgumentException("Enter a valid website URL.") }
+    require(uri.scheme.equals("https", true) || uri.scheme.equals("http", true)) {
+        "Only HTTP and HTTPS website URLs are supported."
+    }
+    require(!uri.host.isNullOrBlank()) { "Enter a valid website address." }
+    return uri.toASCIIString()
 }
 
 private fun wifiEscape(value: String): String =
