@@ -63,15 +63,24 @@ class PdfReaderActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EdgeToEdge()
-        setContent { LawnchairTheme { PdfReaderScreen(::finish) } }
+        val incomingPdf = intent?.data
+        if (incomingPdf != null && intent?.action == Intent.ACTION_VIEW) {
+            runCatching {
+                contentResolver.takePersistableUriPermission(
+                    incomingPdf,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+        }
+        setContent { LawnchairTheme { PdfReaderScreen(::finish, incomingPdf) } }
     }
 }
 
 @Composable
-private fun PdfReaderScreen(onBack: () -> Unit) {
+private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
-    var uri by remember { mutableStateOf<Uri?>(null) }
+    var uri by remember(initialUri) { mutableStateOf(initialUri) }
     var pageCount by remember { mutableIntStateOf(0) }
     var page by remember { mutableIntStateOf(0) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
