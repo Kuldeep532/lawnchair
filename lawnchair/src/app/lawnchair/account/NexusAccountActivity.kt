@@ -215,8 +215,14 @@ class NexusAccountActivity : ComponentActivity() {
                                 "Launcher features such as the home screen, app drawer, gestures, and local settings work on-device without an account. If you choose to sign in, your email and account name are processed by Supabase Auth. Online AI requests send the text you submit to the configured Nexus server and AI provider. Do not submit passwords, payment credentials, or other sensitive information to AI chat. Credentials are stored in Android encrypted preferences. This initial policy should be reviewed and published at a permanent public URL before release."
                             )
                         },
-                        confirmButton = { TextButton(onClick = { showPrivacy = false }) { Text("Close") } },
-                        dismissButton = { TextButton(onClick = { openUrl("https://cpbwiarqlvtlnwbkmpws.supabase.co") }) { Text("Project site") } },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showPrivacy = false
+                                accepted = true
+                                NexusAccountStore.setLegalAccepted(context, true)
+                            }) { Text("Accept Privacy Policy") }
+                        },
+                        dismissButton = { TextButton(onClick = { showPrivacy = false }) { Text("Close without accepting") } },
                     )
                 }
                 if (showTerms) {
@@ -228,8 +234,14 @@ class NexusAccountActivity : ComponentActivity() {
                                 "Use Nexus Launcher lawfully and responsibly. The launcher is provided as-is; feature availability can depend on Android version, device permissions, and third-party services. Online AI may be inaccurate and must not replace professional advice. Third-party providers may apply their own terms. By accepting, you agree to these terms and the privacy notice for this version. These draft terms need legal review and a permanent public URL before public release."
                             )
                         },
-                        confirmButton = { TextButton(onClick = { showTerms = false }) { Text("Close") } },
-                        dismissButton = { TextButton(onClick = { openUrl("https://cpbwiarqlvtlnwbkmpws.supabase.co") }) { Text("Project site") } },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showTerms = false
+                                accepted = true
+                                NexusAccountStore.setLegalAccepted(context, true)
+                            }) { Text("Accept Terms") }
+                        },
+                        dismissButton = { TextButton(onClick = { showTerms = false }) { Text("Close without accepting") } },
                     )
                 }
             }
