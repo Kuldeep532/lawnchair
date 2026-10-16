@@ -107,7 +107,17 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                         !localRuntimeReady
                 }
 
+                var showCloudSettings by remember { mutableStateOf(false) }
+                var selectedProvider by remember { mutableStateOf(NexusCloudAssistant.provider(this@NexusAssistantActivity)) }
+
                 NexusAssistantScreen(
+                    cloudSignedIn = NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity),
+                    selectedProvider = selectedProvider,
+                    onCloudSettings = { showCloudSettings = true },
+                    onProviderChanged = { provider ->
+                        selectedProvider = provider
+                        NexusCloudAssistant.setProvider(this@NexusAssistantActivity, provider)
+                    },
                     onBack = ::finish,
                     onListen = { onRecognized ->
                         speechResultHandler = { recognized ->
@@ -125,6 +135,39 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     },
                     onSpeak = ::speak,
                 )
+
+                if (showCloudSettings) {
+                    AlertDialog(
+                        onDismissRequest = { showCloudSettings = false },
+                        title = { Text("Online AI settings") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                    if (NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity)) {
+                                        "Your Nexus account session is available for online AI."
+                                    } else {
+                                        "Sign in to your Nexus account in the app to enable online AI. The assistant uses your signed-in Supabase session."
+                                    }
+                                )
+                                Text("AI provider")
+                                listOf("gemini" to "Gemini", "openai" to "OpenAI", "anthropic" to "Anthropic").forEach { (id, label) ->
+                                    TextButton(onClick = {
+                                        selectedProvider = id
+                                        NexusCloudAssistant.setProvider(this@NexusAssistantActivity, id)
+                                    }) {
+                                        Text(if (selectedProvider == id) "Selected: $label" else "Use $label")
+                                    }
+                                }
+                                Text(
+                                    "Provider availability depends on the API keys and plan configured on the Nexus server. API secrets stay on the server and are not stored in the launcher."
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showCloudSettings = false }) { Text("Done") }
+                        },
+                    )
+                }
 
                 if (showRequiredDownload) {
                     AlertDialog(
@@ -522,6 +565,10 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
+    cloudSignedIn: Boolean,
+    selectedProvider: String,
+    onCloudSettings: () -> Unit,
+    onProviderChanged: (String) -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
@@ -549,7 +596,16 @@ private fun NexusAssistantScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Free assistant with voice input, spoken replies, web search and quick phone actions.")
+            Text("Nexus Assistant combines phone actions, local chat and optional online AI.")
+            Text(if (cloudSignedIn) "Online AI: account connected." else "Online AI: sign in to your Nexus account to connect.")
+            Text("AI provider: " + when (selectedProvider) {
+                "openai" -> "OpenAI"
+                "anthropic" -> "Anthropic"
+                else -> "Gemini"
+            })
+            Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
+                Text("Online AI settings")
+            }
             Text("Voice: Android text-to-speech is active. Chatterbox voice assets can be downloaded from the required-model dialog; its neural playback pipeline is not connected yet.")
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
