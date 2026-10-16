@@ -70,7 +70,6 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var output by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
-    var encryptedWithPassword by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -176,7 +175,6 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     onClick = {
                         runCatching {
                             output = TextCrypto.encrypt(input, password)
-                            encryptedWithPassword = true
                             error = null
                         }.onFailure { error = "Couldn’t encrypt this text. Check the password and try again." }
                     },
@@ -206,7 +204,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                             error = null
                         }.onFailure { error = "This encrypted text could not be opened. Check the password and try again." }
                     },
-                    enabled = input.isNotBlank(),
+                    enabled = input.isNotBlank() && password.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Open Text") }
             }
@@ -243,7 +241,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                         }) { Icon(Icons.Rounded.Delete, contentDescription = "Clear") }
                     }
                     if (tab == 0) {
-                        Text(if (encryptedWithPassword) "Password protected" else "Protected without a separate password")
+                        Text("Password protected with AES-GCM encryption")
                     }
                 }
             }
