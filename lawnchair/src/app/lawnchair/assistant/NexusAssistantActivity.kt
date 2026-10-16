@@ -130,10 +130,22 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
                 var showCloudSettings by remember { mutableStateOf(false) }
                 var selectedProvider by remember { mutableStateOf(NexusCloudAssistant.provider(this@NexusAssistantActivity)) }
+                var selectedVoiceProvider by remember {
+                    mutableStateOf(
+                        getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
+                            .getString("voice_provider", "local") ?: "local"
+                    )
+                }
 
                 NexusAssistantScreen(
                     cloudSignedIn = NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity),
                     selectedProvider = selectedProvider,
+                    selectedVoiceProvider = selectedVoiceProvider,
+                    onVoiceProviderChange = { provider ->
+                        selectedVoiceProvider = provider
+                        getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
+                            .edit().putString("voice_provider", provider).apply()
+                    },
                     onCloudSettings = { showCloudSettings = true },
                     onBack = ::finish,
                     onListen = { onRecognized ->
@@ -293,17 +305,36 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
     }
 
     private fun speak(message: String) {
-        if (!ttsReady || message.isBlank()) return
+        if (message.isBlank()) return
+        val provider = getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
+            .getString("voice_provider", "local") ?: "local"
+        if (provider == "elevenlabs") {
+            lifecycleScope.launch {
+                val audioUrl = withContext(Dispatchers.IO) {
+                    runCatching { ElevenLabsVoiceClient.synthesize(this@NexusAssistantActivity, message) }
+                        .getOrNull()
+                }
+                if (isFinishing || isDestroyed) return@launch
+                if (!audioUrl.isNullOrBlank()) {
+                    playRemoteAudio(audioUrl, message)
+                } else {
+                    speakWithLocalVoice(message)
+                }
+            }
+        } else {
+            speakWithLocalVoice(message)
+        }
+    }
 
-        // Chatterbox is an English voice. Keep Hindi and other scripts on the device TTS voice.
+    /** Local/offline voice path: Chatterbox for supported English text, Android TTS otherwise. */
+    private fun speakWithLocalVoice(message: String) {
+        if (!ttsReady) return
         val useChatterbox = message.all { it.code < 128 } &&
             AssistantModelStore.voiceState(this) == AssistantModelStore.AssetState.DOWNLOADED
-
         if (!useChatterbox) {
             speakWithPhoneVoice(message)
             return
         }
-
         lifecycleScope.launch {
             val audioFile = withContext(Dispatchers.IO) {
                 runCatching {
@@ -314,11 +345,38 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                 audioFile?.delete()
                 return@launch
             }
-            if (audioFile != null) {
-                playChatterboxAudio(audioFile, message)
-            } else {
-                speakWithPhoneVoice(message)
+            if (audioFile != null) playChatterboxAudio(audioFile, message)
+            else speakWithPhoneVoice(message)
+        }
+    }
+
+    private fun playRemoteAudio(audioUrl: String, fallbackText: String) {
+        runCatching {
+            voicePlayer?.setOnPreparedListener(null)
+            voicePlayer?.setOnCompletionListener(null)
+            voicePlayer?.setOnErrorListener(null)
+            voicePlayer?.release()
+            val player = MediaPlayer()
+            voicePlayer = player
+            player.setDataSource(audioUrl)
+            player.setOnPreparedListener { ready ->
+                runCatching { ready.start() }.onFailure { speakWithLocalVoice(fallbackText) }
             }
+            player.setOnCompletionListener {
+                runCatching { it.release() }
+                if (voicePlayer === it) voicePlayer = null
+            }
+            player.setOnErrorListener { failed, _, _ ->
+                runCatching { failed.release() }
+                if (voicePlayer === failed) voicePlayer = null
+                speakWithLocalVoice(fallbackText)
+                true
+            }
+            player.prepareAsync()
+        }.onFailure {
+            runCatching { voicePlayer?.release() }
+            voicePlayer = null
+            speakWithLocalVoice(fallbackText)
         }
     }
 
@@ -600,6 +658,8 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 private fun NexusAssistantScreen(
     cloudSignedIn: Boolean,
     selectedProvider: String,
+    selectedVoiceProvider: String,
+    onVoiceProviderChange: (String) -> Unit,
     onCloudSettings: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
@@ -638,7 +698,25 @@ private fun NexusAssistantScreen(
             Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
                 Text("Online AI settings")
             }
-            Text("Voice: Android text-to-speech is active. Chatterbox voice assets can be downloaded from the required-model dialog; its neural playback pipeline is not connected yet.")
+            Text("Voice output")
+            listOf("local" to "Local voice (Chatterbox when available, otherwise phone voice)", "elevenlabs" to "ElevenLabs online voice (premium plan and AI credits required)").forEach { (id, label) ->
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = selectedVoiceProvider == id,
+                        onClick = { onVoiceProviderChange(id) },
+                    )
+                    TextButton(onClick = { onVoiceProviderChange(id) }) { Text(label) }
+                }
+            }
+            Text(
+                if (selectedVoiceProvider == "elevenlabs")
+                    "ElevenLabs uses the secure Supabase voice service. If online voice is unavailable, Nexus falls back to local voice."
+                else
+                    "Local voice works without ElevenLabs. Chatterbox is used for supported English text when its model is downloaded and the device has enough memory; Hindi uses Android's local TTS voice."
+            )
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
                 value = query,
