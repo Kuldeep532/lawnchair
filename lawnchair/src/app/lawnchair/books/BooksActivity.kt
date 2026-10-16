@@ -51,8 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import app.lawnchair.assistant.AssistantModelStore
-import app.lawnchair.assistant.ChatterboxOnnxEngine
+import app.lawnchair.assistant.ElevenLabsVoiceClient
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import kotlinx.coroutines.Dispatchers
@@ -365,46 +364,42 @@ private fun BookReaderScreen(
                             } else {
                                 speaking = true
                                 playing = true
-                                val canUseChatterbox = text.all { it.code < 128 } &&
-                                    AssistantModelStore.voiceState(context) == AssistantModelStore.AssetState.DOWNLOADED
-                                if (canUseChatterbox) {
+                                if (ReaderVoicePreferences.provider(context) == ReaderVoicePreferences.ELEVENLABS) {
                                     coroutineScope.launch {
-                                        val audioFile = withContext(Dispatchers.IO) {
-                                            runCatching {
-                                                ChatterboxOnnxEngine.synthesizeToWav(context, text)
-                                            }.getOrNull()
+                                        val audioUrl = withContext(Dispatchers.IO) {
+                                            runCatching { ElevenLabsVoiceClient.synthesize(context, text) }.getOrNull()
                                         }
-                                        if (!speaking) {
-                                            audioFile?.delete()
-                                            return@launch
-                                        }
-                                        if (audioFile == null) {
-                                            engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
+                                        if (!speaking) return@launch
+                                        if (audioUrl.isNullOrBlank()) {
+                                            engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
                                             return@launch
                                         }
                                         runCatching {
+                                            audioPlayer[0]?.release()
                                             val player = MediaPlayer()
                                             audioPlayer[0] = player
-                                            player.setDataSource(audioFile.absolutePath)
-                                            player.setOnPreparedListener { it.start() }
+                                            player.setDataSource(audioUrl)
+                                            player.setOnPreparedListener { ready -> ready.start() }
                                             player.setOnCompletionListener {
                                                 it.release()
                                                 audioPlayer[0] = null
-                                                audioFile.delete()
                                                 speaking = false
                                                 playing = false
                                             }
                                             player.setOnErrorListener { failedPlayer, _, _ ->
                                                 failedPlayer.release()
                                                 audioPlayer[0] = null
-                                                audioFile.delete()
+                                                speaking = false
+                                                playing = false
                                                 engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
                                                 true
                                             }
                                             player.prepareAsync()
                                         }.onFailure {
-                                            audioFile.delete()
+                                            audioPlayer[0]?.release()
                                             audioPlayer[0] = null
+                                            speaking = false
+                                            playing = false
                                             engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
                                         }
                                     }
