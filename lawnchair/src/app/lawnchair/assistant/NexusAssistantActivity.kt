@@ -353,49 +353,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         }
     }
 
-    private fun playChatterboxAudio(file: java.io.File, fallbackText: String) {
-        runCatching {
-            voicePlayer?.setOnPreparedListener(null)
-            voicePlayer?.setOnCompletionListener(null)
-            voicePlayer?.setOnErrorListener(null)
-            voicePlayer?.release()
-            voicePlayer = null
-
-            val player = MediaPlayer()
-            voicePlayer = player
-            player.setDataSource(file.absolutePath)
-            player.setOnPreparedListener {
-                runCatching { it.start() }.onFailure {
-                    cleanupGeneratedAudio(file)
-                    speakWithPhoneVoice(fallbackText)
-                }
-            }
-            player.setOnCompletionListener {
-                cleanupGeneratedAudio(file)
-            }
-            player.setOnErrorListener { _, _, _ ->
-                cleanupGeneratedAudio(file)
-                speakWithPhoneVoice(fallbackText)
-                true
-            }
-            player.prepareAsync()
-        }.onFailure {
-            cleanupGeneratedAudio(file)
-            speakWithPhoneVoice(fallbackText)
-        }
-    }
-
-    private fun cleanupGeneratedAudio(file: java.io.File) {
-        runCatching {
-            voicePlayer?.setOnPreparedListener(null)
-            voicePlayer?.setOnCompletionListener(null)
-            voicePlayer?.setOnErrorListener(null)
-            voicePlayer?.release()
-        }
-        voicePlayer = null
-        file.delete()
-    }
-
     private fun startSpeechRecognition() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -665,7 +622,7 @@ private fun NexusAssistantScreen(
                 Text("Online AI settings")
             }
             Text("Voice output")
-            listOf("local" to "Local voice (Chatterbox when available, otherwise phone voice)", "elevenlabs" to "ElevenLabs online voice (premium plan and AI credits required)").forEach { (id, label) ->
+            listOf("local" to "Local offline voice (phone TTS)", "elevenlabs" to "ElevenLabs online voice (premium plan and AI credits required)").forEach { (id, label) ->
                 androidx.compose.foundation.layout.Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
@@ -681,7 +638,7 @@ private fun NexusAssistantScreen(
                 if (selectedVoiceProvider == "elevenlabs")
                     "ElevenLabs uses the secure Supabase voice service. If online voice is unavailable, Nexus falls back to local voice."
                 else
-                    "Local voice works without ElevenLabs. Chatterbox is used for supported English text when its model is downloaded and the device has enough memory; Hindi uses Android's local TTS voice."
+                    "Local voice works without internet and without a large model download. Voice quality and available languages depend on the TTS voices installed on the phone."
             )
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
