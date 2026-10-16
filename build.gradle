@@ -205,27 +205,43 @@ android {
         ].collect { proj.file(it) }
     }.flatten().findAll { it.exists() }.toArray()
 
-    def releaseSigning
-    try {
+    // Debug builds remain installable without a developer keystore.
+    // Release builds must never silently fall back to the public Android debug key.
+    def releaseSigning = null
+    def keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.isFile()) {
         def keystoreProperties = new Properties()
-        keystoreProperties.load(rootProject.file("keystore.properties").newInputStream())
+        keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+        def requiredSigningValues = ['keyAlias', 'keyPassword', 'storeFile', 'storePassword']
+        def missingSigningValues = requiredSigningValues.findAll {
+            !keystoreProperties[it]?.toString()?.trim()
+        }
+        if (!missingSigningValues.isEmpty()) {
+            throw new GradleException(
+                "keystore.properties is missing required values: ${missingSigningValues.join(', ')}"
+            )
+        }
+        def configuredStoreFile = rootProject.file(keystoreProperties['storeFile'])
+        if (!configuredStoreFile.isFile()) {
+            throw new GradleException(
+                "Release keystore file does not exist: ${configuredStoreFile.path}"
+            )
+        }
         releaseSigning = signingConfigs.create("release") {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile rootProject.file(keystoreProperties['storeFile'])
+            storeFile configuredStoreFile
             storePassword keystoreProperties['storePassword']
         }
-    } catch (Exception ignored) {
-        releaseSigning = signingConfigs.debug
     }
 
     buildTypes {
         all {
-            signingConfig releaseSigning
             pseudoLocalesEnabled true
         }
 
         debug {
+            signingConfig signingConfigs.debug
             applicationIdSuffix ".debug"
             resValue("string", "derived_app_name", "Nexus Launcher (Debug)")
 
@@ -236,6 +252,9 @@ android {
         }
 
         release {
+            if (releaseSigning != null) {
+                signingConfig releaseSigning
+            }
             resValue("string", "derived_app_name", "Nexus Launcher")
             minifyEnabled true
             shrinkResources true
