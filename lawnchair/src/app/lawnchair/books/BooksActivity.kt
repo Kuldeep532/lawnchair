@@ -271,6 +271,22 @@ private fun BookReaderScreen(
     var ocrBusy by remember { mutableStateOf(false) }
     var ocrMessage by remember { mutableStateOf<String?>(null) }
 
+    fun stopReading() {
+        runCatching { speech?.stop() }
+        runCatching { audioPlayer[0]?.stop() }
+        runCatching { audioPlayer[0]?.release() }
+        audioPlayer[0] = null
+        speaking = false
+        playing = false
+    }
+
+    fun goToPage(target: Int) {
+        stopReading()
+        currentPage = target.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
+        pageInput = ""
+        onPositionChanged(currentPage)
+    }
+
     DisposableEffect(Unit) {
         val engine = android.speech.tts.TextToSpeech(context) { status ->
             if (status == android.speech.tts.TextToSpeech.SUCCESS) {
@@ -329,13 +345,13 @@ private fun BookReaderScreen(
         }
     }
 
-    BackHandler { onBack() }
+    BackHandler { stopReading(); onBack() }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { stopReading(); onBack() }) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to library")
                     }
                 },
@@ -358,10 +374,10 @@ private fun BookReaderScreen(
             Surface(tonalElevation = 3.dp) {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        IconButton(enabled = currentPage > 0, onClick = { currentPage = (currentPage - 1).coerceAtLeast(0); onPositionChanged(currentPage) }) {
+                        IconButton(enabled = currentPage > 0, onClick = { goToPage(currentPage - 1) }) {
                             Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous page")
                         }
-                        IconButton(enabled = currentPage > 0, onClick = { currentPage = (currentPage - 2).coerceAtLeast(0); onPositionChanged(currentPage) }) {
+                        IconButton(enabled = currentPage > 0, onClick = { goToPage(currentPage - 2) }) {
                             Icon(Icons.Rounded.SkipPrevious, contentDescription = "Rewind")
                         }
                         IconButton(onClick = {
@@ -424,10 +440,10 @@ private fun BookReaderScreen(
                         }) {
                             Icon(if (speaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (speaking) "Pause reading" else "Read page aloud")
                         }
-                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { currentPage = (currentPage + 2).coerceAtMost(pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }) {
+                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { goToPage(currentPage + 2) }) {
                             Icon(Icons.Rounded.SkipNext, contentDescription = "Fast forward")
                         }
-                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { currentPage = (currentPage + 1).coerceAtMost(pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }) {
+                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { goToPage(currentPage + 1) }) {
                             Icon(Icons.Rounded.SkipNext, contentDescription = "Next page")
                         }
                     }
@@ -440,7 +456,7 @@ private fun BookReaderScreen(
                             modifier = Modifier.weight(1f),
                         )
                         IconButton(enabled = pageInput.isNotBlank(), onClick = {
-                            pageInput.toIntOrNull()?.let { currentPage = (it - 1).coerceIn(0, pages.lastIndex.coerceAtLeast(0)); onPositionChanged(currentPage) }
+                            pageInput.toIntOrNull()?.let { goToPage(it - 1) }
                         }) {
                             Icon(Icons.Rounded.PlayArrow, contentDescription = "Go to page")
                         }
