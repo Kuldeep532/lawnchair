@@ -33,14 +33,17 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.unit.dp
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
-import java.security.MessageDigest
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-private const val PREFIX = "NXT1"
+private const val PREFIX = "NXT2"
+private const val LEGACY_PREFIX = "NXT1"
+private const val PBKDF2_ITERATIONS = 210_000
 private const val TAG_BITS = 128
 private const val IV_BYTES = 12
 private const val SALT_BYTES = 16
@@ -159,18 +162,18 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     value = password,
                     onValueChange = { password = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Password") },
+                    label = { Text("Password (required)") },
                     singleLine = true,
                 )
                 Button(
                     onClick = {
                         runCatching {
                             output = TextCrypto.encrypt(input, password)
-                            encryptedWithPassword = password.isNotEmpty()
+                            encryptedWithPassword = true
                             error = null
-                        }.onFailure { error = "Couldn’t encrypt this text." }
+                        }.onFailure { error = "Couldn’t encrypt this text. Check the password and try again." }
                     },
-                    enabled = input.isNotBlank(),
+                    enabled = input.isNotBlank() && password.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Protect Text") }
             } else {
@@ -181,12 +184,12 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                     label = { Text("Protected Text") },
                     placeholder = { Text("Paste protected text here") },
                 )
-                Text("Enter a password only when the protected text uses one.")
+                Text("Enter the password used to protect this text. New protected text always requires a password.")
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Password (optional)") },
+                    label = { Text("Password") },
                     singleLine = true,
                 )
                 Button(
@@ -243,51 +246,61 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
 
 private object TextCrypto {
     fun encrypt(text: String, password: String): String {
+        require(password.isNotBlank()) { "A password is required to protect text." }
         val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
         val iv = ByteArray(IV_BYTES).also(SecureRandom()::nextBytes)
-        val key = deriveKey(password, salt)
+        val key = deriveStrongKey(password, salt)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(TAG_BITS, iv))
         val ciphertext = cipher.doFinal(text.toByteArray(Charsets.UTF_8))
-        val auth = if (password.isEmpty()) maclessFingerprint(salt, iv) else ByteArray(0)
-        return listOf(
-            PREFIX,
-            if (password.isEmpty()) "0" else "1",
-            b64(salt),
-            b64(iv),
-            b64(ciphertext),
-            b64(auth),
-        ).joinToString(".")
+        return listOf(PREFIX, b64(salt), b64(iv), b64(ciphertext)).joinToString(".")
     }
 
     fun decrypt(encoded: String, password: String): String {
+        require(password.isNotBlank()) { "Enter the password used to protect this text." }
         val p = encoded.split(".")
-        require(p.size == 6 && p[0] == PREFIX) { "Unsupported encrypted text" }
-        val hasPassword = p[1] == "1"
-        require(!hasPassword || password.isNotEmpty()) { "Password required" }
-        if (!hasPassword) require(password.isEmpty()) { "No password is required" }
-        val salt = db64(p[2])
-        val iv = db64(p[3])
-        val ciphertext = db64(p[4])
-        val expectedAuth = db64(p[5])
-        if (!hasPassword && !MessageDigest.isEqual(expectedAuth, maclessFingerprint(salt, iv))) {
-            throw IllegalArgumentException("Invalid text")
+        val salt: ByteArray
+        val iv: ByteArray
+        val ciphertext: ByteArray
+        val key: ByteArray
+        when {
+            p.size == 4 && p[0] == PREFIX -> {
+                salt = db64(p[1])
+                iv = db64(p[2])
+                ciphertext = db64(p[3])
+                key = deriveStrongKey(password, salt)
+            }
+            p.size == 6 && p[0] == LEGACY_PREFIX && p[1] == "1" -> {
+                // Read older password-protected text created by the previous app version.
+                salt = db64(p[2])
+                iv = db64(p[3])
+                ciphertext = db64(p[4])
+                key = deriveLegacyKey(password, salt)
+            }
+            p.size == 6 && p[0] == LEGACY_PREFIX && p[1] == "0" ->
+                throw IllegalArgumentException("This older text was not password-protected. Protect it again with a password.")
+            else -> throw IllegalArgumentException("Unsupported encrypted text")
         }
-        val key = deriveKey(password, salt)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(TAG_BITS, iv))
         return String(cipher.doFinal(ciphertext), Charsets.UTF_8)
     }
 
-    private fun deriveKey(password: String, salt: ByteArray): ByteArray {
+    private fun deriveStrongKey(password: String, salt: ByteArray): ByteArray {
+        val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_BITS)
+        return try {
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        } finally {
+            spec.clearPassword()
+        }
+    }
+
+    private fun deriveLegacyKey(password: String, salt: ByteArray): ByteArray {
         var result = salt
-        val secret = (if (password.isEmpty()) "NexusToolsStudio".toByteArray() else password.toByteArray(Charsets.UTF_8))
+        val secret = password.toByteArray(Charsets.UTF_8)
         repeat(15000) { result = hmac(secret, result) }
         return result.copyOf(KEY_BITS / 8)
     }
-
-    private fun maclessFingerprint(salt: ByteArray, iv: ByteArray): ByteArray =
-        MessageDigest.getInstance("SHA-256").digest(salt + iv + "NexusToolsStudio".toByteArray()).copyOf(16)
 
     private fun hmac(secret: ByteArray, data: ByteArray): ByteArray =
         Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(secret, "HmacSHA256")) }.doFinal(data)
