@@ -419,8 +419,6 @@ private fun BookReaderScreen(
                                             player.setOnErrorListener { failedPlayer, _, _ ->
                                                 failedPlayer.release()
                                                 audioPlayer[0] = null
-                                                speaking = false
-                                                playing = false
                                                 engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
                                                 true
                                             }
@@ -428,8 +426,6 @@ private fun BookReaderScreen(
                                         }.onFailure {
                                             audioPlayer[0]?.release()
                                             audioPlayer[0] = null
-                                            speaking = false
-                                            playing = false
                                             engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
                                         }
                                     }
