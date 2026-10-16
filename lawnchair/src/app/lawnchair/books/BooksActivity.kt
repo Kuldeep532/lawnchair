@@ -2,6 +2,7 @@ package app.lawnchair.books
 
 import android.content.Intent
 import android.media.MediaPlayer
+import android.speech.tts.UtteranceProgressListener
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -277,6 +278,19 @@ private fun BookReaderScreen(
                 if (engineSafeAvailable(engine, locale)) engine.language = locale
             }
         }
+        engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) = Unit
+            override fun onDone(utteranceId: String?) {
+                if (utteranceId?.startsWith("book-page") == true) {
+                    speaking = false
+                    playing = false
+                }
+            }
+            override fun onError(utteranceId: String?) {
+                speaking = false
+                playing = false
+            }
+        })
         speech = engine
         onDispose {
             engine.stop()
