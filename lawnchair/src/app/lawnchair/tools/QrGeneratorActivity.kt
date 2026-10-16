@@ -61,6 +61,7 @@ private fun QrScreen(onBack: () -> Unit) {
     var result by remember { mutableStateOf<Bitmap?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var resultMessage by remember { mutableStateOf<String?>(null) }
 
     fun reset() {
         input = ""
@@ -72,6 +73,7 @@ private fun QrScreen(onBack: () -> Unit) {
         notes = ""
         result = null
         error = null
+        resultMessage = null
     }
 
     fun payload(): String = when (mode) {
@@ -118,6 +120,7 @@ private fun QrScreen(onBack: () -> Unit) {
 
     fun generate() {
         error = null
+        resultMessage = null
         loading = true
         result = runCatching {
             val text = payload().trim()
@@ -159,7 +162,33 @@ private fun QrScreen(onBack: () -> Unit) {
                     Text("Generating QR code…")
                 }
             }
-            result != null -> ResultScreen(result!!, { saveQr(context, result!!) }, { downloadQr(context, result!!) }, { shareQr(context, result!!) }, ::reset)
+            result != null -> ResultScreen(
+                bitmap = result!!,
+                contentPadding = padding,
+                save = {
+                    resultMessage = if (saveQr(context, result!!)) {
+                        "QR code saved to Pictures/Nexus QR."
+                    } else {
+                        "Could not save the QR code. Check available storage and try again."
+                    }
+                },
+                download = {
+                    resultMessage = if (downloadQr(context, result!!)) {
+                        "QR code saved to Downloads/Nexus QR."
+                    } else {
+                        "Could not download the QR code. Check available storage and try again."
+                    }
+                },
+                share = {
+                    resultMessage = if (shareQr(context, result!!)) {
+                        "Share options opened."
+                    } else {
+                        "Could not open sharing. Try saving the QR code first."
+                    }
+                },
+                regenerate = ::reset,
+                message = resultMessage,
+            )
             else -> Column(
                 Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -209,18 +238,21 @@ private fun field(label: String, value: String, onValueChange: (String) -> Unit)
 @Composable
 private fun ResultScreen(
     bitmap: Bitmap,
+    contentPadding: PaddingValues,
     save: () -> Unit,
     download: () -> Unit,
     share: () -> Unit,
     regenerate: () -> Unit,
+    message: String?,
 ) {
     Column(
-        Modifier.fillMaxSize().padding(20.dp).navigationBarsPadding(),
+        Modifier.fillMaxSize().padding(contentPadding).padding(20.dp).navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Image(bitmap.asImageBitmap(), contentDescription = "Generated QR code", modifier = Modifier.size(320.dp))
         Text("QR code generated successfully.")
+        message?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(download, Modifier.weight(1f)) {
                 Icon(Icons.Rounded.Download, contentDescription = null)
@@ -246,15 +278,13 @@ private fun ResultScreen(
     }
 }
 
-private fun saveQr(context: Context, bitmap: Bitmap) {
+private fun saveQr(context: Context, bitmap: Bitmap): Boolean =
     storeQr(context, bitmap, "Pictures/Nexus QR")
-}
 
-private fun downloadQr(context: Context, bitmap: Bitmap) {
+private fun downloadQr(context: Context, bitmap: Bitmap): Boolean =
     storeQr(context, bitmap, "Download/Nexus QR")
-}
 
-private fun storeQr(context: Context, bitmap: Bitmap, path: String) {
+private fun storeQr(context: Context, bitmap: Bitmap, path: String): Boolean {
     val resolver = context.contentResolver
     val values = ContentValues().apply {
         put(MediaStore.Images.Media.DISPLAY_NAME, "Nexus_QR_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.png")
@@ -262,31 +292,41 @@ private fun storeQr(context: Context, bitmap: Bitmap, path: String) {
         put(MediaStore.Images.Media.RELATIVE_PATH, path)
         put(MediaStore.Images.Media.IS_PENDING, 1)
     }
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return
-    runCatching {
-        resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+    return runCatching {
+        val stream = resolver.openOutputStream(uri) ?: error("Could not open image output.")
+        stream.use { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) { "QR image encoding failed." } }
         values.clear()
         values.put(MediaStore.Images.Media.IS_PENDING, 0)
-        resolver.update(uri, values, null, null)
-    }.onFailure { resolver.delete(uri, null, null) }
+        check(resolver.update(uri, values, null, null) > 0) { "Could not finish saving the QR image." }
+    }.onFailure {
+        resolver.delete(uri, null, null)
+    }.isSuccess
 }
 
-private fun shareQr(context: Context, bitmap: Bitmap) {
+private fun shareQr(context: Context, bitmap: Bitmap): Boolean {
     val resolver = context.contentResolver
     val values = ContentValues().apply {
-        put(MediaStore.Images.Media.DISPLAY_NAME, "Nexus_QR_Share.png")
+        put(MediaStore.Images.Media.DISPLAY_NAME, "Nexus_QR_Share_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.png")
         put(MediaStore.Images.Media.MIME_TYPE, "image/png")
         put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Nexus QR")
         put(MediaStore.Images.Media.IS_PENDING, 1)
     }
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return
-    runCatching {
-        resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return false
+    return runCatching {
+        val stream = resolver.openOutputStream(uri) ?: error("Could not open image output.")
+        stream.use { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) { "QR image encoding failed." } }
         values.clear()
         values.put(MediaStore.Images.Media.IS_PENDING, 0)
-        resolver.update(uri, values, null, null)
-        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share QR code"))
-    }.onFailure { resolver.delete(uri, null, null) }
+        check(resolver.update(uri, values, null, null) > 0) { "Could not finish saving the QR image." }
+        val send = Intent(Intent.ACTION_SEND)
+            .setType("image/png")
+            .putExtra(Intent.EXTRA_STREAM, uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        context.startActivity(Intent.createChooser(send, "Share QR code"))
+    }.onFailure {
+        resolver.delete(uri, null, null)
+    }.isSuccess
 }
 
 private fun normalizeQrUrl(value: String): String {
