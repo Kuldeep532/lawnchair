@@ -9,7 +9,8 @@
 - Assistant speech output has two selectable paths: the phone's installed Android TTS voice for offline playback, or ElevenLabs through the authenticated Supabase gateway.
 - The ElevenLabs API secret stays server-side; local TTS is the fallback when online synthesis fails.
 - The multi-gigabyte Chatterbox download flow, unused ONNX inference class, and ONNX Runtime Android dependency have been removed to reduce storage use and APK size.
-- Tools Studio includes Nexus Assistant, Quick Utility Hub, date/time conversion, QR generation, PDF-to-image, image compression, file renaming, password generation, image OCR, image-to-PDF, PDF reader, online radio, live TV, and the protected-text utility.
+- Tools Studio is vertically scrollable for small screens and includes Nexus Assistant, Quick Utility Hub, date/time conversion, QR generation, PDF-to-image, image compression, file renaming, password generation, image OCR, image-to-PDF, PDF reader, TTS & Voice settings, online radio, live TV, and the protected-text utility.
+- Checked that all 13 tool activity destinations referenced by Tools Studio are registered in the Android manifest.
 - Protected text now requires a password and uses AES-GCM with PBKDF2-HMAC-SHA256 (210,000 iterations) for new output. Legacy password-protected NXT1 text remains readable; old NXT1 text that had no real password is rejected rather than presented as secure.
 - Added the missing `password_generator` manifest string resource that caused the prior Android resource-linking build to fail.
 
