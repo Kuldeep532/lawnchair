@@ -346,7 +346,7 @@ private fun BookReaderScreen(
                     }
                     DropdownMenu(expanded = showMore, onDismissRequest = { showMore = false }) {
                         DropdownMenuItem(
-                            text = { Text("Configure TTS & voice") },
+                            text = { Text("Reader Voice settings") },
                             onClick = { showMore = false
                                 context.startActivity(Intent(context, BooksVoiceSettingsActivity::class.java)) },
                         )
