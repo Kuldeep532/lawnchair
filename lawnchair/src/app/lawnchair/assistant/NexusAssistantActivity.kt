@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.provider.Settings
 import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
-import androidx.compose.material3.RadioButton
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.material3.AlertDialog
@@ -502,7 +501,6 @@ private fun NexusAssistantScreen(
             Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
                 Text("Online AI settings")
             }
-            Text("Voice playback is available in Books Reader and PDF Reader.")
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
                 value = query,
