@@ -1,35 +1,46 @@
 # Nexus Assistant
 
-Nexus Assistant is embedded in the Nexus Launcher app.
+Nexus Assistant is embedded in Nexus Launcher. This document describes current source behavior; it does not claim device-tested release readiness.
 
-## Implemented in source
+## Available in source
 
-- Accessible Compose assistant screen with text and voice input.
-- Hindi speech recognition through Android's recognizer, with a system settings fallback if unavailable.
-- Android TextToSpeech spoken output.
-- Device command routing for web search, opening apps by label, flashlight control, Internet/Wi-Fi settings, Bluetooth settings, general settings, alarms, and timers.
-- On-demand download prompt for a lightweight local GGUF chat model and Chatterbox ONNX voice assets.
-- Download progress, app-private storage, partial-file cleanup, retry behavior, and shared voice-download state in Book Library.
-- Local chat wrapper using Llamatik's Android llama.cpp artifact. It loads the downloaded GGUF model and routes free-form prompts to on-device generation.
+- Compose screen with text and voice input, plus Android TextToSpeech output.
+- Hindi-capable speech recognition through Android's recognizer. Recognition can depend on system/network services and is not guaranteed to work offline.
+- Device actions for web search, launching apps by label, flashlight, opening Internet/Wi-Fi and Bluetooth settings, general settings, alarms, and timers.
+- Optional on-device chat through Llamatik/llama.cpp using a downloaded GGUF model.
+- Optional ElevenLabs online speech through the configured Supabase gateway. The provider key must remain on the server.
+- Tools Studio shortcuts and protected-text utility are maintained separately in the Tools Studio activity.
 
-## Models
+## Lightweight local chat model
 
-**Local chat model:** [SmolLM2-135M-Instruct Q4_K_M](https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF), approximately 105 MB. It is a small model suited to a lightweight on-device chat proof of concept, not a high-capability assistant model.
+**SmolLM2-135M-Instruct Q4_K_M GGUF** is downloaded to app-private storage on demand. The model is around 105 MB and is a lightweight local chat option, not a high-capability general assistant. Download completion is not considered inference readiness: the model must load successfully before it can answer locally.
 
-**High-quality voice assets:** [Chatterbox ONNX](https://huggingface.co/onnx-community/chatterbox-ONNX). The selected Q4 ONNX assets are over 1 GB combined. The model card is MIT-licensed and currently provides English speech-generation assets.
+Model source: [Hugging Face — SmolLM2 GGUF](https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF).
 
-## Important remaining limitation
+## Speech output: what works and what does not
 
-Downloading the Chatterbox model files is implemented, but actual neural speech generation from those files is **not yet integrated**. Chatterbox needs an end-to-end ONNX pipeline for text tokenization, model inputs, voice conditioning, decoding and waveform output; merely including ONNX Runtime or downloading the files does not make speech playback work. Android TextToSpeech remains the active voice engine until that pipeline is implemented and tested.
+**Local voice:** The implemented offline speech path uses the text-to-speech engine installed on the user's Android device. Available languages and naturalness depend on the installed voice data and whether that voice supports offline speech.
 
-The first download prompt currently tracks whether model assets exist and can be loaded as a local chat model. A finished APK build and tests on a real Android device are still required before claiming release readiness. Android may use network services for speech recognition; voice input is not guaranteed to be offline or unlimited. Normal apps cannot directly toggle Wi-Fi on modern Android, so the assistant opens the system panel.
+**ElevenLabs:** The optional online neural voice uses the authenticated Supabase gateway. It needs a working signed-in session, correctly configured server-side credentials, and any required plan or credits. The code path still needs verification against the app's canonical authentication lifecycle and on a real device.
 
+**Chatterbox:** Chatterbox speech generation is not currently integrated. The earlier large download-only path was removed; the project does not currently tokenize input, run Chatterbox inference, decode audio, and play that generated waveform end to end. Do not describe Chatterbox as a working local voice engine until that pipeline has been implemented and tested.
 
-## Online AI through Supabase
+**Coqui TTS:** Coqui is not integrated as a native on-device Android inference engine. It should not be presented as available until a suitable model and compatible Android inference pipeline are selected and validated.
 
-- Nexus Assistant now tries the `nexus-ai-chat` Supabase Edge Function before falling back to local on-device chat.
-- The assistant settings provide an accessible provider selector for Gemini, OpenAI, and Anthropic.
-- The Android app contains only the project URL and the public publishable key. Provider API keys and Supabase secret keys must remain in Edge Function secrets.
-- Online AI requires the app's existing sign-in flow to supply its verified Supabase access token to `NexusCloudAssistant.saveSession(context, accessToken, refreshToken)`. The current launcher code does not yet expose an established shared Supabase session provider; until that is wired to the real authentication flow, online requests show a sign-in message and the local assistant remains available.
-- OpenAI and Anthropic calls are subject to the existing Edge Function's premium-access checks. Gemini access is controlled by the server's configured credentials.
-- This cloud request currently sends the latest question without conversation history. Conversation persistence and session refresh should be wired through the app's canonical Supabase session manager before release.
+**Piper:** The repository contains a Piper voice catalog and file downloader, but a catalog and downloaded ONNX files alone do not prove Piper speech generation works. A compatible runtime, inference flow, and audio playback must be wired and tested before describing Piper as a working voice option.
+
+## Online AI and session status
+
+The assistant has a provider selector for Gemini, OpenAI, and Anthropic and attempts to use the configured Supabase AI gateway before using local chat. Online access is not verified until the app's actual sign-in/sign-out flow supplies and refreshes the user's session consistently. Conversation history is not yet confirmed as persistent across requests.
+
+API secrets belong on the server, never in the APK. Provider and premium access depend on server configuration.
+
+## Release verification still required
+
+- Confirm the Android debug build and formatting checks after the latest source changes.
+- Test first-run and repeat model downloads, interrupted/low-storage handling, and local model load failures.
+- Test local TTS and ElevenLabs playback, network failure fallback, language selection, and TalkBack/screen-reader navigation.
+- Wire and verify session creation, refresh, and sign-out against the app's canonical authentication flow before claiming online AI or ElevenLabs is release-ready.
+- Exercise every Tools Studio destination and Secure Vault flows on a physical Android device.
+
+On modern Android, an ordinary app generally cannot toggle Wi-Fi directly; the assistant opens the Android Internet panel instead.
