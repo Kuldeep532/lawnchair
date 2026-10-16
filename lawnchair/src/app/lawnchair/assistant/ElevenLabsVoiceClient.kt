@@ -22,12 +22,10 @@ object ElevenLabsVoiceClient {
     data class Voice(val id: String, val name: String)
 
     fun selectedVoiceId(context: Context): String? =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(VOICE_KEY, null)?.takeIf { it.isNotBlank() }
+        preferences(context).getString(VOICE_KEY, null)?.takeIf { it.isNotBlank() }
 
     fun setSelectedVoiceId(context: Context, voiceId: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString(VOICE_KEY, voiceId).apply()
+        preferences(context).edit().putString(VOICE_KEY, voiceId).apply()
     }
 
     fun synthesize(context: Context, text: String): String {
@@ -60,9 +58,19 @@ object ElevenLabsVoiceClient {
         }
     }
 
+    private fun preferences(context: Context): SharedPreferences {
+        val secure = AssistantPreferences.secure(context)
+        val legacy = AssistantPreferences.legacy(context)
+        val oldVoiceId = legacy.getString(VOICE_KEY, null)
+        if (!oldVoiceId.isNullOrBlank() && secure.getString(VOICE_KEY, null).isNullOrBlank()) {
+            secure.edit().putString(VOICE_KEY, oldVoiceId).apply()
+            legacy.edit().remove(VOICE_KEY).apply()
+        }
+        return secure
+    }
+
     private fun accessToken(context: Context): String =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(TOKEN_KEY, null)?.takeIf { it.isNotBlank() }
+        preferences(context).getString(TOKEN_KEY, null)?.takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Sign in to your Nexus account to use ElevenLabs voice.")
 
     private fun request(url: String, token: String, payload: JSONObject): JSONObject {
