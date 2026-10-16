@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import app.lawnchair.assistant.ElevenLabsVoiceClient
+import app.lawnchair.books.ReaderVoicePreferences
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import com.google.mlkit.vision.common.InputImage
