@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Bundle
+import android.content.Intent
+import android.media.MediaPlayer
+import android.speech.tts.TextToSpeech
 import androidx.activity.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,9 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -36,11 +41,16 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import app.lawnchair.assistant.ElevenLabsVoiceClient
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 private data class PdfRenderResult(
     val pageCount: Int,
@@ -66,6 +76,33 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
     var extracted by remember { mutableStateOf("") }
     var working by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var readerVoiceMessage by remember { mutableStateOf("Voice is ready for use after text extraction.") }
+    var voiceReady by remember { mutableStateOf(false) }
+    var speech by remember { mutableStateOf<TextToSpeech?>(null) }
+    var voicePlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+    var speaking by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    DisposableEffect(context) {
+        val engine = TextToSpeech(context) { status ->
+            voiceReady = status == TextToSpeech.SUCCESS
+            if (status == TextToSpeech.SUCCESS) {
+                val result = engineSafeSetLanguage(speech, Locale.getDefault())
+                if (!result) readerVoiceMessage = "Phone voice is ready; its preferred language may need to be installed."
+            } else {
+                readerVoiceMessage = "Phone voice is not ready. Check Android voice settings."
+            }
+        }
+        speech = engine
+        onDispose {
+            runCatching { engine.stop() }
+            engine.shutdown()
+            speech = null
+            runCatching { voicePlayer?.stop() }
+            runCatching { voicePlayer?.release() }
+            voicePlayer = null
+        }
+    }
 
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -150,7 +187,77 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
             }
     }
 
+    fun readExtractedText() {
+        val text = extracted.trim()
+        if (text.isBlank()) {
+            readerVoiceMessage = "Extract text from the current PDF page before reading aloud."
+            return
+        }
+        val engine = speech
+        if (ReaderVoicePreferences.provider(context) == ReaderVoicePreferences.ELEVENLABS) {
+            speaking = true
+            readerVoiceMessage = "Preparing ElevenLabs audio…"
+            coroutineScope.launch {
+                val audioUrl = withContext(Dispatchers.IO) {
+                    runCatching { ElevenLabsVoiceClient.synthesize(context, text) }.getOrNull()
+                }
+                if (!speaking) return@launch
+                if (audioUrl.isNullOrBlank()) {
+                    speaking = false
+                    readerVoiceMessage = "ElevenLabs is unavailable. Using the phone voice."
+                    if (voiceReady) engine?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
+                    return@launch
+                }
+                runCatching {
+                    voicePlayer?.release()
+                    val player = MediaPlayer()
+                    voicePlayer = player
+                    player.setDataSource(audioUrl)
+                    player.setOnPreparedListener {
+                        readerVoiceMessage = "Reading with ElevenLabs."
+                        it.start()
+                    }
+                    player.setOnCompletionListener {
+                        it.release()
+                        if (voicePlayer === it) voicePlayer = null
+                        speaking = false
+                        readerVoiceMessage = "Finished reading this page."
+                    }
+                    player.setOnErrorListener { failed, _, _ ->
+                        failed.release()
+                        if (voicePlayer === failed) voicePlayer = null
+                        speaking = false
+                        readerVoiceMessage = "Audio playback failed. Try the phone voice."
+                        true
+                    }
+                    player.prepareAsync()
+                }.onFailure {
+                    voicePlayer?.release()
+                    voicePlayer = null
+                    speaking = false
+                    readerVoiceMessage = "Audio playback failed. Try the phone voice."
+                }
+            }
+        } else if (voiceReady && engine != null) {
+            speaking = true
+            readerVoiceMessage = "Reading with the phone voice."
+            engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-page")
+        } else {
+            readerVoiceMessage = "Phone voice is not ready. Open Reader Voice settings."
+        }
+    }
+
+    fun stopReading() {
+        runCatching { speech?.stop() }
+        runCatching { voicePlayer?.stop() }
+        runCatching { voicePlayer?.release() }
+        voicePlayer = null
+        speaking = false
+        readerVoiceMessage = "Reading stopped."
+    }
+
     fun reset() {
+        stopReading()
         uri = null
         pageCount = 0
         page = 0
@@ -291,10 +398,38 @@ private fun PdfReaderScreen(onBack: () -> Unit) {
                             Icon(Icons.Rounded.Share, contentDescription = "Share")
                         }
                     }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = ::readExtractedText,
+                            enabled = extracted.isNotBlank() && !speaking,
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Read aloud") }
+                        OutlinedButton(
+                            onClick = ::stopReading,
+                            enabled = speaking,
+                            modifier = Modifier.weight(1f),
+                        ) { Text("Stop") }
+                    }
+                    TextButton(
+                        onClick = {
+                            context.startActivity(Intent(context, app.lawnchair.books.BooksVoiceSettingsActivity::class.java))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text("Reader Voice settings") }
+                    Text(readerVoiceMessage, style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
                 }
 
                 message?.let { Text(it) }
             }
         }
     }
+}
+
+private fun engineSafeSetLanguage(engine: TextToSpeech?, locale: Locale): Boolean {
+    if (engine == null) return false
+    val result = engine.setLanguage(locale)
+    return result >= TextToSpeech.LANG_AVAILABLE
 }
