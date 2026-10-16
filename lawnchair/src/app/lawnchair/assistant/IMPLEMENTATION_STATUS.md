@@ -1,32 +1,39 @@
 # Nexus Launcher — implementation and verification status
 
-This file separates source presence from functionality verified on a device.
+This checklist records what is present in the source and what is still required before calling the launcher complete. A source file or shortcut is not proof that an end-to-end feature works.
 
 ## Present in source
 
-- Nexus Assistant activity and its text/voice interface are included.
-- The assistant uses Android speech recognition for voice input and the phone's installed Android TextToSpeech engine for local spoken output.
-- A lightweight SmolLM2-135M-Instruct Q4_K_M GGUF model can be downloaded to app-private storage and loaded through Llamatik/llama.cpp for local chat.
-- ElevenLabs speech requests are routed through the configured Supabase gateway. This depends on a valid user session, server-side provider setup, and any required entitlement/credits.
-- Tools Studio includes navigation to Nexus Assistant, Quick Utility Hub, date/time conversion, QR generator, PDF-to-image, image compressor, file renamer, password generator, image OCR, image-to-PDF, PDF reader, TTS & Voice settings, online radio, live TV, and protected text.
-- Secure Vault source includes biometric unlock, encrypted preferences, notes, documents, passwords, cards, and image-text extraction paths.
-- About screen includes Nexus Launcher branding and Nexus Fusion UI v1.5 description.
-- Protected text uses AES-GCM and PBKDF2-HMAC-SHA256 for new output; it rejects the known legacy format that did not use a real password.
+- Nexus Assistant includes text/voice input, Android speech recognition, device actions, optional on-device chat with a downloaded SmolLM2 GGUF model, and an optional ElevenLabs gateway client.
+- Tools Studio links to Quick Utility Hub, date/time conversion, QR generation, PDF/image conversion, image compression, file renaming, password generation, OCR, PDF reading, voice settings, radio, live TV, and protected text.
+- Secure Vault source includes biometric unlock, encrypted preferences, notes, documents, passwords, cards, and image-text extraction.
+- Radio, Live TV playlist/player, Digital Wellbeing, launcher appearance and branding code are present.
+- Protected text uses AES-GCM and PBKDF2-HMAC-SHA256 for new output; known legacy output that did not use a real password is rejected.
 
-## Voice engines — do not overstate readiness
+## Voice readiness
 
-- **Android local TTS:** Implemented, but language and offline availability depend on the device's installed voice data.
-- **ElevenLabs:** Client code exists behind the Supabase gateway. It is not release-verified until the normal login/session-refresh/sign-out flow is connected and online playback succeeds on a device.
-- **Chatterbox:** Not integrated for actual speech generation. The previous large download-only flow was removed. Tokenization, ONNX inference, decoding, and playback are not wired end to end.
+- **Android local TTS:** Implemented. Available languages and offline voice data depend on the phone.
+- **ElevenLabs:** Client code uses the configured Supabase gateway. Not release-verified until signed-in session, session refresh, server configuration and successful device playback are confirmed.
+- **Chatterbox:** Not integrated end-to-end. Tokenization, ONNX inference, audio decoding and playback are not wired together.
 - **Coqui TTS:** Not integrated as a native on-device Android inference engine.
-- **Piper:** A voice catalog/downloader exists, but a working Android Piper inference and audio playback flow is not established by those files alone.
+- **Piper:** A voice catalog/downloader exists, but a compatible inference runtime and playback path are not established by the source alone.
 
-## Explicit release checks remaining
+## Build verification
 
-1. Wait for and confirm the GitHub Actions Android debug build and formatting result for the latest commit.
-2. Test assistant, local model, TTS, online session handling, and Tools Studio actions on a physical Android device.
-3. Verify screen-reader navigation and touch target descriptions.
-4. Verify Secure Vault lock-on-background, biometric failure/cancellation, persisted files, OCR fallback, and encrypted storage behavior.
-5. Verify online AI uses the real signed-in session, refreshes expired sessions, and clears them on sign-out.
+The `Nexus Launcher Build and Verification` workflow compiles the Android debug APK and runs Spotless formatting checks. It is triggered manually and by relevant changes on `16-dev`; a successful run uploads a debug APK artifact for testing. A running workflow is not a successful build: check its result before distributing the APK.
 
-A source file or UI shortcut is not proof that an end-to-end feature is complete. Do not mark the release ready until the checks above are completed.
+## Release checks still required
+
+1. Confirm a successful debug compilation and formatting check for the current commit.
+2. Exercise Assistant commands, local model first download/re-download/interruption, inference, voice playback and network-failure fallback on a physical Android device.
+3. Confirm the online AI and ElevenLabs paths use the app's real sign-in session, refresh expired sessions, and clear credentials on sign-out.
+4. Exercise every Tools Studio destination; test file access, output saving, sharing, and back navigation.
+5. Test Secure Vault biometric success/failure/cancellation, lock-on-background, data persistence, document/image OCR, and encrypted storage.
+6. Test Radio and Live TV with reachable streams, playback errors, service lifecycle, and stop/return navigation.
+7. Verify TalkBack/screen-reader labels, focus order, large font, contrast, and touch target sizes.
+8. Confirm Digital Wellbeing limits and app exemptions work on supported Android versions.
+9. Review manifest permissions, exported components, and any provider/API configuration before release.
+
+## Honest release status
+
+Do not describe the project as fully complete or release-ready until the checks above pass. This note is a checklist, not a claim that physical-device testing has happened.
