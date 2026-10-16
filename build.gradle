@@ -495,8 +495,6 @@ dependencies {
     // On-device GGUF inference for the lightweight local Nexus Assistant model.
     implementation("com.llamatik:library-android:1.10.1")
 
-    // Chatterbox ONNX inference runtime. Model assets are downloaded separately at first use.
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
 
     ksp libs.dagger.compiler
     implementation libs.dagger.hilt.android
