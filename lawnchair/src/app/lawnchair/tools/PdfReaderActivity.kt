@@ -227,9 +227,14 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
                 }
                 if (!speaking) return@launch
                 if (audioUrl.isNullOrBlank()) {
-                    speaking = false
-                    readerVoiceMessage = "ElevenLabs is unavailable. Using the phone voice."
-                    if (voiceReady) engine?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
+                    if (voiceReady && engine != null) {
+                        speaking = true
+                        readerVoiceMessage = "ElevenLabs is unavailable. Reading with the phone voice."
+                        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
+                    } else {
+                        speaking = false
+                        readerVoiceMessage = "ElevenLabs is unavailable and the phone voice is not ready."
+                    }
                     return@launch
                 }
                 runCatching {
@@ -250,16 +255,28 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
                     player.setOnErrorListener { failed, _, _ ->
                         failed.release()
                         if (voicePlayer === failed) voicePlayer = null
-                        speaking = false
-                        readerVoiceMessage = "Audio playback failed. Try the phone voice."
+                        if (voiceReady && engine != null) {
+                            speaking = true
+                            readerVoiceMessage = "ElevenLabs playback failed. Reading with the phone voice."
+                            engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
+                        } else {
+                            speaking = false
+                            readerVoiceMessage = "Audio playback failed and the phone voice is not ready."
+                        }
                         true
                     }
                     player.prepareAsync()
                 }.onFailure {
                     voicePlayer?.release()
                     voicePlayer = null
-                    speaking = false
-                    readerVoiceMessage = "Audio playback failed. Try the phone voice."
+                    if (voiceReady && engine != null) {
+                        speaking = true
+                        readerVoiceMessage = "ElevenLabs playback failed. Reading with the phone voice."
+                        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
+                    } else {
+                        speaking = false
+                        readerVoiceMessage = "Audio playback failed and the phone voice is not ready."
+                    }
                 }
             }
         } else if (voiceReady && engine != null) {
