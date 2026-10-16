@@ -5,12 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.speech.RecognizerIntent
-import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.RadioButton
 import androidx.activity.compose.BackHandler
@@ -56,10 +54,7 @@ import java.util.Locale
  * for input and Android TextToSpeech for spoken output while a licence-compatible neural
  * voice asset and its inference runtime are evaluated.
  */
-class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener {
-    private var tts: TextToSpeech? = null
-    private var ttsReady = false
-    private var voicePlayer: MediaPlayer? = null
+class NexusAssistantActivity : ComponentActivity() {
     private var output: ((String) -> Unit)? = null
     private var speechResultHandler: ((String) -> Unit)? = null
 
@@ -83,7 +78,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         super.onCreate(savedInstanceState)
         EdgeToEdge()
         runCatching { AssistantPreferences.migrateLegacySession(this) }
-        tts = TextToSpeech(this, this)
         setContent {
             LawnchairTheme {
                 var showRequiredDownload by remember { mutableStateOf(false) }
@@ -109,22 +103,9 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
                 var showCloudSettings by remember { mutableStateOf(false) }
                 var selectedProvider by remember { mutableStateOf(NexusCloudAssistant.provider(this@NexusAssistantActivity)) }
-                var selectedVoiceProvider by remember {
-                    mutableStateOf(
-                        AssistantPreferences.secure(this@NexusAssistantActivity)
-                            .getString("voice_provider", "local") ?: "local"
-                    )
-                }
-
                 NexusAssistantScreen(
                     cloudSignedIn = NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity),
                     selectedProvider = selectedProvider,
-                    selectedVoiceProvider = selectedVoiceProvider,
-                    onVoiceProviderChange = { provider ->
-                        selectedVoiceProvider = provider
-                        AssistantPreferences.secure(this@NexusAssistantActivity)
-                            .edit().putString("voice_provider", provider).apply()
-                    },
                     onCloudSettings = { showCloudSettings = true },
                     onBack = ::finish,
                     onListen = { onRecognized ->
@@ -141,7 +122,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                         output = setResponse
                         processInput(query, setResponse)
                     },
-                    onSpeak = ::speak,
                 )
 
                 if (showCloudSettings) {
@@ -193,7 +173,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                         title = { Text("Download required models") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Download the optional local chat model to enable offline chat. Voice output uses the phone's installed TTS voice and does not require a huge voice download.")
+                                Text("Download the optional local chat model to enable offline chat. Speech output is reserved for Books Reader and PDF Reader.")
                                 Text(
                                     when {
                                         modelState != AssistantModelStore.AssetState.DOWNLOADED ->
@@ -237,7 +217,7 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                                             }
                                             if (modelState == AssistantModelStore.AssetState.DOWNLOADED && localRuntimeReady) {
                                                 showRequiredDownload = false
-                                                downloadMessage = "Local chat is ready. Spoken output uses the lightweight phone TTS voice; no large neural voice pack was downloaded."
+                                                downloadMessage = "Local chat is ready. Voice playback is available in Books Reader and PDF Reader."
                                             } else {
                                                 downloadError = if (!localRuntimeReady) {
                                                     "The local chat model could not be loaded on this device. You can still use phone commands or sign in for online AI."
@@ -263,74 +243,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
                     )
                 }
             }
-        }
-    }
-
-    override fun onInit(status: Int) {
-        ttsReady = status == TextToSpeech.SUCCESS
-        if (ttsReady) tts?.language = Locale("hi", "IN")
-    }
-
-    private fun speak(message: String) {
-        if (message.isBlank()) return
-        val provider = AssistantPreferences.secure(this@NexusAssistantActivity)
-                            .getString("voice_provider", "local") ?: "local"
-        if (provider == "elevenlabs") {
-            lifecycleScope.launch {
-                val audioUrl = withContext(Dispatchers.IO) {
-                    runCatching { ElevenLabsVoiceClient.synthesize(this@NexusAssistantActivity, message) }
-                        .getOrNull()
-                }
-                if (isFinishing || isDestroyed) return@launch
-                if (!audioUrl.isNullOrBlank()) {
-                    playRemoteAudio(audioUrl, message)
-                } else {
-                    speakWithLocalVoice(message)
-                }
-            }
-        } else {
-            speakWithLocalVoice(message)
-        }
-    }
-
-    /** Lightweight offline voice path. Uses the installed Android TTS voice without large model downloads. */
-    private fun speakWithLocalVoice(message: String) {
-        speakWithPhoneVoice(message)
-    }
-
-    private fun playRemoteAudio(audioUrl: String, fallbackText: String) {
-        runCatching {
-            voicePlayer?.setOnPreparedListener(null)
-            voicePlayer?.setOnCompletionListener(null)
-            voicePlayer?.setOnErrorListener(null)
-            voicePlayer?.release()
-            val player = MediaPlayer()
-            voicePlayer = player
-            player.setDataSource(audioUrl)
-            player.setOnPreparedListener { ready ->
-                runCatching { ready.start() }.onFailure { speakWithLocalVoice(fallbackText) }
-            }
-            player.setOnCompletionListener {
-                runCatching { it.release() }
-                if (voicePlayer === it) voicePlayer = null
-            }
-            player.setOnErrorListener { failed, _, _ ->
-                runCatching { failed.release() }
-                if (voicePlayer === failed) voicePlayer = null
-                speakWithLocalVoice(fallbackText)
-                true
-            }
-            player.prepareAsync()
-        }.onFailure {
-            runCatching { voicePlayer?.release() }
-            voicePlayer = null
-            speakWithLocalVoice(fallbackText)
-        }
-    }
-
-    private fun speakWithPhoneVoice(message: String) {
-        if (ttsReady) {
-            tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "nexus-assistant-fallback")
         }
     }
 
@@ -376,7 +288,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
         if (isSystemCommand(raw)) {
             val answer = handleCommand(raw)
             onResult(answer)
-            speak(answer)
             return
         }
         lifecycleScope.launch {
@@ -388,7 +299,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             }
             if (!cloudAnswer.isNullOrBlank()) {
                 onResult(cloudAnswer)
-                speak(cloudAnswer)
                 return@launch
             }
 
@@ -402,12 +312,10 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
             }
             if (!localAnswer.isNullOrBlank()) {
                 onResult(localAnswer)
-                speak(localAnswer)
             } else {
                 val fallback = cloudError?.takeIf { it.contains("Sign in") || it.contains("premium", ignoreCase = true) }
                     ?: "I couldn't reach the online assistant or load the local model. Please check your internet connection, or use a phone command such as ‘open YouTube’."
                 onResult(fallback)
-                speak(fallback)
             }
         }
     }
@@ -549,10 +457,6 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 
 
     override fun onDestroy() {
-        tts?.stop()
-        tts?.shutdown()
-        runCatching { voicePlayer?.release() }
-        voicePlayer = null
         LocalAssistantEngine.release()
         super.onDestroy()
     }
@@ -562,13 +466,10 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
 private fun NexusAssistantScreen(
     cloudSignedIn: Boolean,
     selectedProvider: String,
-    selectedVoiceProvider: String,
-    onVoiceProviderChange: (String) -> Unit,
     onCloudSettings: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
-    onSpeak: (String) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     var response by remember {
@@ -602,25 +503,7 @@ private fun NexusAssistantScreen(
             Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
                 Text("Online AI settings")
             }
-            Text("Voice output")
-            listOf("local" to "Local offline voice (phone TTS)", "elevenlabs" to "ElevenLabs online voice (premium plan and AI credits required)").forEach { (id, label) ->
-                androidx.compose.foundation.layout.Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                ) {
-                    RadioButton(
-                        selected = selectedVoiceProvider == id,
-                        onClick = { onVoiceProviderChange(id) },
-                    )
-                    TextButton(onClick = { onVoiceProviderChange(id) }) { Text(label) }
-                }
-            }
-            Text(
-                if (selectedVoiceProvider == "elevenlabs")
-                    "ElevenLabs uses the secure Supabase voice service. If online voice is unavailable, Nexus falls back to local voice."
-                else
-                    "Local voice works without internet and without a large model download. Voice quality and available languages depend on the TTS voices installed on the phone."
-            )
+            Text("Voice playback is available in Books Reader and PDF Reader.")
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
                 value = query,
@@ -646,10 +529,6 @@ private fun NexusAssistantScreen(
             }
             Text("Assistant response")
             Text(response)
-            Button(
-                onClick = { onSpeak(response) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Read response aloud") }
             Text("Note: Android may ask for microphone permission. Wi-Fi opens the system Internet panel because Android does not allow ordinary apps to switch Wi-Fi directly.")
         }
     }
