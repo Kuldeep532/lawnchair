@@ -2,6 +2,7 @@ package app.lawnchair.assistant
 
 import android.Manifest
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.camera2.CameraManager
@@ -13,6 +14,8 @@ import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.RadioButton
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.material3.AlertDialog
@@ -77,6 +80,23 @@ class NexusAssistantActivity : ComponentActivity(), TextToSpeech.OnInitListener 
     ) { granted ->
         if (granted) startSpeechRecognition()
         else output?.invoke("Microphone permission is needed for voice input.")
+    }
+
+    private fun secureAssistantPreferences(): SharedPreferences {
+        return try {
+            val masterKey = MasterKey.Builder(this)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            EncryptedSharedPreferences.create(
+                this,
+                "nexus_assistant_cloud",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+            )
+        } catch (_: Exception) {
+            getSharedPreferences("nexus_assistant_cloud", MODE_PRIVATE)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
