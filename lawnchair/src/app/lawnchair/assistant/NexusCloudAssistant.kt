@@ -23,7 +23,9 @@ object NexusCloudAssistant {
     private const val PROVIDER_KEY = "provider"
 
     fun saveSession(context: Context, accessToken: String, refreshToken: String? = null) {
-        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
+        require(accessToken.isNotBlank()) { "A valid user session is required." }
+        val prefs = AssistantPreferences.secure(context)
+        prefs.edit()
             .putString(TOKEN_KEY, accessToken)
             .apply {
                 if (!refreshToken.isNullOrBlank()) putString(REFRESH_KEY, refreshToken)
@@ -32,7 +34,7 @@ object NexusCloudAssistant {
     }
 
     fun clearSession(context: Context) {
-        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
+        AssistantPreferences.secure(context).edit()
             .remove(TOKEN_KEY)
             .remove(REFRESH_KEY)
             .apply()
@@ -40,17 +42,19 @@ object NexusCloudAssistant {
 
     fun setProvider(context: Context, provider: String) {
         require(provider in setOf("gemini", "openai", "anthropic"))
-        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .edit().putString(PROVIDER_KEY, provider).apply()
+        val prefs = AssistantPreferences.secure(context)
+        prefs.edit().putString(PROVIDER_KEY, provider).apply()
+        AssistantPreferences.legacy(context).edit().remove(PROVIDER_KEY).apply()
     }
 
     fun provider(context: Context): String =
-        context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .getString(PROVIDER_KEY, "gemini") ?: "gemini"
+        AssistantPreferences.secure(context).getString(PROVIDER_KEY, null)
+            ?: AssistantPreferences.legacy(context).getString(PROVIDER_KEY, "gemini")
+            ?: "gemini"
 
-    fun isSignedIn(context: Context): Boolean =
-        !context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .getString(TOKEN_KEY, null).isNullOrBlank()
+    fun isSignedIn(context: Context): Boolean = runCatching {
+        !AssistantPreferences.secure(context).getString(TOKEN_KEY, null).isNullOrBlank()
+    }.getOrDefault(false)
 
     /**
      * This operation performs network I/O. Call from a background thread.
