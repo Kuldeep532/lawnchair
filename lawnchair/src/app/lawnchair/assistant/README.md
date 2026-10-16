@@ -23,3 +23,13 @@ Nexus Assistant is embedded in the Nexus Launcher app.
 Downloading the Chatterbox model files is implemented, but actual neural speech generation from those files is **not yet integrated**. Chatterbox needs an end-to-end ONNX pipeline for text tokenization, model inputs, voice conditioning, decoding and waveform output; merely including ONNX Runtime or downloading the files does not make speech playback work. Android TextToSpeech remains the active voice engine until that pipeline is implemented and tested.
 
 The first download prompt currently tracks whether model assets exist and can be loaded as a local chat model. A finished APK build and tests on a real Android device are still required before claiming release readiness. Android may use network services for speech recognition; voice input is not guaranteed to be offline or unlimited. Normal apps cannot directly toggle Wi-Fi on modern Android, so the assistant opens the system panel.
+
+
+## Online AI through Supabase
+
+- Nexus Assistant now tries the `nexus-ai-chat` Supabase Edge Function before falling back to local on-device chat.
+- The assistant settings provide an accessible provider selector for Gemini, OpenAI, and Anthropic.
+- The Android app contains only the project URL and the public publishable key. Provider API keys and Supabase secret keys must remain in Edge Function secrets.
+- Online AI requires the app's existing sign-in flow to supply its verified Supabase access token to `NexusCloudAssistant.saveSession(context, accessToken, refreshToken)`. The current launcher code does not yet expose an established shared Supabase session provider; until that is wired to the real authentication flow, online requests show a sign-in message and the local assistant remains available.
+- OpenAI and Anthropic calls are subject to the existing Edge Function's premium-access checks. Gemini access is controlled by the server's configured credentials.
+- This cloud request currently sends the latest question without conversation history. Conversation persistence and session refresh should be wired through the app's canonical Supabase session manager before release.
