@@ -1,32 +1,106 @@
-name: Nexus Assistant Build Check
+name: Nexus Launcher Build and Verification
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 16-dev
+    paths:
+      - ".github/workflows/assistant-build-check.yml"
+      - "lawnchair/**"
+      - "quickstep/**"
+      - "gradle/**"
+      - "build.gradle"
+      - "settings.gradle"
+      - "gradle.properties"
+      - "Android.bp"
+      - "platform_frameworks_libs_systemui/**"
+      - "systemUI/**"
+      - "compatLib/**"
+      - "hidden-api/**"
+      - "iconloaderlib/**"
+      - "searchuilib/**"
+      - "animationlib/**"
+      - "contextualeducationlib/**"
+      - "viewcapturelib/**"
+      - "displaylib/**"
+      - "mechanics/**"
+      - "shared/**"
+      - "plugin/**"
+      - "plugincore/**"
+      - "common/**"
+      - "log/**"
+      - "animation/**"
+      - "unfold/**"
+      - "utils/**"
+      - "modules/**"
+      - "flags/**"
+      - "wmshell/**"
+      - "dagger/**"
+      - "concurrent/**"
+      - "baseline-profile/**"
+      - "androidx-lib/**"
+      - "compose/**"
+      - "iconloaderlib/**"
+      - "searchuilib/**"
+      - "animationlib/**"
+      - "msdllib/**"
+      - "contextualeducationlib/**"
+      - "viewcapturelib/**"
+      - "displaylib/**"
+      - "mechanics/**"
 
 permissions:
   contents: read
 
+concurrency:
+  group: nexus-launcher-check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-assistant:
+  build-debug:
+    name: Compile Nexus Launcher (debug)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
-      - name: Checkout launcher source
+      - name: Checkout source and bundled modules
         uses: actions/checkout@v7
         with:
-          submodules: true
+          submodules: recursive
 
-      - name: Install Java
+      - name: Set up Java 21
         uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: "21"
 
-      - name: Configure Gradle
+      - name: Configure Gradle cache
         uses: gradle/actions/setup-gradle@v6
 
       - name: Compile Android debug APK
         run: ./gradlew --no-daemon assembleLawnWithQuickstepGithubDebug
 
-      - name: Check formatting
+      - name: Check code formatting
+        if: success()
         run: ./gradlew --no-daemon spotlessCheck
+
+      - name: Upload debug APK for testing
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nexus-launcher-debug-${{ github.sha }}
+          path: build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Summarize result
+        if: always()
+        run: |
+          {
+            echo "## Nexus Launcher verification"
+            echo ""
+            echo "- Branch: `$GITHUB_REF_NAME`"
+            echo "- Commit: `$GITHUB_SHA`"
+            echo "- Debug build and formatting checks: see job result above"
+            echo "- APK is uploaded only when compilation and formatting succeed."
+          } >> "$GITHUB_STEP_SUMMARY"
