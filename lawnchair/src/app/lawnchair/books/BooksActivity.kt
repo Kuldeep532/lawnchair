@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Locale
@@ -279,7 +281,8 @@ private fun BookReaderScreen(
     }
 
     DisposableEffect(Unit) {
-        val engine = android.speech.tts.TextToSpeech(context) { status ->
+        lateinit var engine: android.speech.tts.TextToSpeech
+        engine = android.speech.tts.TextToSpeech(context) { status ->
             if (status == android.speech.tts.TextToSpeech.SUCCESS) {
                 val locale = Locale.getDefault()
                 if (engineSafeAvailable(engine, locale)) engine.language = locale
