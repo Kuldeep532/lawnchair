@@ -14,16 +14,17 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import app.lawnchair.R
+
 
 class LiveTvPlaybackService : MediaSessionService() {
     private lateinit var player: ExoPlayer
     private lateinit var mediaSession: MediaSession
+    private lateinit var sessionActivity: PendingIntent
 
     override fun onCreate() {
         super.onCreate()
         createChannel()
-        val sessionActivity = PendingIntent.getActivity(
+        sessionActivity = PendingIntent.getActivity(
             this,
             2001,
             Intent(this, LiveTvActivity::class.java),
@@ -64,7 +65,7 @@ class LiveTvPlaybackService : MediaSessionService() {
                 player.prepare()
                 player.play()
                 val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_home)
+                    .setSmallIcon(android.R.drawable.ic_media_play)
                     .setContentTitle(name.ifBlank { "Live TV" })
                     .setContentText("Live TV is playing")
                     .setOngoing(true)
