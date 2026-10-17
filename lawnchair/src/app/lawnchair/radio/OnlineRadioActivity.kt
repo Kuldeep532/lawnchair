@@ -56,8 +56,8 @@ private enum class DiscoveryTab {
 class OnlineRadioActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
-        setContent { LawnchairTheme { OnlineRadioScreen(::finish) } }
+        setContent { LawnchairTheme {
+                EdgeToEdge() OnlineRadioScreen(::finish) } }
     }
 }
 
