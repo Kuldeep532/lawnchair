@@ -329,6 +329,11 @@
             </intent-filter>
         </receiver>
 
+        <activity
+            android:name="app.lawnchair.widgets.custom.NexusAppWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Transparent" />
+
         <receiver
             android:name="app.lawnchair.widgets.custom.NexusAppWidgetProvider"
             android:exported="true"
