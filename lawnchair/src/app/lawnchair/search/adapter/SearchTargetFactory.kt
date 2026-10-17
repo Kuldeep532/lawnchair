@@ -1,5 +1,6 @@
 package app.lawnchair.search.adapter
 
+import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -243,8 +244,24 @@ class SearchTargetFactory(
         tintIcon: Boolean = false,
     ): SearchTargetCompat {
         val id = "browser:$query:$providerName"
-        val browserIntent = NexusSearchBrowserActivity.urlIntent(context, searchUrl)
-        val title = context.getString(R.string.all_apps_search_on_web_message, providerName)
+        val browserIntent = if (providerName == "Music apps") {
+            val playIntent = Intent("android.media.action.MEDIA_PLAY_FROM_SEARCH").apply {
+                putExtra(SearchManager.QUERY, query)
+                putExtra(MediaStore.EXTRA_MEDIA_TITLE, query)
+            }
+            if (context.packageManager.queryIntentActivities(playIntent, 0).isNotEmpty()) {
+                Intent.createChooser(playIntent, "Select music app to play")
+            } else {
+                NexusSearchBrowserActivity.urlIntent(context, searchUrl)
+            }
+        } else {
+            NexusSearchBrowserActivity.urlIntent(context, searchUrl)
+        }
+        val title = if (providerName == "Music apps") {
+            "Select music app to play"
+        } else {
+            context.getString(R.string.all_apps_search_on_web_message, providerName)
+        }
 
         val icon = Icon.createWithResource(context, providerIconRes).apply {
             if (tintIcon) {
