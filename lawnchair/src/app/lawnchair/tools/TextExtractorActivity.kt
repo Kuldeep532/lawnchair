@@ -50,8 +50,7 @@ class TextExtractorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
-        setContent { LawnchairTheme { TextExtractorScreen(::finish) } }
+        setContent { LawnchairTheme { EdgeToEdge(); TextExtractorScreen(::finish) } }
     }
 
     fun incomingImageUri(): Uri? = when (intent.action) {
