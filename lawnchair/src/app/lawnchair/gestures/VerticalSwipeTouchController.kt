@@ -160,9 +160,6 @@ class VerticalSwipeTouchController(
         if (overrideSwipeDown || overrideTwoFingerSwipeDown) {
             directions = directions or BothAxesSwipeDetector.DIRECTION_DOWN
         }
-        if (overrideSwipeLeft || overrideSwipeRight) {
-            directions = directions or BothAxesSwipeDetector.DIRECTION_LEFT or BothAxesSwipeDetector.DIRECTION_RIGHT
-        }
         return directions
     }
 
