@@ -58,7 +58,7 @@ fun WidgetStudioPreferences() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                "Create a home-screen app widget. Choose an app and a colour; the widget opens that app with one tap.",
+                "Create a home-screen app widget. Choose an app and a colour; it opens the app and shows app-published shortcuts when available.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text("Choose an app", style = MaterialTheme.typography.titleMedium)
