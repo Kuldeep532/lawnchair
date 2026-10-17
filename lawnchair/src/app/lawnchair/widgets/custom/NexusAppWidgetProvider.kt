@@ -37,10 +37,10 @@ class NexusAppWidgetProvider : AppWidgetProvider() {
 
         private fun updateWidget(context: Context, manager: AppWidgetManager, widgetId: Int) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val packageName = prefs.getString(KEY_PACKAGE, null)
-            val className = prefs.getString(KEY_CLASS, null)
-            val label = prefs.getString(KEY_LABEL, "Choose an app") ?: "Choose an app"
-            val color = prefs.getInt(KEY_COLOR, Color.rgb(49, 93, 168))
+            val packageName = prefs.getString("${KEY_PACKAGE}_$widgetId", prefs.getString(KEY_PACKAGE, null))
+            val className = prefs.getString("${KEY_CLASS}_$widgetId", prefs.getString(KEY_CLASS, null))
+            val label = prefs.getString("${KEY_LABEL}_$widgetId", prefs.getString(KEY_LABEL, "Choose an app")) ?: "Choose an app"
+            val color = prefs.getInt("${KEY_COLOR}_$widgetId", prefs.getInt(KEY_COLOR, Color.rgb(49, 93, 168)))
             val views = RemoteViews(context.packageName, R.layout.nexus_app_widget)
             views.setTextViewText(R.id.nexus_app_widget_title, label)
             views.setTextViewText(R.id.nexus_app_widget_subtitle, "Tap to open")
