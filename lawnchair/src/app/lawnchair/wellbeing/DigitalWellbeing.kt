@@ -12,6 +12,7 @@ import android.widget.Toast
 import android.provider.Settings
 import android.content.pm.LauncherApps
 import android.os.Process
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
