@@ -122,7 +122,7 @@ class NexusAssistantActivity : ComponentActivity() {
                         title = { Text("Models") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Download Voice AI Models for on-device use. Downloaded files stay in this app's private storage. The lightweight local chat model enables offline text chat; speech playback uses the installed Android voice in Books Reader and PDF Reader.")
+                                Text("Download the on-device AI model. The current download is the lightweight local chat model for offline text chat. Spoken reading currently uses the Android voice installed on your phone; manage its voice data separately through Android voice settings.")
                                 Text(
                                     when {
                                         modelState != AssistantModelStore.AssetState.DOWNLOADED ->
