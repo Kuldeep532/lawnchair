@@ -196,7 +196,7 @@ private fun LivePlayerScreen(
     }
 }
 
-private object LiveTvController {
+internal object LiveTvController {
     fun play(context: Context, channel: LiveTvChannel) {
         val intent = Intent(context, LiveTvPlaybackService::class.java)
             .setAction(ACTION_PLAY)
