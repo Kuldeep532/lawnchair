@@ -242,7 +242,7 @@ class NexusAssistantActivity : ComponentActivity() {
             raw.trim().equals("download models", ignoreCase = true) ||
             raw.trim().equals("download voice ai models", ignoreCase = true)
         ) {
-            onResult("Open launcher Settings, then Models, to download Voice AI Models.")
+            startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
             return
         }
         if (isSystemCommand(raw)) {
