@@ -3,7 +3,7 @@ package app.lawnchair.secureworld
 import android.content.Intent
 import android.os.Bundle
 import android.net.Uri
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,6 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -49,7 +53,7 @@ import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import java.util.concurrent.Executor
 
-class SecureWorldActivity : ComponentActivity() {
+class SecureWorldActivity : FragmentActivity() {
 
     private lateinit var promptExecutor: Executor
     private lateinit var store: SecureWorldStore
@@ -148,13 +152,12 @@ class SecureWorldActivity : ComponentActivity() {
         suggestedName: String,
         extractedText: String = "",
     ) {
+        EdgeToEdge()
         setContent {
             LawnchairTheme {
-                EdgeToEdge()
                 DocumentDialog(
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
-                    suggestedDetails = suggestDocumentDetails("Other", extractedText),
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
                         val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
@@ -189,10 +192,18 @@ class SecureWorldActivity : ComponentActivity() {
         }
     }
 
+    private fun deleteVaultItem(item: VaultListItem) {
+        when (item) {
+            is VaultListItem.NoteItem -> store.deleteNote(item.value.id)
+            is VaultListItem.DocumentItem -> store.deleteDocument(item.value.id)
+            is VaultListItem.PasswordItem -> store.deletePassword(item.value.id)
+        }
+    }
+
     private fun showSecureVault() {
+        EdgeToEdge()
         setContent {
             LawnchairTheme {
-                EdgeToEdge()
                 var selectedTab by remember { mutableIntStateOf(0) }
                     var contentTab by remember { mutableIntStateOf(0) }
                 var showAddSheet by remember { mutableStateOf(false) }
@@ -664,6 +675,7 @@ private fun AddDocumentChoiceDialog(
 private fun DocumentDialog(
     suggestedName: String,
     suggestedNumber: String,
+    suggestedDetails: String = "",
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit,
 ) {
@@ -680,7 +692,7 @@ private fun DocumentDialog(
     var category by remember { mutableStateOf(categories.first()) }
     var number by remember { mutableStateOf(suggestedNumber) }
     var name by remember { mutableStateOf(suggestedName) }
-    var details by remember { mutableStateOf("") }
+    var details by remember { mutableStateOf(suggestedDetails) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -760,7 +772,6 @@ private fun NoteDialog(
 }
 
 @androidx.compose.runtime.Composable
-@androidx.compose.runtime.Composable
 private fun CardDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, String, String, String) -> Unit,
@@ -824,6 +835,7 @@ private fun isValidCardNumber(number: String): Boolean {
     return sum % 10 == 0
 }
 
+@androidx.compose.runtime.Composable
 private fun PasswordDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit,
