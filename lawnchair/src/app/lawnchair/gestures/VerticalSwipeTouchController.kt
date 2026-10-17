@@ -41,6 +41,8 @@ class VerticalSwipeTouchController(
 
     private var overrideSwipeUp = false
     private var overrideSwipeDown = false
+    private var overrideSwipeLeft = false
+    private var overrideSwipeRight = false
     private var overrideTwoFingerSwipeUp = false
     private var overrideTwoFingerSwipeDown = false
 
@@ -59,6 +61,12 @@ class VerticalSwipeTouchController(
                 .launchIn(this)
             prefs.swipeDownGestureHandler.get()
                 .onEach { overrideSwipeDown = it != prefs.swipeDownGestureHandler.defaultValue }
+                .launchIn(this)
+            prefs.swipeLeftGestureHandler.get()
+                .onEach { overrideSwipeLeft = it !is GestureHandlerConfig.NoOp }
+                .launchIn(this)
+            prefs.swipeRightGestureHandler.get()
+                .onEach { overrideSwipeRight = it !is GestureHandlerConfig.NoOp }
                 .launchIn(this)
             // Override when a custom gesture handler is configured, as launcher does not handle these by default
             prefs.twoFingerSwipeUpGestureHandler.get()
@@ -146,6 +154,9 @@ class VerticalSwipeTouchController(
         }
         if (overrideSwipeDown || overrideTwoFingerSwipeDown) {
             directions = directions or BothAxesSwipeDetector.DIRECTION_DOWN
+        }
+        if (overrideSwipeLeft || overrideSwipeRight) {
+            directions = directions or BothAxesSwipeDetector.DIRECTION_LEFT or BothAxesSwipeDetector.DIRECTION_RIGHT
         }
         return directions
     }
