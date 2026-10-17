@@ -6,6 +6,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.LauncherApps
+import android.os.Build
+import android.os.Process
+import android.view.View
 import android.graphics.Color
 import android.widget.RemoteViews
 import com.android.launcher3.R
@@ -64,7 +68,44 @@ class NexusAppWidgetProvider : AppWidgetProvider() {
                     ),
                 )
             }
-            views.setContentDescription(R.id.nexus_app_widget_root, "$label app widget. Tap to open.")
+
+            // Display up to two shortcuts published by the selected app, when available.
+            val shortcuts = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1 && !packageName.isNullOrBlank()) {
+                runCatching {
+                    val launcherApps = context.getSystemService(LauncherApps::class.java)
+                    val query = LauncherApps.ShortcutQuery()
+                        .setPackage(packageName)
+                        .setQueryFlags(
+                            LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                                LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                                LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED,
+                        )
+                    launcherApps.getShortcuts(query, Process.myUserHandle()).orEmpty().take(2)
+                }.getOrDefault(emptyList())
+            } else {
+                emptyList()
+            }
+            val actionIds = intArrayOf(R.id.nexus_app_widget_action1, R.id.nexus_app_widget_action2)
+            actionIds.forEachIndexed { index, viewId ->
+                val shortcut = shortcuts.getOrNull(index)
+                val actionIntent = shortcut?.intents?.lastOrNull()
+                if (shortcut != null && actionIntent != null) {
+                    views.setViewVisibility(viewId, View.VISIBLE)
+                    views.setTextViewText(viewId, shortcut.shortLabel?.toString() ?: shortcut.id)
+                    views.setOnClickPendingIntent(
+                        viewId,
+                        PendingIntent.getActivity(
+                            context,
+                            widgetId * 10 + index + 1,
+                            Intent(actionIntent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                        ),
+                    )
+                } else {
+                    views.setViewVisibility(viewId, View.GONE)
+                }
+            }
+            views.setContentDescription(R.id.nexus_app_widget_root, "$label app widget. Tap to open. App shortcuts appear when supported by the app.")
             manager.updateAppWidget(widgetId, views)
         }
     }
