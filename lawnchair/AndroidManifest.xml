@@ -147,18 +147,6 @@
         </activity>
 
         <activity
-            android:name="app.lawnchair.tools.QuickUtilityActivity"
-            android:exported="false"
-            android:label="Quick Utility Hub"
-            android:theme="@style/Theme.Lawnchair" />
-
-        <activity
-            android:name="app.lawnchair.tools.DateTimeHelperActivity"
-            android:exported="false"
-            android:label="Date &amp; Time Converter"
-            android:theme="@style/Theme.Lawnchair" />
-
-        <activity
             android:name="app.lawnchair.tools.QrGeneratorActivity"
             android:exported="false"
             android:label="@string/qr_generator"
@@ -174,12 +162,6 @@
             android:name="app.lawnchair.tools.ImageCompressorActivity"
             android:exported="false"
             android:label="@string/image_compressor"
-            android:theme="@style/Theme.Lawnchair" />
-
-        <activity
-            android:name="app.lawnchair.tools.FileRenamerActivity"
-            android:exported="false"
-            android:label="@string/file_renamer"
             android:theme="@style/Theme.Lawnchair" />
 
         <activity
