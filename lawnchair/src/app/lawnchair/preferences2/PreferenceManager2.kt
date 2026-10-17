@@ -852,16 +852,6 @@ class PreferenceManager2 @Inject constructor(
         defaultValue = GestureHandlerConfig.OpenNotifications,
     )
 
-    val swipeLeftGestureHandler = serializablePreference<GestureHandlerConfig>(
-        key = stringPreferencesKey("swipe_left_gesture_handler"),
-        defaultValue = GestureHandlerConfig.NoOp,
-    )
-
-    val swipeRightGestureHandler = serializablePreference<GestureHandlerConfig>(
-        key = stringPreferencesKey("swipe_right_gesture_handler"),
-        defaultValue = GestureHandlerConfig.NoOp,
-    )
-
     val twoFingerSwipeUpGestureHandler = serializablePreference<GestureHandlerConfig>(
         key = stringPreferencesKey("two_finger_swipe_up_gesture_handler"),
         defaultValue = GestureHandlerConfig.NoOp,
