@@ -222,7 +222,7 @@ fun DigitalWellbeingSettings() {
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Choose distracting apps and set daily usage limits. PhonePe, Google Pay and YouTube remain excluded.")
+            Text("Choose distracting apps and set daily usage limits. Phone, messaging, payment and core utility apps are protected. YouTube can be selected if you want to limit it.")
             Text("Daily total limit: $dailyLimit minutes", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = dailyLimit.toString(),
@@ -300,7 +300,6 @@ fun DigitalWellbeingSettings() {
                         }
                     }
                 }
-            }
                 item {
                     Text("Use your time to learn", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
                     Text("Instead of endless scrolling, try a short lesson or a useful tutorial.")
