@@ -4,7 +4,7 @@ This checklist records what is present in the source and what is still required 
 
 ## Present in source
 
-- Nexus Assistant includes text/voice input, Android speech recognition, device actions, optional on-device chat with a downloaded SmolLM2 GGUF model, and an optional ElevenLabs gateway client.
+- Nexus Assistant uses Android speech recognition, device actions, and local-first chat with the downloaded SmolLM2 GGUF model. The launcher and local chat do not require signing in. Model downloads are available under Settings > Models.
 - Tools Studio links to Quick Utility Hub, date/time conversion, QR generation, PDF/image conversion, image compression, file renaming, password generation, OCR, PDF reading, voice settings, radio, live TV, and protected text.
 - Secure Vault source includes biometric unlock, encrypted preferences, notes, documents, passwords, cards, and image-text extraction.
 - Radio, Live TV playlist/player, Digital Wellbeing, launcher appearance and branding code are present.
@@ -13,7 +13,7 @@ This checklist records what is present in the source and what is still required 
 ## Voice readiness
 
 - **Android local TTS:** Implemented. Available languages and offline voice data depend on the phone.
-- **ElevenLabs:** Client code uses the configured Supabase gateway. Not release-verified until signed-in session, session refresh, server configuration and successful device playback are confirmed.
+- **Online neural voice:** Removed from this local-first build. Reader voice settings use the voice installed on the phone.
 - **Chatterbox:** Not integrated end-to-end. Tokenization, ONNX inference, audio decoding and playback are not wired together.
 - **Coqui TTS:** Not integrated as a native on-device Android inference engine.
 - **Piper:** A voice catalog/downloader exists, but a compatible inference runtime and playback path are not established by the source alone.
@@ -26,7 +26,7 @@ The `Nexus Launcher Build and Verification` workflow compiles the Android debug 
 
 1. Confirm a successful debug compilation and formatting check for the current commit.
 2. Exercise Assistant commands, local model first download/re-download/interruption, inference, voice playback and network-failure fallback on a physical Android device.
-3. Confirm the online AI and ElevenLabs paths use the app's real sign-in session, refresh expired sessions, and clear credentials on sign-out.
+3. Confirm the removed account, online AI, and online voice screens are absent from the built APK.
 4. Exercise every Tools Studio destination; test file access, output saving, sharing, and back navigation.
 5. Test Secure Vault biometric success/failure/cancellation, lock-on-background, data persistence, document/image OCR, and encrypted storage.
 6. Test Radio and Live TV with reachable streams, playback errors, service lifecycle, and stop/return navigation.
