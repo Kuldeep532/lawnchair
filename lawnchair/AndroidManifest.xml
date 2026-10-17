@@ -368,6 +368,12 @@
             </intent-filter>
         </service>
 
+        <activity
+            android:name="app.lawnchair.wellbeing.DigitalWellbeingBlockedActivity"
+            android:exported="false"
+            android:label="Focus Mode"
+            android:theme="@style/Theme.Lawnchair" />
+
         <service
             android:name="app.lawnchair.LawnchairAccessibilityService"
             android:exported="false"
