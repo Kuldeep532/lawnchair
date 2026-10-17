@@ -38,7 +38,7 @@ private object NexusAiRanker {
         return apps.withIndex()
             .map { indexed ->
                 val app = indexed.value
-                val key = app.componentName?.flattenToString() ?: return@mapNotNull null
+                val key = app.componentName?.flattenToString().orEmpty()
                 val launches = prefs.getLong("launch:$key", 0L).coerceAtMost(10_000L)
                 val last = prefs.getLong("last:$key", 0L)
                 val ageHours = if (last == 0L) Double.POSITIVE_INFINITY else
@@ -81,7 +81,7 @@ private object NexusPreferenceBrain {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return apps.withIndex()
             .sortedWith(compareByDescending<IndexedValue<AppInfo>> { (_, app) ->
-                val key = app.componentName.flattenToString()
+                val key = app.componentName?.flattenToString().orEmpty()
                 val launches = prefs.getLong(KEY_PREFIX + key, 0L).coerceAtMost(10_000L)
                 val last = prefs.getLong(KEY_LAST_PREFIX + key, 0L)
                 val recencyHours = ((System.currentTimeMillis() - last).coerceAtLeast(0L) / 3_600_000L).coerceAtMost(24L * 30L)
