@@ -87,7 +87,6 @@ class BooksActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         store = BooksStore.getInstance(this)
 
         val externalUri = intent?.data
@@ -161,6 +160,7 @@ class BooksActivity : ComponentActivity() {
         selectedBook = null
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 BooksLibraryScreen(
                     books = store.books(),
                     onImport = { picker.launch(arrayOf(
@@ -187,6 +187,7 @@ class BooksActivity : ComponentActivity() {
     private fun showReader(book: BookItem) {
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 BookReaderScreen(
                     book = book,
                     onBack = { showLibrary() },
