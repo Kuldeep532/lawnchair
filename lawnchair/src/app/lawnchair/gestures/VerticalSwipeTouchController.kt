@@ -89,7 +89,12 @@ class VerticalSwipeTouchController(
         if (noIntercept) {
             return false
         }
-        val horizontalHandled = horizontalGestureListener.dispatchGestureEvent(ev)
+        val horizontalEnabled = overrideSwipeLeft || overrideSwipeRight
+        val horizontalHandled = if (horizontalEnabled) {
+            horizontalGestureListener.dispatchGestureEvent(ev)
+        } else {
+            false
+        }
         onControllerTouchEvent(ev)
         return horizontalHandled || detector.isDraggingOrSettling
     }
