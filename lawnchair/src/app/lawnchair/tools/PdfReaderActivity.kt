@@ -62,7 +62,6 @@ private data class PdfRenderResult(
 class PdfReaderActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         val incomingPdf = intent?.data
         if (incomingPdf != null && intent?.action == Intent.ACTION_VIEW) {
             runCatching {
@@ -72,7 +71,8 @@ class PdfReaderActivity : ComponentActivity() {
                 )
             }
         }
-        setContent { LawnchairTheme { PdfReaderScreen(::finish, incomingPdf) } }
+        setContent { LawnchairTheme {
+                EdgeToEdge() PdfReaderScreen(::finish, incomingPdf) } }
     }
 }
 
