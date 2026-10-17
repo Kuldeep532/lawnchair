@@ -135,6 +135,7 @@ class NexusAssistantActivity : ComponentActivity() {
                         onVoiceSettings = {
                             runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
                                 .recoverCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+                                .recoverCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
                         },
                         onOpenReader = {
                             runCatching { startActivity(Intent(this@NexusAssistantActivity, app.lawnchair.books.BooksActivity::class.java)) }
