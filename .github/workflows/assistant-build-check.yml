@@ -30,10 +30,10 @@ jobs:
       - name: Configure Gradle cache
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Compile Android debug APK
+      - name: Build Nexus Launcher for testing
         run: ./gradlew --no-daemon assembleLawnWithQuickstepGithubDebug
 
-      - name: Check code formatting
+      - name: Check app code quality
         if: success()
         run: ./gradlew --no-daemon spotlessCheck
 
