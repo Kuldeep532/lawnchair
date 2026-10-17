@@ -133,7 +133,7 @@ class NexusAssistantActivity : ComponentActivity() {
                             }
                         },
                         onVoiceSettings = {
-                            runCatching { startActivity(Intent(Settings.ACTION_TEXT_TO_SPEECH_SETTINGS)) }
+                            runCatching { startActivity(Intent(Settings.ACTION_TTS_SETTINGS)) }
                         },
                         onOpenReader = {
                             runCatching { startActivity(Intent(this@NexusAssistantActivity, app.lawnchair.books.BooksActivity::class.java)) }
