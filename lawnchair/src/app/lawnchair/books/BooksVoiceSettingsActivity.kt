@@ -47,10 +47,10 @@ class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListe
             LawnchairTheme {
                 VoiceSettingsScreen(
                     voiceReady = voiceReady,
-                    initialProvider = ReaderVoicePreferences.provider(this@BooksVoiceSettingsActivity),
+                    initialProvider = ReaderVoicePreferences.LOCAL,
                     statusMessage = statusMessage,
                     onBack = ::finish,
-                    onProviderChange = { ReaderVoicePreferences.setProvider(this@BooksVoiceSettingsActivity, it) },
+                    onProviderChange = { ReaderVoicePreferences.setProvider(this@BooksVoiceSettingsActivity, ReaderVoicePreferences.LOCAL) },
                     onTestVoice = ::testVoice,
                     onOpenSystemSettings = {
                         runCatching {
