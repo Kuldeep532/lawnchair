@@ -43,9 +43,8 @@ import java.util.Locale
 class ImageCompressorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LawnchairTheme {
-                EdgeToEdge()
-                EdgeToEdge() ImageCompressorScreen(::finish) } }
+        EdgeToEdge()
+        setContent { LawnchairTheme { ImageCompressorScreen(::finish) } }
     }
 }
 
