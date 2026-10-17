@@ -358,7 +358,7 @@ class NexusAssistantActivity : ComponentActivity() {
      */
     private fun openUniversalSearch(rawCommand: String): String {
         val query = rawCommand.trim()
-            .replaceFirst(Regex("^(search|सर्च|खोज|ढूंढो|खोजो)\\\\s+", RegexOption.IGNORE_CASE), "")
+            .replaceFirst(Regex("^(search|सर्च|खोज|ढूंढो|खोजो)\\s+", RegexOption.IGNORE_CASE), "")
             .trim()
         if (query.isBlank()) return "Type what you want to search for."
 
