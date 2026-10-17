@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="nexus_music_widget_bg">#202124</color>
+    <color name="nexus_music_widget_border">#454A52</color>
+    <color name="nexus_music_widget_text">#F5F5F5</color>
+    <color name="nexus_music_widget_secondary">#C2C7D0</color>
+    <color name="nexus_music_widget_action">#E1E4EA</color>
+</resources>
