@@ -56,7 +56,7 @@ class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListe
                     },
                     onOpenSystemSettings = {
                         runCatching {
-                            startActivity(Intent(Settings.ACTION_TEXT_TO_SPEECH_SETTINGS))
+                            startActivity(Intent(Settings.ACTION_TTS_SETTINGS))
                         }.onFailure {
                             statusMessage = "Android voice settings could not be opened."
                         }
