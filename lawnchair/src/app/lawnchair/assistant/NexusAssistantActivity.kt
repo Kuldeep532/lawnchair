@@ -130,7 +130,7 @@ class NexusAssistantActivity : ComponentActivity() {
                 if (showCloudSettings) {
                     AlertDialog(
                         onDismissRequest = { showCloudSettings = false },
-                        title = { Text("Optional online AI settings") },
+                        title = { Text("Online AI settings (optional)") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text(
