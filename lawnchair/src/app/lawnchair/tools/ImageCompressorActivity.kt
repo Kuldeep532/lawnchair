@@ -44,6 +44,7 @@ class ImageCompressorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { LawnchairTheme {
+                EdgeToEdge()
                 EdgeToEdge() ImageCompressorScreen(::finish) } }
     }
 }
