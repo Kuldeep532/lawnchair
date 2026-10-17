@@ -289,6 +289,13 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 
     private fun processInput(raw: String, onResult: (String) -> Unit) {
+        if (raw.trim().equals("models", ignoreCase = true) ||
+            raw.trim().equals("download models", ignoreCase = true) ||
+            raw.trim().equals("download voice ai models", ignoreCase = true)
+        ) {
+            onResult("Open launcher Settings, then Models, to download Voice AI Models.")
+            return
+        }
         if (isSystemCommand(raw)) {
             val answer = handleCommand(raw)
             onResult(answer)
@@ -504,8 +511,12 @@ private fun NexusAssistantScreen(
                 "anthropic" -> "Anthropic"
                 else -> "Gemini"
             })
+            Button(
+                onClick = { onCommand("models") { response = it } },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Download Voice AI Models") }
             Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
-                Text("Online AI settings")
+                Text("Online AI settings (optional)")
             }
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
