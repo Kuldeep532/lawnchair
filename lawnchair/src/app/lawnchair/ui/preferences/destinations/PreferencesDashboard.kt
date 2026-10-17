@@ -82,6 +82,7 @@ import app.lawnchair.ui.preferences.navigation.Folders
 import app.lawnchair.ui.preferences.navigation.General
 import app.lawnchair.ui.preferences.navigation.Gestures
 import app.lawnchair.ui.preferences.navigation.HomeScreen
+import app.lawnchair.ui.preferences.navigation.WidgetStudio
 import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.ControlCenter
@@ -160,6 +161,14 @@ fun PreferencesDashboard(
                 iconResource = R.drawable.ic_home_screen,
                 onNavigate = { onNavigate(HomeScreen) },
                 isSelected = currentRoute is HomeScreen,
+            )
+
+            PreferenceCategory(
+                label = "Widget Studio",
+                description = "Create app widgets and choose their colours",
+                iconResource = R.drawable.ic_home_screen,
+                onNavigate = { onNavigate(WidgetStudio) },
+                isSelected = currentRoute is WidgetStudio,
             )
 
             PreferenceCategory(
