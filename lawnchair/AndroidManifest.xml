@@ -329,6 +329,28 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name="app.lawnchair.widgets.music.NexusMusicWidgetProvider"
+            android:exported="true"
+            android:label="Nexus Music">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/nexus_music_widget_info" />
+        </receiver>
+
+        <service
+            android:name="app.lawnchair.widgets.music.NexusMusicNotificationListenerService"
+            android:exported="true"
+            android:label="Nexus Music Playback"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <service
             android:name="app.lawnchair.LawnchairAccessibilityService"
             android:exported="false"
