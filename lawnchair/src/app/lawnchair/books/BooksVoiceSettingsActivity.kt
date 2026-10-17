@@ -159,6 +159,12 @@ private fun VoiceSettingsScreen(
                 onClick = { onTestVoice(selectedProvider) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Test selected voice") }
+            Button(
+                onClick = {
+                    startActivity(app.lawnchair.assistant.NexusAssistantLauncher.modelsIntent(this@BooksVoiceSettingsActivity))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Open AI Gallery") }
             TextButton(
                 onClick = onOpenSystemSettings,
                 modifier = Modifier.fillMaxWidth(),
