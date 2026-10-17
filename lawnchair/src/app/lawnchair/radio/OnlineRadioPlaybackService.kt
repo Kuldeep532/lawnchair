@@ -17,14 +17,13 @@ class OnlineRadioPlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        val sessionActivity = launchIntent?.let {
-            PendingIntent.getActivity(
-                this,
-                0,
-                it,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-        }
+            ?: Intent(this, app.lawnchair.LawnchairLauncher::class.java)
+        val sessionActivity = PendingIntent.getActivity(
+            this,
+            0,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
         val audioAttributes = AudioAttributes.Builder()
             .setUsage(C.USAGE_MEDIA)
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
