@@ -158,6 +158,7 @@ class SecureWorldActivity : FragmentActivity() {
                 DocumentDialog(
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
+                    suggestedDetails = suggestDocumentDetails("Other", extractedText),
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
                         val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
