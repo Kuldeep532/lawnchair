@@ -123,6 +123,18 @@ class DigitalWellbeingController(private val context: Context) {
             System.currentTimeMillis(),
         ).firstOrNull { it.packageName == packageName }?.totalTimeInForeground ?: 0L
     }
+
+    fun totalBlockedUsageToday(): Long {
+        if (!isUsageAccessGranted()) return 0L
+        val blocked = blockedPackages()
+        val manager = context.getSystemService(UsageStatsManager::class.java)
+        return manager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            startOfDayMillis(),
+            System.currentTimeMillis(),
+        ).filter { it.packageName in blocked && !isAllowedApp(it.packageName) }
+            .sumOf { it.totalTimeInForeground }
+    }
 }
 
 @Composable
@@ -240,7 +252,7 @@ suspend fun runWellbeingTick(context: Context) {
         if (foreground == null || foreground == context.packageName) return@repeat
         if (!controller.isSocialApp(foreground)) return@repeat
         val used = controller.packageUsageToday(foreground) / 60_000L
-        if (used >= controller.socialBlockMinutes() && foreground != lastBlockedPackage) {
+        if ((used >= controller.socialBlockMinutes() || controller.totalBlockedUsageToday() >= controller.dailyLimitMinutes()) && foreground != lastBlockedPackage) {
             lastBlockedPackage = foreground
             context.startActivity(
                 Intent(context, DigitalWellbeingBlockedActivity::class.java)
