@@ -20,6 +20,7 @@ import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.exifinterface.media.ExifInterface
 import app.lawnchair.allapps.views.SearchResultView
+import app.lawnchair.assistant.NexusSearchBrowserActivity
 import app.lawnchair.search.algorithms.data.Calculation
 import app.lawnchair.search.algorithms.data.ContactInfo
 import app.lawnchair.search.algorithms.data.FileInfo
@@ -81,7 +82,7 @@ class SearchTargetFactory(
     fun createWebSuggestionsTarget(suggestion: String, suggestionProvider: String): SearchTargetCompat {
         val webSearchProvider = WebSearchProvider.fromString(suggestionProvider)
         val url = webSearchProvider.getSearchUrl(suggestion)
-        val browserIntent = Intent(Intent.ACTION_VIEW, url.toUri())
+        val browserIntent = NexusSearchBrowserActivity.urlIntent(context, url)
         val id = suggestion + url
         val bitmap = createSmallSearchResultBitmap(context, R.drawable.ic_allapps_search)
         val action = SearchActionCompat.Builder(id, suggestion).apply {
@@ -145,7 +146,7 @@ class SearchTargetFactory(
 
     fun createSearchHistoryTarget(recentKeyword: RecentKeyword, searchUrl: (String) -> String): SearchTargetCompat {
         val value = recentKeyword.getValueByKey("display1") ?: ""
-        val browserIntent = Intent(Intent.ACTION_VIEW, searchUrl(value).toUri())
+        val browserIntent = NexusSearchBrowserActivity.urlIntent(context, searchUrl(value))
         val id = recentKeyword.data.toString() + searchUrl(value)
         val bitmap = createSmallSearchResultBitmap(context, R.drawable.ic_recent)
         val action = SearchActionCompat.Builder(id, value)
@@ -242,7 +243,7 @@ class SearchTargetFactory(
         tintIcon: Boolean = false,
     ): SearchTargetCompat {
         val id = "browser:$query:$providerName"
-        val browserIntent = Intent(Intent.ACTION_VIEW, searchUrl.toUri())
+        val browserIntent = NexusSearchBrowserActivity.urlIntent(context, searchUrl)
         val title = context.getString(R.string.all_apps_search_on_web_message, providerName)
 
         val icon = Icon.createWithResource(context, providerIconRes).apply {
