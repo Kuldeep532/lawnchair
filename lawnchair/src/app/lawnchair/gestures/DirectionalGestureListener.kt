@@ -31,6 +31,12 @@ abstract class DirectionalGestureListener(ctx: Context?) : OnTouchListener {
         return onTouchEvent(event)
     }
 
+    /**
+     * Dispatches a touch event to the same gesture detector used by icon gestures.
+     * The launcher can use this for configurable horizontal workspace swipes.
+     */
+    fun dispatchGestureEvent(event: MotionEvent): Boolean = onTouchEvent(event)
+
     inner class GestureListener : SimpleOnGestureListener() {
 
         private fun shouldReactToSwipe(diff: Float, velocity: Float): Boolean = abs(diff) > SWIPE_THRESHOLD && abs(velocity) > SWIPE_VELOCITY_THRESHOLD
