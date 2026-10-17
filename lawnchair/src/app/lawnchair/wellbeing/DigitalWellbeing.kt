@@ -204,6 +204,7 @@ class DigitalWellbeingBlockedActivity : androidx.activity.ComponentActivity() {
         super.onCreate(savedInstanceState)
         androidx.activity.compose.setContent {
             app.lawnchair.ui.theme.LawnchairTheme {
+                EdgeToEdge()
                 Scaffold(
                     topBar = { TopAppBar(title = { Text("Focus Mode") }) },
                 ) { padding ->
