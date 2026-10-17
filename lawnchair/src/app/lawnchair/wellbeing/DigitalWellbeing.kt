@@ -7,6 +7,8 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import android.provider.Settings
 import android.content.pm.LauncherApps
 import android.os.Process
@@ -314,17 +316,39 @@ fun DigitalWellbeingSettings() {
                     }
                 }
                 item {
-                    Text("Use your time to learn", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
-                    Text("Instead of endless scrolling, try a short lesson or a useful tutorial.")
-                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.duolingo.com/"))) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Learn English with Duolingo")
+                    Text("Learn instead of endlessly scrolling", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                    Text("Pick one small goal: learn a skill, practise English, complete a course, or explore legitimate work opportunities.")
+                    Button(onClick = { openWellbeingResource(context, "https://www.duolingo.com/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Practise English · Duolingo")
                     }
-                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.youtube.com/@bbclearningenglish"))) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("BBC Learning English on YouTube")
+                    Button(onClick = { openWellbeingResource(context, "https://www.youtube.com/@bbclearningenglish") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("English lessons · BBC Learning English")
                     }
-                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.khanacademy.org/"))) }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Study with Khan Academy")
+                    Button(onClick = { openWellbeingResource(context, "https://www.khanacademy.org/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Study maths and more · Khan Academy")
                     }
+                    Button(onClick = { openWellbeingResource(context, "https://swayam.gov.in/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Free courses · SWAYAM")
+                    }
+                    Button(onClick = { openWellbeingResource(context, "https://nptel.ac.in/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Technical courses · NPTEL")
+                    }
+                    Button(onClick = { openWellbeingResource(context, "https://www.skillindiadigital.gov.in/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Job skills · Skill India Digital Hub")
+                    }
+                    Button(onClick = { openWellbeingResource(context, "https://internshala.com/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Explore internships · Internshala")
+                    }
+                    Button(onClick = { openWellbeingResource(context, "https://www.ncs.gov.in/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Explore jobs · National Career Service")
+                    }
+                    Button(onClick = { openWellbeingResource(context, "https://www.fiverr.com/") }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Explore freelance work · Fiverr")
+                    }
+                    Text(
+                        "Safety tip: courses and job listings do not guarantee income. Never pay a recruiter to get a job, and never share OTPs, UPI PINs, or banking passwords.",
+                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
             Text(
@@ -429,7 +453,7 @@ class DigitalWellbeingBlockedActivity : androidx.activity.ComponentActivity() {
                 finish()
             }
         })
-        androidx.activity.compose.setContent {
+        setContent {
             app.lawnchair.ui.theme.LawnchairTheme {
                 EdgeToEdge()
                 Scaffold(
@@ -451,5 +475,13 @@ class DigitalWellbeingBlockedActivity : androidx.activity.ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+private fun openWellbeingResource(context: Context, url: String) {
+    runCatching {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }.onFailure {
+        Toast.makeText(context, "Could not open this link. Please check your browser.", Toast.LENGTH_LONG).show()
     }
 }
