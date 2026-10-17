@@ -44,9 +44,8 @@ class FileRenamerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
 
-        setContent { LawnchairTheme { FileRenamerScreen(::finish) } }
+        setContent { LawnchairTheme { EdgeToEdge(); FileRenamerScreen(::finish) } }
     }
 }
 
