@@ -54,9 +54,9 @@ private const val KEY_BITS = 256
 class ToolsStudioActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 ToolsStudioScreen(onBack = ::finish)
             }
         }
