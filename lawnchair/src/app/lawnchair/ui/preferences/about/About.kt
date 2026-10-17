@@ -132,7 +132,7 @@ fun About(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     NexusInfoRow("Launcher", "Nexus Launcher")
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    NexusInfoRow("Experience", "Nexus Fusion UI")
+                    NexusInfoRow("Experience", "Nexus UI")
                 }
             }
         }
@@ -150,7 +150,7 @@ fun About(
         }
         item {
             Text(
-                text = "Nexus Fusion UI began as an experiment in creating a custom launcher experience and grew into a consistent visual language for Nexus Launcher.",
+                text = "Nexus UI began as an experiment in creating a custom launcher experience and grew into the visual identity of Nexus Launcher.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
