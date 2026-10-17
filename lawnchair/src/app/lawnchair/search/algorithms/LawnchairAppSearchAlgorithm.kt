@@ -112,8 +112,6 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
             searchTargets.add(searchTargetFactory.createHeaderTarget(SPACE))
         }
 
-        searchTargetFactory.createMarketSearchTarget(query)?.let { searchTargets.add(it) }
-
         // Keep the standard app-search mode useful as a universal launcher search.
         // The existing "Web search suggestions" switch remains the user's opt-out.
         if (PreferenceManager.getInstance(context).searchResultStartPageSuggestion.get()) {
@@ -177,6 +175,8 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
                 )
             }
         }
+
+        searchTargetFactory.createMarketSearchTarget(query)?.let { searchTargets.add(it) }
 
         setFirstItemQuickLaunch(searchTargets)
         val adapterItems = transformSearchResults(searchTargets)
