@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +40,7 @@ import app.lawnchair.ui.theme.LawnchairTheme
  * Lightweight in-app search viewer. It uses Android System WebView, so no browser
  * engine is bundled in the APK and no search API key is required.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 class NexusSearchBrowserActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
