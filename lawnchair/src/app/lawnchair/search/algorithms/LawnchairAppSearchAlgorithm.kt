@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(context) {
 
@@ -81,10 +82,13 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
         apps: MutableList<AppInfo>,
         query: String,
     ): ArrayList<BaseAllAppsAdapter.AdapterItem> {
+        val appQuery = query.trim().let { value ->
+            if (value.startsWith("app:", ignoreCase = true)) value.substringAfter(':').trim() else value
+        }
         val appResults = if (enableFuzzySearch) {
-            SearchUtils.fuzzySearch(apps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
+            SearchUtils.fuzzySearch(apps, appQuery, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         } else {
-            SearchUtils.normalSearch(apps, query, maxResultsCount, hiddenApps, hiddenAppsInSearch)
+            SearchUtils.normalSearch(apps, appQuery, maxResultsCount, hiddenApps, hiddenAppsInSearch)
         }
 
         val searchTargets = mutableListOf<SearchTargetCompat>()
