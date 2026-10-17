@@ -101,12 +101,7 @@ class NexusAssistantActivity : ComponentActivity() {
                     }
                 }
 
-                var showCloudSettings by remember { mutableStateOf(false) }
-                var selectedProvider by remember { mutableStateOf(NexusCloudAssistant.provider(this@NexusAssistantActivity)) }
                 NexusAssistantScreen(
-                    cloudSignedIn = NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity),
-                    selectedProvider = selectedProvider,
-                    onCloudSettings = { showCloudSettings = true },
                     onOpenModels = {
                         startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
                     },
@@ -126,49 +121,6 @@ class NexusAssistantActivity : ComponentActivity() {
                         processInput(query, setResponse)
                     },
                 )
-
-                if (showCloudSettings) {
-                    AlertDialog(
-                        onDismissRequest = { showCloudSettings = false },
-                        title = { Text("Online AI settings (optional)") },
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text(
-                                    if (NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity)) {
-                                        "Your Nexus account session is available for online AI."
-                                    } else {
-                                        "Sign in to your Nexus account in the app to enable online AI. The assistant uses your signed-in Supabase session."
-                                    }
-                                )
-                                Text("AI provider")
-                                listOf("gemini" to "Gemini", "openai" to "OpenAI", "anthropic" to "Anthropic").forEach { (id, label) ->
-                                    androidx.compose.foundation.layout.Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                                    ) {
-                                        RadioButton(
-                                            selected = selectedProvider == id,
-                                            onClick = {
-                                                selectedProvider = id
-                                                NexusCloudAssistant.setProvider(this@NexusAssistantActivity, id)
-                                            },
-                                        )
-                                        TextButton(onClick = {
-                                            selectedProvider = id
-                                            NexusCloudAssistant.setProvider(this@NexusAssistantActivity, id)
-                                        }) { Text(label) }
-                                    }
-                                }
-                                Text(
-                                    "Provider availability depends on the API keys and plan configured on the Nexus server. API secrets stay on the server and are not stored in the launcher."
-                                )
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { showCloudSettings = false }) { Text("Done") }
-                        },
-                    )
-                }
 
                 if (showRequiredDownload) {
                     AlertDialog(
@@ -478,9 +430,6 @@ class NexusAssistantActivity : ComponentActivity() {
 
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
-    cloudSignedIn: Boolean,
-    selectedProvider: String,
-    onCloudSettings: () -> Unit,
     onOpenModels: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
@@ -509,19 +458,6 @@ private fun NexusAssistantScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("Nexus Assistant is local-first: phone commands and downloaded local chat work without signing in.")
-            Text(if (cloudSignedIn) "Optional online AI: connected." else "Optional online AI: not connected. Local features remain available.")
-            Text("AI provider: " + when (selectedProvider) {
-                "openai" -> "OpenAI"
-                "anthropic" -> "Anthropic"
-                else -> "Gemini"
-            })
-            Button(
-                onClick = onOpenModels,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Download Voice AI Models") }
-            Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
-                Text("Online AI settings (optional)")
-            }
             Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
             OutlinedTextField(
                 value = query,
