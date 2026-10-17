@@ -1,7 +1,6 @@
 package app.lawnchair.assistant
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -22,17 +21,16 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
@@ -53,7 +51,7 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                 EdgeToEdge()
                 var progress by remember { mutableIntStateOf(0) }
                 var pageTitle by remember { mutableStateOf("Nexus Search") }
-                var webView: WebView? = null
+                var webView by remember { mutableStateOf<WebView?>(null) }
                 BackHandler(enabled = webView?.canGoBack() == true) {
                     webView?.goBack()
                 }
@@ -88,7 +86,6 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                             factory = { context ->
                                 WebView(context).apply {
                                     webView = this
-                                    @SuppressLint("SetJavaScriptEnabled")
                                     settings.javaScriptEnabled = true
                                     settings.domStorageEnabled = true
                                     settings.allowFileAccess = false
@@ -96,6 +93,9 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                                     settings.javaScriptCanOpenWindowsAutomatically = false
                                     settings.setSupportMultipleWindows(false)
                                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                        settings.safeBrowsingEnabled = true
+                                    }
                                     webViewClient = object : WebViewClient() {
                                         override fun shouldOverrideUrlLoading(
                                             view: WebView,
