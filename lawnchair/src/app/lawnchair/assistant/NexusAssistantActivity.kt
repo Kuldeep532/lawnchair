@@ -186,6 +186,30 @@ class NexusAssistantActivity : ComponentActivity() {
             }
     }
 
+    private fun isDirectWebQuestion(raw: String): Boolean {
+        val query = raw.trim().lowercase(Locale.ROOT)
+        if (query.isBlank()) return false
+        return query.startsWith("what is ") ||
+            query.startsWith("what's ") ||
+            query.startsWith("who is ") ||
+            query.startsWith("who was ") ||
+            query.startsWith("where is ") ||
+            query.startsWith("when is ") ||
+            query.startsWith("when was ") ||
+            query.startsWith("why is ") ||
+            query.startsWith("how to ") ||
+            query.startsWith("how do ") ||
+            query.startsWith("how does ") ||
+            query.startsWith("tell me about ") ||
+            query.startsWith("latest news ") ||
+            query.startsWith("समझाओ ") ||
+            query.startsWith("क्या है ") ||
+            query.startsWith("कौन है ") ||
+            query.startsWith("कहाँ है ") ||
+            query.startsWith("कैसे ") ||
+            query.startsWith("बताओ ")
+    }
+
     private fun isSystemCommand(raw: String): Boolean {
         val command = raw.trim().lowercase(Locale.ROOT)
         return command.contains("flashlight") || command.contains("torch") ||
@@ -211,6 +235,11 @@ class NexusAssistantActivity : ComponentActivity() {
             raw.trim().equals("download voice ai models", ignoreCase = true)
         ) {
             startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
+            return
+        }
+        // Common information questions should work even when no local AI model or API is available.
+        if (isDirectWebQuestion(raw)) {
+            onResult(openSearch(raw.trim()))
             return
         }
         if (isSystemCommand(raw)) {
