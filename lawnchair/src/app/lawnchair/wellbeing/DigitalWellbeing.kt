@@ -403,15 +403,13 @@ fun DigitalWellbeingSettings() {
 
 suspend fun runWellbeingTick(context: Context) {
     val controller = DigitalWellbeingController(context)
-    if (!controller.isUsageAccessGranted()) return
     var lastBlockedPackage: String? = null
     repeat(2) {
         delay(750)
         val foreground = controller.foregroundPackage()
         if (foreground == null || foreground == context.packageName) return@repeat
-        if (!controller.isSocialApp(foreground)) return@repeat
-        val used = controller.packageUsageToday(foreground) / 60_000L
-        if ((used >= controller.socialBlockMinutes() || controller.totalBlockedUsageToday() / 60_000L >= controller.dailyLimitMinutes()) && foreground != lastBlockedPackage) {
+        if (!controller.shouldBlockPackage(foreground)) return@repeat
+        if (foreground != lastBlockedPackage) {
             lastBlockedPackage = foreground
             context.startActivity(
                 Intent(context, DigitalWellbeingBlockedActivity::class.java)
