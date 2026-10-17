@@ -12,7 +12,7 @@ import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.util.Log
 import android.widget.RemoteViews
-import app.lawnchair.R
+import com.android.launcher3.R
 
 class NexusMusicWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray) {
