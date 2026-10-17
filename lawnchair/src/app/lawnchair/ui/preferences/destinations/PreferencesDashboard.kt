@@ -252,8 +252,8 @@ fun PreferencesDashboard(
             )
 
             PreferenceCategory(
-                label = "Nexus UI",
-                description = "Version 1.0 · About this launcher",
+                label = "About Nexus Launcher",
+                description = "Nexus UI version 1.0 and app information",
                 iconResource = R.drawable.ic_about,
                 onNavigate = { onNavigate(About) },
                 isSelected = currentRoute is About,
