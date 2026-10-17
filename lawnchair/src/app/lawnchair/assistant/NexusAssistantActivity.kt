@@ -402,10 +402,7 @@ class NexusAssistantActivity : ComponentActivity() {
             else -> null
         }
 
-        if (!musicQuery.isNullOrBlank()) return openUrlSearch(
-            "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
-            "Searching music for $musicQuery."
-        )
+        if (!musicQuery.isNullOrBlank()) return openMusicAppChooser(musicQuery)
         if (!videoQuery.isNullOrBlank()) return openUrlSearch(
             "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
             "Searching videos for $videoQuery."
