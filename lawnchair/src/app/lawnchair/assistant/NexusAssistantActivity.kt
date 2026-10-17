@@ -71,9 +71,9 @@ class NexusAssistantActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 var showRequiredDownload by remember {
                     mutableStateOf(intent.getBooleanExtra(EXTRA_OPEN_MODELS, false) || AssistantModelStore.localState(this@NexusAssistantActivity) != AssistantModelStore.AssetState.DOWNLOADED)
                 }
