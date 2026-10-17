@@ -58,9 +58,9 @@ class PdfToImageActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 PdfToImageScreen(onBack = ::finish)
             }
         }
