@@ -277,7 +277,7 @@ private object PdfRendererInfo {
         val descriptor = resolver.openFileDescriptor(uri, "r")
             ?: error("The selected PDF could not be opened.")
         descriptor.use {
-            PdfRenderer(it.fileDescriptor).use { renderer ->
+            PdfRenderer(it).use { renderer ->
                 return renderer.pageCount
             }
         }
