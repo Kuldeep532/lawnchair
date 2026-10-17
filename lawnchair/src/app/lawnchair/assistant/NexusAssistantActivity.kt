@@ -302,7 +302,7 @@ class NexusAssistantActivity : ComponentActivity() {
                     "Opening settings."
                 }.getOrElse { "I could not open settings on this device." }
             command.contains("bluetooth") || command.contains("ब्लूटूथ") -> runCatching {
-                startActivity(Intent(Settings.Panel.ACTION_BLUETOOTH))
+                startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
                 "Bluetooth controls opened."
             }.getOrElse {
                 runCatching {
