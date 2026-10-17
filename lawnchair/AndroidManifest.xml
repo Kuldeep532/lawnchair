@@ -60,7 +60,6 @@
         tools:node="remove" />
 
     <application>
-        <activity android:name="app.lawnchair.account.NexusAccountActivity" android:exported="false" android:label="Nexus Account" android:theme="@style/Theme.Lawnchair" />
 
         <activity
             android:name="app.lawnchair.assistant.NexusAssistantActivity"
