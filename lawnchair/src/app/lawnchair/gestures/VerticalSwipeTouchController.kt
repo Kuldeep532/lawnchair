@@ -24,25 +24,9 @@ class VerticalSwipeTouchController(
 
     private val prefs = PreferenceManager2.getInstance(launcher)
     private val detector = BothAxesSwipeDetector(launcher, this)
-    private val horizontalGestureListener = object : DirectionalGestureListener(launcher) {
-        override fun onSwipeRight(velocity: Float): Boolean {
-            gestureController.onSwipeRight()
-            return true
-        }
-
-        override fun onSwipeLeft(velocity: Float): Boolean {
-            gestureController.onSwipeLeft()
-            return true
-        }
-
-        override fun onSwipeTop(velocity: Float): Boolean = false
-        override fun onSwipeDown(velocity: Float): Boolean = false
-    }
 
     private var overrideSwipeUp = false
     private var overrideSwipeDown = false
-    private var overrideSwipeLeft = false
-    private var overrideSwipeRight = false
     private var overrideTwoFingerSwipeUp = false
     private var overrideTwoFingerSwipeDown = false
 
@@ -61,12 +45,6 @@ class VerticalSwipeTouchController(
                 .launchIn(this)
             prefs.swipeDownGestureHandler.get()
                 .onEach { overrideSwipeDown = it != prefs.swipeDownGestureHandler.defaultValue }
-                .launchIn(this)
-            prefs.swipeLeftGestureHandler.get()
-                .onEach { overrideSwipeLeft = it !is GestureHandlerConfig.NoOp }
-                .launchIn(this)
-            prefs.swipeRightGestureHandler.get()
-                .onEach { overrideSwipeRight = it !is GestureHandlerConfig.NoOp }
                 .launchIn(this)
             // Override when a custom gesture handler is configured, as launcher does not handle these by default
             prefs.twoFingerSwipeUpGestureHandler.get()
@@ -88,9 +66,6 @@ class VerticalSwipeTouchController(
         }
         if (noIntercept) {
             return false
-        }
-        if (overrideSwipeLeft || overrideSwipeRight) {
-            horizontalGestureListener.dispatchGestureEvent(ev)
         }
         onControllerTouchEvent(ev)
         return detector.isDraggingOrSettling
