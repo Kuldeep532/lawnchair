@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import java.io.ByteArrayInputStream
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -49,8 +51,9 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                 EdgeToEdge()
                 var progress by remember { mutableIntStateOf(0) }
                 var pageTitle by remember { mutableStateOf("Nexus Search") }
+                var canGoBack by remember { mutableStateOf(false) }
                 var webView by remember { mutableStateOf<WebView?>(null) }
-                BackHandler(enabled = webView?.canGoBack() == true) {
+                BackHandler(enabled = canGoBack) {
                     webView?.goBack()
                 }
                 Scaffold(
@@ -59,7 +62,7 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                             title = { Text(pageTitle, maxLines = 1) },
                             navigationIcon = {
                                 IconButton(onClick = {
-                                    if (webView?.canGoBack() == true) webView?.goBack() else finish()
+                                    if (canGoBack) webView?.goBack() else finish()
                                 }) {
                                     Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
                                 }
@@ -100,8 +103,38 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                                             request: WebResourceRequest,
                                         ): Boolean {
                                             val uri = request.url
-                                            if (uri.scheme == "http" || uri.scheme == "https") return false
-                                            return true
+                                            return uri.scheme != "http" && uri.scheme != "https"
+                                        }
+
+                                        override fun shouldInterceptRequest(
+                                            view: WebView,
+                                            request: WebResourceRequest,
+                                        ): WebResourceResponse? {
+                                            val uri = request.url
+                                            val host = uri.host.orEmpty().lowercase()
+                                            val knownAdHost = listOf(
+                                                "doubleclick.net",
+                                                "googlesyndication.com",
+                                                "googleadservices.com",
+                                                "adservice.google.com",
+                                                "amazon-adsystem.com",
+                                                "adnxs.com",
+                                            ).any { host == it || host.endsWith(".$it") }
+                                            val googleAdPath = host == "www.google.com" &&
+                                                (uri.path.orEmpty().startsWith("/pagead/") ||
+                                                    uri.path.orEmpty().startsWith("/ads/"))
+                                            if (knownAdHost || googleAdPath) {
+                                                return WebResourceResponse(
+                                                    "text/plain",
+                                                    "utf-8",
+                                                    ByteArrayInputStream(ByteArray(0)),
+                                                )
+                                            }
+                                            return super.shouldInterceptRequest(view, request)
+                                        }
+
+                                        override fun onPageFinished(view: WebView, url: String?) {
+                                            canGoBack = view.canGoBack()
                                         }
                                     }
                                     webChromeClient = object : WebChromeClient() {
