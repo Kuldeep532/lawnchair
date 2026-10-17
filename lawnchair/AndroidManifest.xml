@@ -72,6 +72,12 @@
     <application>
 
         <activity
+            android:name="app.lawnchair.ui.preferences.legal.LegalDocumentsActivity"
+            android:exported="false"
+            android:label="Legal information"
+            android:theme="@style/Theme.Lawnchair" />
+
+        <activity
             android:name="app.lawnchair.assistant.NexusAssistantActivity"
             android:exported="false"
             android:label="Nexus Assistant"
