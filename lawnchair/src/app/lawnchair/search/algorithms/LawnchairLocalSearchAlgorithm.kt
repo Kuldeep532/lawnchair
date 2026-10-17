@@ -173,7 +173,7 @@ class LawnchairLocalSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm
                 actions.add(
                     SearchResult.Action.WebSearch(
                         query = musicQuery,
-                        providerName = "YouTube Music",
+                        providerName = "Music apps",
                         searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
                         providerIconRes = R.drawable.ic_search,
                         tintIcon = true,
