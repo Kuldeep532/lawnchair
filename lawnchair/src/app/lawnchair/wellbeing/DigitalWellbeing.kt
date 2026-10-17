@@ -6,9 +6,14 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import android.content.pm.LauncherApps
+import android.os.Process
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +33,7 @@ import java.util.Calendar
 private const val PREFS = "nexus_wellbeing"
 private const val KEY_DAILY_LIMIT = "daily_limit_minutes"
 private const val KEY_SOCIAL_BLOCK_MINUTES = "social_block_minutes"
+private const val KEY_BLOCKED_PACKAGES = "blocked_packages"
 private val DEFAULT_BLOCKED = setOf(
     "com.instagram.android",
     "com.facebook.katana",
@@ -67,8 +73,15 @@ class DigitalWellbeingController(private val context: Context) {
     fun isAllowedApp(packageName: String): Boolean =
         packageName in ALLOWED || packageName == context.packageName
 
+    fun blockedPackages(): Set<String> =
+        prefs.getStringSet(KEY_BLOCKED_PACKAGES, DEFAULT_BLOCKED)?.toSet() ?: DEFAULT_BLOCKED
+
+    fun setBlockedPackages(packages: Set<String>) {
+        prefs.edit().putStringSet(KEY_BLOCKED_PACKAGES, packages.toSet()).apply()
+    }
+
     fun isSocialApp(packageName: String): Boolean =
-        packageName in DEFAULT_BLOCKED && !isAllowedApp(packageName)
+        packageName in blockedPackages() && !isAllowedApp(packageName)
 
     fun foregroundPackage(): String? {
         if (!isUsageAccessGranted()) return null
@@ -119,16 +132,34 @@ fun DigitalWellbeingSettings() {
     var dailyLimit by remember { mutableIntStateOf(controller.dailyLimitMinutes()) }
     var socialBlock by remember { mutableIntStateOf(controller.socialBlockMinutes()) }
     var access by remember { mutableStateOf(controller.isUsageAccessGranted()) }
+    var blockedPackages by remember { mutableStateOf(controller.blockedPackages()) }
+    val installedApps = remember {
+        runCatching {
+            context.getSystemService(LauncherApps::class.java)
+                .getActivityList(null, Process.myUserHandle())
+                .map { it.applicationInfo.packageName to (it.label?.toString() ?: it.applicationInfo.packageName) }
+                .distinctBy { it.first }
+                .filter { it.first != context.packageName && !controller.isAllowedApp(it.first) }
+                .sortedBy { it.second.lowercase() }
+        }.getOrDefault(emptyList())
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            access = controller.isUsageAccessGranted()
+            delay(1000)
+        }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Digital Wellbeing") }) },
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Set a daily launcher-use limit and reduce time on distracting apps.")
-            Text("Daily launcher limit: $dailyLimit minutes")
+            Text("Choose distracting apps and set daily usage limits. PhonePe, Google Pay and YouTube remain excluded.")
+            Text("Daily total limit: $dailyLimit minutes", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = dailyLimit.toString(),
                 onValueChange = { value ->
@@ -138,11 +169,10 @@ fun DigitalWellbeingSettings() {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Daily limit in minutes") },
+                label = { Text("Daily total limit (minutes)") },
                 singleLine = true,
             )
-
-            Text("Social app block duration: $socialBlock minutes")
+            Text("Per-app limit: $socialBlock minutes", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(15, 30, 45, 60).forEach { minutes ->
                     FilterChip(
@@ -155,26 +185,47 @@ fun DigitalWellbeingSettings() {
                     )
                 }
             }
-
             Text(
-                if (access) {
-                    "Usage access is enabled."
-                } else {
-                    "Usage access is required to measure app time."
-                },
+                if (access) "Usage access is enabled." else "Enable usage access to measure app time and enforce limits.",
             )
             Button(
-                onClick = {
-                    controller.openUsageAccessSettings()
-                    access = controller.isUsageAccessGranted()
-                },
+                onClick = { controller.openUsageAccessSettings() },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (access) "Review usage access" else "Enable usage access")
             }
-
-            Text("Protected apps: Instagram and Facebook. PhonePe, Google Pay and YouTube are always excluded.")
-            Text("A stronger block can be enabled later using Android's managed-device controls.")
+            Text("Apps to limit", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+            LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                items(installedApps, key = { it.first }) { (packageName, label) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Checkbox(
+                            checked = packageName in blockedPackages,
+                            onCheckedChange = { checked ->
+                                blockedPackages = if (checked) blockedPackages + packageName else blockedPackages - packageName
+                                controller.setBlockedPackages(blockedPackages)
+                            },
+                        )
+                        Column(Modifier.weight(1f).padding(top = 10.dp)) {
+                            Text(label)
+                            Text(
+                                if (access) "Used today: ${controller.packageUsageToday(packageName) / 60_000L} min"
+                                else packageName,
+                                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                "Limits rely on Android Usage Access and launcher monitoring. Android may restrict background enforcement; this is not a device-wide parental-control lock.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
