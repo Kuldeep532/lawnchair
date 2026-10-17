@@ -107,6 +107,9 @@ class NexusAssistantActivity : ComponentActivity() {
                     cloudSignedIn = NexusCloudAssistant.isSignedIn(this@NexusAssistantActivity),
                     selectedProvider = selectedProvider,
                     onCloudSettings = { showCloudSettings = true },
+                    onOpenModels = {
+                        startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
+                    },
                     onBack = ::finish,
                     onListen = { onRecognized ->
                         speechResultHandler = { recognized ->
@@ -478,6 +481,7 @@ private fun NexusAssistantScreen(
     cloudSignedIn: Boolean,
     selectedProvider: String,
     onCloudSettings: () -> Unit,
+    onOpenModels: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
@@ -512,7 +516,7 @@ private fun NexusAssistantScreen(
                 else -> "Gemini"
             })
             Button(
-                onClick = { onCommand("models") { response = it } },
+                onClick = onOpenModels,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Download Voice AI Models") }
             Button(onClick = onCloudSettings, modifier = Modifier.fillMaxWidth()) {
