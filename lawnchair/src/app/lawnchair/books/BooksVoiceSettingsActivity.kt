@@ -40,10 +40,10 @@ class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         textToSpeech = TextToSpeech(this, this)
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 VoiceSettingsScreen(
                     voiceReady = voiceReady,
                     initialProvider = ReaderVoicePreferences.LOCAL,
