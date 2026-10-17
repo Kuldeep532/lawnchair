@@ -14,7 +14,6 @@ import android.os.Build
 import android.os.IBinder
 import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
-import app.lawnchair.R
 
 class OnlineRadioService : Service() {
     private var player: MediaPlayer? = null
@@ -141,7 +140,7 @@ class OnlineRadioService : Service() {
 
     private fun notification(station: RadioStation, playing: Boolean): Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_home)
+            .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(station.name)
             .setContentText(if (playing) "Online Radio is playing" else "Online Radio is paused")
             .setOngoing(playing)
