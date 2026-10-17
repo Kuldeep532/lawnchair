@@ -42,8 +42,9 @@ import java.security.SecureRandom
 class PasswordGeneratorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LawnchairTheme {
-                EdgeToEdge() PasswordGeneratorScreen(::finish) } }
+        EdgeToEdge()
+
+        setContent { LawnchairTheme { PasswordGeneratorScreen(::finish) } }
     }
 }
 
