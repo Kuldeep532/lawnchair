@@ -41,9 +41,7 @@ import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -257,18 +255,7 @@ class NexusAssistantActivity : ComponentActivity() {
             return
         }
         lifecycleScope.launch {
-            var cloudError: String? = null
-            val cloudAnswer = withContext(Dispatchers.IO) {
-                runCatching { NexusCloudAssistant.reply(this@NexusAssistantActivity, raw) }
-                    .onFailure { cloudError = it.message }
-                    .getOrNull()
-            }
-            if (!cloudAnswer.isNullOrBlank()) {
-                onResult(cloudAnswer)
-                return@launch
-            }
-
-            val localAnswer = withContext(Dispatchers.IO) {
+            val localAnswer = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 if (!LocalAssistantEngine.isLoaded) {
                     LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                 }
@@ -279,9 +266,7 @@ class NexusAssistantActivity : ComponentActivity() {
             if (!localAnswer.isNullOrBlank()) {
                 onResult(localAnswer)
             } else {
-                val fallback = cloudError?.takeIf { it.contains("Sign in") || it.contains("premium", ignoreCase = true) }
-                    ?: "I couldn't reach the online assistant or load the local model. Please check your internet connection, or use a phone command such as ‘open YouTube’."
-                onResult(fallback)
+                onResult("The local chat model is not ready on this device. Open Settings, then Models, to download Voice AI Models. Phone commands remain available.")
             }
         }
     }
