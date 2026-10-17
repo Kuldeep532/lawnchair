@@ -259,6 +259,38 @@ fun PreferencesDashboard(
                 onNavigate = { onNavigate(About) },
                 isSelected = currentRoute is About,
             )
+
+            PreferenceCategory(
+                label = "Privacy Policy",
+                description = "Learn what launcher features and permissions process",
+                iconResource = R.drawable.ic_about,
+                onNavigate = {
+                    context.startActivity(
+                        Intent(context, app.lawnchair.ui.preferences.legal.LegalDocumentsActivity::class.java)
+                            .putExtra(
+                                app.lawnchair.ui.preferences.legal.LegalDocumentsActivity.EXTRA_DOCUMENT,
+                                app.lawnchair.ui.preferences.legal.LegalDocumentsActivity.PRIVACY,
+                            ),
+                    )
+                },
+                isSelected = false,
+            )
+
+            PreferenceCategory(
+                label = "Terms & Conditions",
+                description = "Review the terms for using Nexus Launcher",
+                iconResource = R.drawable.ic_about,
+                onNavigate = {
+                    context.startActivity(
+                        Intent(context, app.lawnchair.ui.preferences.legal.LegalDocumentsActivity::class.java)
+                            .putExtra(
+                                app.lawnchair.ui.preferences.legal.LegalDocumentsActivity.EXTRA_DOCUMENT,
+                                app.lawnchair.ui.preferences.legal.LegalDocumentsActivity.TERMS,
+                            ),
+                    )
+                },
+                isSelected = false,
+            )
         }
     }
 }
