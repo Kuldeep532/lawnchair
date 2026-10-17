@@ -454,9 +454,9 @@ class DigitalWellbeingBlockedActivity : androidx.activity.ComponentActivity() {
                 finish()
             }
         })
-        EdgeToEdge()
         setContent {
             app.lawnchair.ui.theme.LawnchairTheme {
+                EdgeToEdge()
                 Scaffold(
                     topBar = { TopAppBar(title = { Text("Focus Mode") }) },
                 ) { padding ->
