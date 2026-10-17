@@ -39,9 +39,8 @@ import app.lawnchair.ui.theme.LawnchairTheme
 class ImageToPdfActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
 
-        setContent { LawnchairTheme { ImageToPdfScreen(::finish) } }
+        setContent { LawnchairTheme { EdgeToEdge(); ImageToPdfScreen(::finish) } }
     }
 }
 
