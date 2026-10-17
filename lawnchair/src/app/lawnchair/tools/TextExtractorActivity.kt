@@ -13,6 +13,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -48,8 +50,8 @@ class TextExtractorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LawnchairTheme {
-                EdgeToEdge() TextExtractorScreen(::finish) } }
+        EdgeToEdge()
+        setContent { LawnchairTheme { TextExtractorScreen(::finish) } }
     }
 
     fun incomingImageUri(): Uri? = when (intent.action) {
