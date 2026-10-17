@@ -403,6 +403,12 @@ suspend fun runWellbeingTick(context: Context) {
 class DigitalWellbeingBlockedActivity : androidx.activity.ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                startActivity(Intent(this@DigitalWellbeingBlockedActivity, app.lawnchair.LawnchairLauncher::class.java))
+                finish()
+            }
+        })
         androidx.activity.compose.setContent {
             app.lawnchair.ui.theme.LawnchairTheme {
                 EdgeToEdge()
