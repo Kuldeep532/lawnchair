@@ -1,6 +1,8 @@
 package app.lawnchair.wellbeing
 
 import android.app.AppOpsManager
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityManager
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
@@ -82,6 +84,13 @@ class DigitalWellbeingController(private val context: Context) {
             context.packageName,
         )
         return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    fun isAccessibilityMonitoringEnabled(): Boolean {
+        val manager = context.getSystemService(AccessibilityManager::class.java) ?: return false
+        return manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            .any { it.resolveInfo.serviceInfo.packageName == context.packageName &&
+                it.resolveInfo.serviceInfo.name == "app.lawnchair.LawnchairAccessibilityService" }
     }
 
     fun openUsageAccessSettings() {
@@ -192,6 +201,7 @@ fun DigitalWellbeingSettings() {
     var dailyLimit by remember { mutableIntStateOf(controller.dailyLimitMinutes()) }
     var socialBlock by remember { mutableIntStateOf(controller.socialBlockMinutes()) }
     var access by remember { mutableStateOf(controller.isUsageAccessGranted()) }
+    var monitoring by remember { mutableStateOf(controller.isAccessibilityMonitoringEnabled()) }
     var blockedPackages by remember { mutableStateOf(controller.blockedPackages()) }
     var focusUntil by remember { mutableStateOf(controller.focusUntilMillis()) }
     var showStartConsent by remember { mutableStateOf(false) }
@@ -211,6 +221,8 @@ fun DigitalWellbeingSettings() {
     LaunchedEffect(Unit) {
         while (true) {
             access = controller.isUsageAccessGranted()
+            monitoring = controller.isAccessibilityMonitoringEnabled()
+            focusUntil = controller.focusUntilMillis()
             delay(1000)
         }
     }
@@ -269,7 +281,7 @@ fun DigitalWellbeingSettings() {
                 Button(
                     onClick = { showStartConsent = true },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = blockedPackages.isNotEmpty(),
+                    enabled = blockedPackages.isNotEmpty() && monitoring,
                 ) { Text("Start 24-hour Focus Session") }
                 Text("Choose distracting apps below first. A focus session blocks only those apps for 24 hours; essential phone, messaging, payment and system apps are excluded.")
             }
@@ -318,12 +330,21 @@ fun DigitalWellbeingSettings() {
                 "For live app-switch monitoring, enable Nexus Launcher in Android Accessibility settings too.",
                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
             )
+            Text(
+                if (monitoring) "Accessibility monitoring is enabled."
+                else "Enable Accessibility monitoring before starting a Focus Session.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
             Button(
                 onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Enable accessibility monitoring")
+                Text(if (monitoring) "Review accessibility monitoring" else "Enable accessibility monitoring")
             }
+            Text(
+                "Transparency: Focus Mode blocks selected apps only. It does not prevent uninstalling Nexus Launcher or changing Android permissions; Android reserves device-owner controls for managed devices.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
         }
     }
 
