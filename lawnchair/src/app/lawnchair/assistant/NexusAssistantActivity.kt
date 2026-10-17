@@ -75,10 +75,11 @@ class NexusAssistantActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         EdgeToEdge()
-        runCatching { AssistantPreferences.migrateLegacySession(this) }
         setContent {
             LawnchairTheme {
-                var showRequiredDownload by remember { mutableStateOf(false) }
+                var showRequiredDownload by remember {
+                    mutableStateOf(intent.getBooleanExtra(EXTRA_OPEN_MODELS, false))
+                }
                 var modelState by remember { mutableStateOf(AssistantModelStore.localState(this)) }
                 var localRuntimeReady by remember { mutableStateOf(LocalAssistantEngine.isLoaded) }
                 var downloading by remember { mutableStateOf(false) }
@@ -95,8 +96,9 @@ class NexusAssistantActivity : ComponentActivity() {
                         }
                     } else false
                     // A missing optional local model or neural voice must not block cloud and phone actions.
-                    showRequiredDownload = modelState != AssistantModelStore.AssetState.DOWNLOADED ||
-                        !localRuntimeReady
+                    if (modelState != AssistantModelStore.AssetState.DOWNLOADED || !localRuntimeReady) {
+                        showRequiredDownload = true
+                    }
                 }
 
                 var showCloudSettings by remember { mutableStateOf(false) }
@@ -125,7 +127,7 @@ class NexusAssistantActivity : ComponentActivity() {
                 if (showCloudSettings) {
                     AlertDialog(
                         onDismissRequest = { showCloudSettings = false },
-                        title = { Text("Online AI settings") },
+                        title = { Text("Optional online AI settings") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text(
@@ -168,10 +170,10 @@ class NexusAssistantActivity : ComponentActivity() {
                 if (showRequiredDownload) {
                     AlertDialog(
                         onDismissRequest = { if (!downloading) showRequiredDownload = false },
-                        title = { Text("Download required models") },
+                        title = { Text("Models") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Download the optional local chat model to enable offline chat. Speech output is reserved for Books Reader and PDF Reader.")
+                                Text("Download Voice AI Models for on-device use. Downloaded files stay in this app's private storage. The lightweight local chat model enables offline text chat; speech playback uses the installed Android voice in Books Reader and PDF Reader.")
                                 Text(
                                     when {
                                         modelState != AssistantModelStore.AssetState.DOWNLOADED ->
@@ -218,7 +220,7 @@ class NexusAssistantActivity : ComponentActivity() {
                                                 downloadMessage = "Local chat is ready. Voice playback is available in Books Reader and PDF Reader."
                                             } else {
                                                 downloadError = if (!localRuntimeReady) {
-                                                    "The local chat model could not be loaded on this device. You can still use phone commands or sign in for online AI."
+                                                    "The local chat model could not be loaded on this device. Phone commands and local voice remain available."
                                                 } else {
                                                     "The local model download is incomplete. Please try again."
                                                 }
@@ -236,12 +238,16 @@ class NexusAssistantActivity : ComponentActivity() {
                             TextButton(
                                 enabled = !downloading,
                                 onClick = { showRequiredDownload = false },
-                            ) { Text("Later") }
+                            ) { Text("Close") }
                         },
                     )
                 }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_OPEN_MODELS = "app.lawnchair.assistant.OPEN_MODELS"
     }
 
     private fun startSpeechRecognition() {
@@ -491,8 +497,8 @@ private fun NexusAssistantScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Nexus Assistant combines phone actions, local chat and optional online AI.")
-            Text(if (cloudSignedIn) "Online AI: account connected." else "Online AI: sign in to your Nexus account to connect.")
+            Text("Nexus Assistant is local-first: phone commands and downloaded local chat work without signing in.")
+            Text(if (cloudSignedIn) "Optional online AI: connected." else "Optional online AI: not connected. Local features remain available.")
             Text("AI provider: " + when (selectedProvider) {
                 "openai" -> "OpenAI"
                 "anthropic" -> "Anthropic"
