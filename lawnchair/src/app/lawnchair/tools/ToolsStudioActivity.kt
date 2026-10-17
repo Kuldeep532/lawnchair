@@ -97,15 +97,6 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             ) { Text("Nexus Assistant") }
 
             Button(
-                onClick = { context.startActivity(Intent(context, QuickUtilityActivity::class.java)) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Quick Utility Hub") }
-
-            Button(
-                onClick = { context.startActivity(Intent(context, DateTimeHelperActivity::class.java)) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Date & Time Converter") }
-            Button(
                 onClick = { context.startActivity(Intent(context, QrGeneratorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("QR Code Generator") }
@@ -117,10 +108,6 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 onClick = { context.startActivity(Intent(context, ImageCompressorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Compress Image") }
-            Button(
-                onClick = { context.startActivity(Intent(context, FileRenamerActivity::class.java)) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Rename Files") }
             Button(
                 onClick = { context.startActivity(Intent(context, PasswordGeneratorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
