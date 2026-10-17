@@ -24,6 +24,20 @@ class VerticalSwipeTouchController(
 
     private val prefs = PreferenceManager2.getInstance(launcher)
     private val detector = BothAxesSwipeDetector(launcher, this)
+    private val horizontalGestureListener = object : DirectionalGestureListener(launcher) {
+        override fun onSwipeRight(velocity: Float): Boolean {
+            gestureController.onSwipeRight()
+            return true
+        }
+
+        override fun onSwipeLeft(velocity: Float): Boolean {
+            gestureController.onSwipeLeft()
+            return true
+        }
+
+        override fun onSwipeTop(velocity: Float): Boolean = false
+        override fun onSwipeDown(velocity: Float): Boolean = false
+    }
 
     private var overrideSwipeUp = false
     private var overrideSwipeDown = false
@@ -67,8 +81,9 @@ class VerticalSwipeTouchController(
         if (noIntercept) {
             return false
         }
+        val horizontalHandled = horizontalGestureListener.dispatchGestureEvent(ev)
         onControllerTouchEvent(ev)
-        return detector.isDraggingOrSettling
+        return horizontalHandled || detector.isDraggingOrSettling
     }
 
     override fun onControllerTouchEvent(ev: MotionEvent): Boolean {
