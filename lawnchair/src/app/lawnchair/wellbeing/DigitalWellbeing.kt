@@ -285,7 +285,10 @@ class DigitalWellbeingBlockedActivity : androidx.activity.ComponentActivity() {
                     ) {
                         Text("This app is temporarily blocked to help you stay within your time limit.")
                         Button(
-                            onClick = { startActivity(Intent(this@DigitalWellbeingBlockedActivity, app.lawnchair.LawnchairLauncher::class.java)) },
+                            onClick = {
+                                startActivity(Intent(this@DigitalWellbeingBlockedActivity, app.lawnchair.LawnchairLauncher::class.java))
+                                finish()
+                            },
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text("Back to Launcher") }
                     }
