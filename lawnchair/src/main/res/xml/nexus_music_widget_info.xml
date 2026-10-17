@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Required AppWidgetProvider metadata. Keep under src/main/res/xml so Android resource linking can resolve @xml/nexus_music_widget_info. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:label="Nexus Music"
     android:description="@string/derived_app_name"
