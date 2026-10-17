@@ -59,6 +59,16 @@
         android:name="${packageName}.permission.HOTSEAT_EDU"
         tools:node="remove" />
 
+    <queries>
+        <intent>
+            <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application>
 
         <activity
