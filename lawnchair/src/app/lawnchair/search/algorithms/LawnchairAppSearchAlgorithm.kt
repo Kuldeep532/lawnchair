@@ -82,6 +82,7 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
         apps: MutableList<AppInfo>,
         query: String,
     ): ArrayList<BaseAllAppsAdapter.AdapterItem> {
+        val prefs = PreferenceManager.getInstance(context)
         val appQuery = query.trim().let { value ->
             if (value.startsWith("app:", ignoreCase = true)) value.substringAfter(':').trim() else value
         }
@@ -114,7 +115,7 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
 
         // Keep the standard app-search mode useful as a universal launcher search.
         // The existing "Web search suggestions" switch remains the user's opt-out.
-        if (PreferenceManager.getInstance(context).searchResultStartPageSuggestion.get()) {
+        if (prefs.searchResultStartPageSuggestion.get()) {
             val normalized = query.trim()
             val lower = normalized.lowercase(Locale.ROOT)
             val musicQuery = when {
@@ -137,24 +138,32 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
             }
 
             when {
-                !musicQuery.isNullOrBlank() -> searchTargets.add(
-                    searchTargetFactory.createWebSearchActionTarget(
-                        query = musicQuery,
-                        providerName = "Music apps",
-                        searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
-                        providerIconRes = com.android.launcher3.R.drawable.ic_search,
-                        tintIcon = true,
-                    ),
-                )
-                !videoQuery.isNullOrBlank() -> searchTargets.add(
-                    searchTargetFactory.createWebSearchActionTarget(
-                        query = videoQuery,
-                        providerName = "YouTube Videos",
-                        searchUrl = "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
-                        providerIconRes = com.android.launcher3.R.drawable.ic_search,
-                        tintIcon = true,
-                    ),
-                )
+                !musicQuery.isNullOrBlank() -> {
+                    if (prefs.searchResultMusic.get()) {
+                        searchTargets.add(
+                            searchTargetFactory.createWebSearchActionTarget(
+                                query = musicQuery,
+                                providerName = "Music apps",
+                                searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
+                                providerIconRes = com.android.launcher3.R.drawable.ic_search,
+                                tintIcon = true,
+                            ),
+                        )
+                    }
+                }
+                !videoQuery.isNullOrBlank() -> {
+                    if (prefs.searchResultVideos.get()) {
+                        searchTargets.add(
+                            searchTargetFactory.createWebSearchActionTarget(
+                                query = videoQuery,
+                                providerName = "YouTube Videos",
+                                searchUrl = "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
+                                providerIconRes = com.android.launcher3.R.drawable.ic_search,
+                                tintIcon = true,
+                            ),
+                        )
+                    }
+                }
                 !appQuery.isNullOrBlank() -> searchTargets.add(
                     searchTargetFactory.createWebSearchActionTarget(
                         query = "$appQuery app",
