@@ -95,28 +95,71 @@ class NexusAssistantActivity : ComponentActivity() {
                     } else false
                 }
 
-                NexusAssistantScreen(
-                    onOpenModels = {
-                        startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
-                    },
-                    onBack = ::finish,
-                    onListen = { onRecognized ->
-                        speechResultHandler = { recognized ->
-                            processInput(recognized, onRecognized)
-                        }
-                        output = onRecognized
-                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                            == PackageManager.PERMISSION_GRANTED
-                        ) startSpeechRecognition()
-                        else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                    },
-                    onCommand = { query, setResponse ->
-                        output = setResponse
-                        processInput(query, setResponse)
-                    },
-                )
-
                 if (showRequiredDownload) {
+                    AiGalleryScreen(
+                        modelState = modelState,
+                        localRuntimeReady = localRuntimeReady,
+                        downloading = downloading,
+                        downloadProgress = downloadProgress,
+                        downloadLabel = downloadLabel,
+                        downloadMessage = downloadMessage,
+                        downloadError = downloadError,
+                        onBack = ::finish,
+                        onDownloadChat = {
+                            downloading = true
+                            downloadError = null
+                            downloadProgress = 0
+                            lifecycleScope.launch {
+                                try {
+                                    withContext(Dispatchers.IO) {
+                                        AssistantModelStore.downloadRequired(this@NexusAssistantActivity) { progress ->
+                                            runOnUiThread {
+                                                downloadLabel = progress.label
+                                                downloadProgress = progress.percent
+                                                downloadMessage = progress.message
+                                            }
+                                        }
+                                    }
+                                    modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
+                                    localRuntimeReady = withContext(Dispatchers.IO) {
+                                        LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
+                                    }
+                                    if (!localRuntimeReady) downloadError = "The local chat model could not be loaded on this device."
+                                    else downloadMessage = "Local AI is ready for offline chat."
+                                } catch (error: Exception) {
+                                    downloadError = error.message ?: "The download could not finish. Please try again."
+                                } finally {
+                                    downloading = false
+                                }
+                            }
+                        },
+                        onVoiceSettings = {
+                            runCatching { startActivity(Intent(Settings.ACTION_TEXT_TO_SPEECH_SETTINGS)) }
+                        },
+                        onOpenReader = {
+                            runCatching { startActivity(Intent(this@NexusAssistantActivity, app.lawnchair.books.BooksActivity::class.java)) }
+                        },
+                    )
+                } else {
+                    NexusAssistantScreen(
+                        onOpenModels = {
+                            startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
+                        },
+                        onBack = ::finish,
+                        onListen = { onRecognized ->
+                            speechResultHandler = { recognized -> processInput(recognized, onRecognized) }
+                            output = onRecognized
+                            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startSpeechRecognition()
+                            else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                        onCommand = { query, setResponse ->
+                            output = setResponse
+                            processInput(query, setResponse)
+                        },
+                    )
+                }
+
+                if (false && showRequiredDownload) {
                     AlertDialog(
                         onDismissRequest = { if (!downloading) showRequiredDownload = false },
                         title = { Text("Models") },
