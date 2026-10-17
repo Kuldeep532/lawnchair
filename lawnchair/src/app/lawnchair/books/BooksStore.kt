@@ -1,6 +1,7 @@
 package app.lawnchair.books
 
 import android.content.Context
+import android.util.Base64
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.util.UUID
@@ -77,11 +78,22 @@ class BooksStore private constructor(context: Context) {
         }
     }
 
-    private fun escape(value: String) =
-        value.replace("\", "\\").replace(RECORD, "\e").replace(SEP, "\u")
+    private fun escape(value: String): String =
+        Base64.encodeToString(
+            value.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
+        )
 
-    private fun unescape(value: String) =
-        value.replace("\u", SEP).replace("\e", RECORD).replace("\\", "\")
+    private fun unescape(value: String): String =
+        runCatching {
+            String(
+                Base64.decode(
+                    value,
+                    Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING,
+                ),
+                Charsets.UTF_8,
+            )
+        }.getOrDefault(value)
 
     companion object {
         private const val KEY_BOOKS = "books"
