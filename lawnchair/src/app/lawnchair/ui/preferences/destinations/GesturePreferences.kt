@@ -53,10 +53,6 @@ fun GesturePreferences(
                 label = stringResource(id = R.string.gesture_back_tap),
             )
             GestureHandlerPreference(
-                adapter = prefs.swipeLeftGestureHandler.getAdapter(),
-                label = stringResource(id = R.string.gesture_swipe_left),
-            )
-            GestureHandlerPreference(
                 adapter = prefs.swipeRightGestureHandler.getAdapter(),
                 label = stringResource(id = R.string.gesture_swipe_right),
             )
