@@ -43,8 +43,9 @@ import java.util.TimeZone
 class DateTimeHelperActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LawnchairTheme {
-                EdgeToEdge() DateTimeHelperScreen(::finish) } }
+        EdgeToEdge()
+
+        setContent { LawnchairTheme { DateTimeHelperScreen(::finish) } }
     }
 }
 
