@@ -13,7 +13,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:text="Nothing playing"
-        android:textColor="#171717"
+        android:textColor="@color/nexus_music_widget_text"
         android:textSize="16sp"
         android:textStyle="bold"
         android:contentDescription="Current song title" />
@@ -26,7 +26,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:text="Enable media access to control playback"
-        android:textColor="#5B6068"
+        android:textColor="@color/nexus_music_widget_secondary"
         android:textSize="12sp" />
 
     <LinearLayout
@@ -44,7 +44,7 @@
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
             android:text="Media access"
-            android:textColor="#343941"
+            android:textColor="@color/nexus_music_widget_action"
             android:textSize="12sp"
             android:contentDescription="Open notification access settings" />
 
