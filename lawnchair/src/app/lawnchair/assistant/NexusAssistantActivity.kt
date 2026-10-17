@@ -12,10 +12,7 @@ import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextButton
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,7 +38,9 @@ import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -76,7 +75,7 @@ class NexusAssistantActivity : ComponentActivity() {
         setContent {
             LawnchairTheme {
                 var showRequiredDownload by remember {
-                    mutableStateOf(intent.getBooleanExtra(EXTRA_OPEN_MODELS, false))
+                    mutableStateOf(intent.getBooleanExtra(EXTRA_OPEN_MODELS, false) || AssistantModelStore.localState(this@NexusAssistantActivity) != AssistantModelStore.AssetState.DOWNLOADED)
                 }
                 var modelState by remember { mutableStateOf(AssistantModelStore.localState(this)) }
                 var localRuntimeReady by remember { mutableStateOf(LocalAssistantEngine.isLoaded) }
@@ -159,81 +158,6 @@ class NexusAssistantActivity : ComponentActivity() {
                     )
                 }
 
-                if (false && showRequiredDownload) {
-                    AlertDialog(
-                        onDismissRequest = { if (!downloading) showRequiredDownload = false },
-                        title = { Text("Models") },
-                        text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Download the on-device AI model. The current download is the lightweight local chat model for offline text chat. Spoken reading currently uses the Android voice installed on your phone; manage its voice data separately through Android voice settings.")
-                                Text(
-                                    when {
-                                        modelState != AssistantModelStore.AssetState.DOWNLOADED ->
-                                            "Local chat model is not downloaded yet."
-                                        localRuntimeReady -> "Local chat model has already been downloaded and loaded."
-                                        else -> "Local chat model is downloaded, but could not be loaded. Tap Download to retry."
-                                    }
-                                )
-                                if (downloading) {
-                                    Text(downloadLabel)
-                                    LinearProgressIndicator(
-                                        progress = { downloadProgress / 100f },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                    Text(downloadMessage)
-                                }
-                                downloadError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                enabled = !downloading,
-                                onClick = {
-                                    downloading = true
-                                    downloadError = null
-                                    downloadProgress = 0
-                                    lifecycleScope.launch {
-                                        try {
-                                            withContext(Dispatchers.IO) {
-                                                AssistantModelStore.downloadRequired(this@NexusAssistantActivity) { progress ->
-                                                    runOnUiThread {
-                                                        downloadLabel = progress.label
-                                                        downloadProgress = progress.percent
-                                                        downloadMessage = progress.message
-                                                    }
-                                                }
-                                            }
-                                            modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
-                                            localRuntimeReady = withContext(Dispatchers.IO) {
-                                                LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
-                                            }
-                                            if (modelState == AssistantModelStore.AssetState.DOWNLOADED && localRuntimeReady) {
-                                                showRequiredDownload = false
-                                                downloadMessage = "Local chat is ready. Voice playback is available in Books Reader and PDF Reader."
-                                            } else {
-                                                downloadError = if (!localRuntimeReady) {
-                                                    "The local chat model could not be loaded on this device. Phone commands and local voice remain available."
-                                                } else {
-                                                    "The local model download is incomplete. Please try again."
-                                                }
-                                            }
-                                        } catch (error: Exception) {
-                                            downloadError = error.message ?: "The download could not finish. Please try again."
-                                        } finally {
-                                            downloading = false
-                                        }
-                                    }
-                                },
-                            ) { Text(if (downloading) "Downloading…" else "Download") }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                enabled = !downloading,
-                                onClick = { showRequiredDownload = false },
-                            ) { Text("Close") }
-                        },
-                    )
-                }
 
             }
         }
@@ -506,6 +430,10 @@ private fun NexusAssistantScreen(
                 Icon(Icons.Rounded.Mic, contentDescription = "Voice input")
                 Text("  Speak")
             }
+            Button(
+                onClick = onOpenModels,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Open AI Gallery · Download models") }
             Text("Assistant response")
             Text(response)
             Text("Note: Android may ask for microphone permission. Wi-Fi opens the system Internet panel because Android does not allow ordinary apps to switch Wi-Fi directly.")
