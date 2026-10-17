@@ -8,6 +8,7 @@ object NexusAppUsageTracker {
     private const val KEY_PREFIX = "launch:"
     private const val KEY_LAST_PREFIX = "last:"
 
+    @JvmStatic
     fun recordLaunch(context: Context, componentName: ComponentName) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val key = componentName.flattenToString()
