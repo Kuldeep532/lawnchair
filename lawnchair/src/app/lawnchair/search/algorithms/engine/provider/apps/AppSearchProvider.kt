@@ -14,6 +14,8 @@ import java.text.Normalizer
 import java.util.Locale
 import kotlin.math.ln
 
+private val DIACRITICS_REMOVE_PATTERN = "\\p{M}+".toRegex()
+
 
 /** Lightweight, offline preference ranking used by Nexus Launcher.
  * It deliberately uses a handful of signals instead of shipping a neural model.
@@ -36,7 +38,7 @@ private object NexusAiRanker {
         return apps.withIndex()
             .map { indexed ->
                 val app = indexed.value
-                val key = app.componentName.flattenToString()
+                val key = app.componentName?.flattenToString() ?: return@mapNotNull null
                 val launches = prefs.getLong("launch:$key", 0L).coerceAtMost(10_000L)
                 val last = prefs.getLong("last:$key", 0L)
                 val ageHours = if (last == 0L) Double.POSITIVE_INFINITY else
@@ -101,7 +103,6 @@ private object NexusPreferenceBrain {
 
 object AppSearchProvider {
 
-    private val DIACRITICS_REMOVE_PATTERN = "\\p{M}+".toRegex()
 
     fun search(context: Context, query: String, allApps: AllAppsList): List<SearchResult.App> {
         val prefs = PreferenceManager2.getInstance(context)
