@@ -74,7 +74,6 @@ class SecureWorldActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
         store = SecureWorldStore.getInstance(this)
         promptExecutor = ContextCompat.getMainExecutor(this)
         authenticateAndShow()
@@ -151,6 +150,7 @@ class SecureWorldActivity : ComponentActivity() {
     ) {
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 DocumentDialog(
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
@@ -192,6 +192,7 @@ class SecureWorldActivity : ComponentActivity() {
     private fun showSecureVault() {
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 var selectedTab by remember { mutableIntStateOf(0) }
                     var contentTab by remember { mutableIntStateOf(0) }
                 var showAddSheet by remember { mutableStateOf(false) }
