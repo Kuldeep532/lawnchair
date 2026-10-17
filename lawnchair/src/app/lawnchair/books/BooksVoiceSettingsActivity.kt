@@ -29,7 +29,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import java.util.Locale
@@ -52,6 +51,9 @@ class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListe
                     onBack = ::finish,
                     onProviderChange = { ReaderVoicePreferences.setProvider(this@BooksVoiceSettingsActivity, ReaderVoicePreferences.LOCAL) },
                     onTestVoice = ::testVoice,
+                    onOpenGallery = {
+                        startActivity(app.lawnchair.assistant.NexusAssistantLauncher.modelsIntent(this@BooksVoiceSettingsActivity))
+                    },
                     onOpenSystemSettings = {
                         runCatching {
                             startActivity(Intent(Settings.ACTION_TEXT_TO_SPEECH_SETTINGS))
@@ -110,6 +112,7 @@ private fun VoiceSettingsScreen(
     onBack: () -> Unit,
     onProviderChange: (String) -> Unit,
     onTestVoice: (String) -> Unit,
+    onOpenGallery: () -> Unit,
     onOpenSystemSettings: () -> Unit,
 ) {
     var selectedProvider by remember { mutableStateOf(initialProvider) }
@@ -160,9 +163,7 @@ private fun VoiceSettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Test selected voice") }
             Button(
-                onClick = {
-                    startActivity(app.lawnchair.assistant.NexusAssistantLauncher.modelsIntent(this@BooksVoiceSettingsActivity))
-                },
+                onClick = onOpenGallery,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Open AI Gallery") }
             TextButton(
