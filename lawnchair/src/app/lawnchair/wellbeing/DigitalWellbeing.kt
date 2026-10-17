@@ -31,6 +31,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import app.lawnchair.ui.theme.EdgeToEdge
 import kotlinx.coroutines.delay
 import java.util.Calendar
 
