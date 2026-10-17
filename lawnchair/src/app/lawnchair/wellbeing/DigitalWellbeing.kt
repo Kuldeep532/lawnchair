@@ -260,7 +260,7 @@ suspend fun runWellbeingTick(context: Context) {
         if (foreground == null || foreground == context.packageName) return@repeat
         if (!controller.isSocialApp(foreground)) return@repeat
         val used = controller.packageUsageToday(foreground) / 60_000L
-        if ((used >= controller.socialBlockMinutes() || controller.totalBlockedUsageToday() >= controller.dailyLimitMinutes()) && foreground != lastBlockedPackage) {
+        if ((used >= controller.socialBlockMinutes() || controller.totalBlockedUsageToday() / 60_000L >= controller.dailyLimitMinutes()) && foreground != lastBlockedPackage) {
             lastBlockedPackage = foreground
             context.startActivity(
                 Intent(context, DigitalWellbeingBlockedActivity::class.java)
