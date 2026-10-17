@@ -5,9 +5,9 @@
     android:configure="app.lawnchair.widgets.custom.NexusAppWidgetConfigActivity"
     android:initialLayout="@layout/nexus_app_widget"
     android:minWidth="110dp"
-    android:minHeight="70dp"
+    android:minHeight="110dp"
     android:targetCellWidth="2"
-    android:targetCellHeight="1"
+    android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />
