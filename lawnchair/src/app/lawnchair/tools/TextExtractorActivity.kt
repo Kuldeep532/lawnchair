@@ -6,7 +6,7 @@ import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import androidx.activity.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -48,8 +48,8 @@ class TextExtractorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
-        setContent { LawnchairTheme { TextExtractorScreen(::finish) } }
+        setContent { LawnchairTheme {
+                EdgeToEdge() TextExtractorScreen(::finish) } }
     }
 
     fun incomingImageUri(): Uri? = when (intent.action) {
