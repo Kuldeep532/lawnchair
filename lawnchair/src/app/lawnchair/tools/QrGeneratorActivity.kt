@@ -12,7 +12,7 @@ import java.util.Date
 import java.util.Locale
 import android.net.Uri
 import androidx.activity.ComponentActivity
-import androidx.activity.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
