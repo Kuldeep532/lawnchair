@@ -170,14 +170,6 @@ fun PreferencesDashboard(
                 isSelected = currentRoute is DigitalWellbeing,
             )
 
-            PreferenceCategory(
-                label = "Privacy & security",
-                description = "Manage your private space and protected shortcuts",
-                iconResource = R.drawable.ic_about,
-                onNavigate = { onNavigate(app.lawnchair.ui.preferences.navigation.SecureVault) },
-                isSelected = currentRoute == app.lawnchair.ui.preferences.navigation.SecureVault,
-            )
-
             val isSmartspaceEnabled = prefs2.enableSmartspace.firstCached()
             PreferenceCategory(
                 label = stringResource(id = R.string.smartspace_widget),
