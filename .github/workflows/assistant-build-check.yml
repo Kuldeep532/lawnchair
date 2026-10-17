@@ -1,60 +1,13 @@
-name: Nexus Launcher Build and Verification
+name: Nexus Launcher Debug Compile
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 16-dev
-    paths:
-      - ".github/workflows/assistant-build-check.yml"
-      - "lawnchair/**"
-      - "quickstep/**"
-      - "gradle/**"
-      - "build.gradle"
-      - "settings.gradle"
-      - "gradle.properties"
-      - "Android.bp"
-      - "platform_frameworks_libs_systemui/**"
-      - "systemUI/**"
-      - "compatLib/**"
-      - "hidden-api/**"
-      - "iconloaderlib/**"
-      - "searchuilib/**"
-      - "animationlib/**"
-      - "contextualeducationlib/**"
-      - "viewcapturelib/**"
-      - "displaylib/**"
-      - "mechanics/**"
-      - "shared/**"
-      - "plugin/**"
-      - "plugincore/**"
-      - "common/**"
-      - "log/**"
-      - "animation/**"
-      - "unfold/**"
-      - "utils/**"
-      - "modules/**"
-      - "flags/**"
-      - "wmshell/**"
-      - "dagger/**"
-      - "concurrent/**"
-      - "baseline-profile/**"
-      - "androidx-lib/**"
-      - "compose/**"
-      - "iconloaderlib/**"
-      - "searchuilib/**"
-      - "animationlib/**"
-      - "msdllib/**"
-      - "contextualeducationlib/**"
-      - "viewcapturelib/**"
-      - "displaylib/**"
-      - "mechanics/**"
 
 permissions:
   contents: read
 
 concurrency:
-  group: nexus-launcher-check-${{ github.ref }}
+  group: nexus-launcher-debug-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -97,10 +50,9 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Nexus Launcher verification"
+            echo "## Nexus Launcher debug compile"
             echo ""
-            echo "- Branch: `$GITHUB_REF_NAME`"
-            echo "- Commit: `$GITHUB_SHA`"
-            echo "- Debug build and formatting checks: see job result above"
-            echo "- APK is uploaded only when compilation and formatting succeed."
+            echo "- Branch: $GITHUB_REF_NAME"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Build and formatting status: see job result above"
           } >> "$GITHUB_STEP_SUMMARY"
