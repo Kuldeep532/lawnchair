@@ -41,8 +41,8 @@ import java.util.Locale
 class QuickUtilityActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LawnchairTheme {
-                EdgeToEdge() QuickUtilityScreen(::finish) } }
+        EdgeToEdge()
+        setContent { LawnchairTheme { QuickUtilityScreen(::finish) } }
     }
 }
 
