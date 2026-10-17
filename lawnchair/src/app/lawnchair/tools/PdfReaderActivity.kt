@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import app.lawnchair.assistant.ElevenLabsVoiceClient
 import app.lawnchair.books.ReaderVoicePreferences
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
@@ -222,70 +221,9 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
             return
         }
         val engine = speech
-        if (ReaderVoicePreferences.provider(context) == ReaderVoicePreferences.ELEVENLABS) {
+        if (voiceReady && engine != null) {
             speaking = true
-            readerVoiceMessage = "Preparing ElevenLabs audio…"
-            coroutineScope.launch {
-                val audioUrl = withContext(Dispatchers.IO) {
-                    runCatching { ElevenLabsVoiceClient.synthesize(context, text) }.getOrNull()
-                }
-                if (!speaking) return@launch
-                if (audioUrl.isNullOrBlank()) {
-                    if (voiceReady && engine != null) {
-                        speaking = true
-                        readerVoiceMessage = "ElevenLabs is unavailable. Reading with the phone voice."
-                        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
-                    } else {
-                        speaking = false
-                        readerVoiceMessage = "ElevenLabs is unavailable and the phone voice is not ready."
-                    }
-                    return@launch
-                }
-                runCatching {
-                    voicePlayer?.release()
-                    val player = MediaPlayer()
-                    voicePlayer = player
-                    player.setDataSource(audioUrl)
-                    player.setOnPreparedListener {
-                        readerVoiceMessage = "Reading with ElevenLabs."
-                        it.start()
-                    }
-                    player.setOnCompletionListener {
-                        it.release()
-                        if (voicePlayer === it) voicePlayer = null
-                        speaking = false
-                        readerVoiceMessage = "Finished reading this page."
-                    }
-                    player.setOnErrorListener { failed, _, _ ->
-                        failed.release()
-                        if (voicePlayer === failed) voicePlayer = null
-                        if (voiceReady && engine != null) {
-                            speaking = true
-                            readerVoiceMessage = "ElevenLabs playback failed. Reading with the phone voice."
-                            engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
-                        } else {
-                            speaking = false
-                            readerVoiceMessage = "Audio playback failed and the phone voice is not ready."
-                        }
-                        true
-                    }
-                    player.prepareAsync()
-                }.onFailure {
-                    voicePlayer?.release()
-                    voicePlayer = null
-                    if (voiceReady && engine != null) {
-                        speaking = true
-                        readerVoiceMessage = "ElevenLabs playback failed. Reading with the phone voice."
-                        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-fallback")
-                    } else {
-                        speaking = false
-                        readerVoiceMessage = "Audio playback failed and the phone voice is not ready."
-                    }
-                }
-            }
-        } else if (voiceReady && engine != null) {
-            speaking = true
-            readerVoiceMessage = "Reading with the phone voice."
+            readerVoiceMessage = "Reading with the phone's installed text-to-speech voice."
             engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "pdf-reader-page")
         } else {
             readerVoiceMessage = "Phone voice is not ready. Open Reader Voice settings."
