@@ -311,7 +311,7 @@ private object PdfImageConverter {
             ?: error("The selected PDF could not be opened.")
 
         descriptor.use { parcel ->
-            PdfRenderer(parcel.fileDescriptor).use { renderer ->
+            PdfRenderer(parcel).use { renderer ->
                 val total = renderer.pageCount
                 val renderedFiles = ArrayList<File>(total)
 
