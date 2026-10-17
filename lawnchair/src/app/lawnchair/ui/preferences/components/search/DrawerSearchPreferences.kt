@@ -171,6 +171,17 @@ private fun LocalSearchSettings(
             navController.navigate(SearchProviderPreference(SearchProviderId.WEB))
         },
     )
+
+    SwitchPreference(
+        adapter = prefs.searchResultMusic.getAdapter(),
+        label = "Music search results",
+        description = "Show a music-app chooser for music: searches.",
+    )
+    SwitchPreference(
+        adapter = prefs.searchResultVideos.getAdapter(),
+        label = "Video search results",
+        description = "Show video search results for video: searches.",
+    )
     val peopleAdapter = prefs.searchResultPeople.getAdapter()
     val peopleEnabled = rememberPermissionState(android.Manifest.permission.READ_CONTACTS).status.isGranted
     TwoTargetSwitchPreference(
