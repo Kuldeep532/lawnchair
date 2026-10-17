@@ -1,6 +1,8 @@
 package app.lawnchair.search.algorithms
 
 import android.content.Context
+import android.net.Uri
+import app.lawnchair.preferences.PreferenceManager
 import android.os.Handler
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.search.adapter.SPACE
@@ -107,6 +109,70 @@ class LawnchairAppSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm(c
         }
 
         searchTargetFactory.createMarketSearchTarget(query)?.let { searchTargets.add(it) }
+
+        // Keep the standard app-search mode useful as a universal launcher search.
+        // The existing "Web search suggestions" switch remains the user's opt-out.
+        if (PreferenceManager.getInstance(context).searchResultStartPageSuggestion.get()) {
+            val normalized = query.trim()
+            val lower = normalized.lowercase(Locale.ROOT)
+            val musicQuery = when {
+                lower.startsWith("music:") -> normalized.substringAfter(':').trim()
+                lower.startsWith("music ") -> normalized.substringAfter(' ').trim()
+                lower.startsWith("म्यूजिक ") -> normalized.substringAfter(' ').trim()
+                else -> null
+            }
+            val videoQuery = when {
+                lower.startsWith("video:") -> normalized.substringAfter(':').trim()
+                lower.startsWith("video ") -> normalized.substringAfter(' ').trim()
+                lower.startsWith("videos ") -> normalized.substringAfter(' ').trim()
+                lower.startsWith("वीडियो ") -> normalized.substringAfter(' ').trim()
+                else -> null
+            }
+            val appQuery = when {
+                lower.startsWith("app:") -> normalized.substringAfter(':').trim()
+                lower.startsWith("app ") -> normalized.substringAfter(' ').trim()
+                else -> null
+            }
+
+            when {
+                !musicQuery.isNullOrBlank() -> searchTargets.add(
+                    searchTargetFactory.createWebSearchActionTarget(
+                        query = musicQuery,
+                        providerName = "Music apps",
+                        searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
+                        providerIconRes = com.android.launcher3.R.drawable.ic_search,
+                        tintIcon = true,
+                    ),
+                )
+                !videoQuery.isNullOrBlank() -> searchTargets.add(
+                    searchTargetFactory.createWebSearchActionTarget(
+                        query = videoQuery,
+                        providerName = "YouTube Videos",
+                        searchUrl = "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
+                        providerIconRes = com.android.launcher3.R.drawable.ic_search,
+                        tintIcon = true,
+                    ),
+                )
+                !appQuery.isNullOrBlank() -> searchTargets.add(
+                    searchTargetFactory.createWebSearchActionTarget(
+                        query = "$appQuery app",
+                        providerName = "Google",
+                        searchUrl = "https://www.google.com/search?q=" + Uri.encode("$appQuery app"),
+                        providerIconRes = com.android.launcher3.R.drawable.ic_search,
+                        tintIcon = true,
+                    ),
+                )
+                else -> searchTargets.add(
+                    searchTargetFactory.createWebSearchActionTarget(
+                        query = normalized,
+                        providerName = "Google",
+                        searchUrl = "https://www.google.com/search?q=" + Uri.encode(normalized),
+                        providerIconRes = com.android.launcher3.R.drawable.ic_search,
+                        tintIcon = true,
+                    ),
+                )
+            }
+        }
 
         setFirstItemQuickLaunch(searchTargets)
         val adapterItems = transformSearchResults(searchTargets)
