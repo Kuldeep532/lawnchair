@@ -42,9 +42,8 @@ private enum class QrMode(val label: String) { TEXT("Text"), URL("URL"), WIFI("W
 class QrGeneratorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LawnchairTheme {
-                EdgeToEdge()
-                EdgeToEdge() QrScreen(::finish) } }
+        EdgeToEdge()
+        setContent { LawnchairTheme { QrScreen(::finish) } }
     }
 }
 
