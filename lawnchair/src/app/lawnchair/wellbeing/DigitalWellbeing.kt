@@ -243,9 +243,15 @@ fun DigitalWellbeingSettings() {
                 }
             }
             Text(
-                "Limits rely on Android Usage Access and launcher monitoring. Android may restrict background enforcement; this is not a device-wide parental-control lock.",
+                "For live app-switch monitoring, enable Nexus Launcher in Android Accessibility settings too. Enforcement can still vary by Android version.",
                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
             )
+            Button(
+                onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Enable accessibility monitoring")
+            }
         }
     }
 }
