@@ -403,7 +403,7 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 
     private fun openUrlSearch(url: String, successMessage: String): String = runCatching {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        startActivity(NexusSearchBrowserActivity.urlIntent(this, url))
         successMessage
     }.getOrElse { "Search could not be opened. Please try again." }
 
@@ -411,17 +411,10 @@ class NexusAssistantActivity : ComponentActivity() {
         val query = rawQuery.trim()
         if (query.isBlank()) return "Tell me what you want to search for."
         return runCatching {
-            startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", query))
-            "Searching the web for $query."
+            startActivity(NexusSearchBrowserActivity.queryIntent(this, query))
+            "Searching the web for $query in Nexus Search."
         }.getOrElse {
-            runCatching {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
-                    "https://www.google.com/search?q=" + Uri.encode(query)
-                )))
-                "Searching the web for $query."
-            }.getOrElse {
-                "Search could not be opened. Please try again."
-            }
+            "Search could not be opened. Please try again."
         }
     }
 
