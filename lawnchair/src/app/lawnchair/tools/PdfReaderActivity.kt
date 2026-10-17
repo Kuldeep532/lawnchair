@@ -8,7 +8,7 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import androidx.activity.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -154,7 +154,7 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
                 val descriptor = context.contentResolver.openFileDescriptor(source, "r")
                     ?: error("PDF could not be opened.")
                 descriptor.use {
-                    val renderer = PdfRenderer(it.fileDescriptor)
+                    val renderer = PdfRenderer(it)
                     renderer.use {
                         val count = renderer.pageCount
                         val pdfPage = renderer.openPage(
