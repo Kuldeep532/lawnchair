@@ -223,13 +223,15 @@ class LawnchairLocalSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm
 
     private val sectionBuilders: List<SectionBuilder> = listOf(
         AppsAndShortcutsSectionBuilder,
+        // Put the explicit web/music/video action immediately after app matches so Enter
+        // searches the query when no installed app matches it.
+        ActionsSectionBuilder,
         CalculationSectionBuilder,
         WebSuggestionsSectionBuilder,
         ContactsSectionBuilder,
         FilesSectionBuilder,
         SettingsSectionBuilder,
         HistorySectionBuilder,
-        ActionsSectionBuilder,
         EmptyStateSectionBuilder,
         SearchSettingsSectionBuilder,
     )
