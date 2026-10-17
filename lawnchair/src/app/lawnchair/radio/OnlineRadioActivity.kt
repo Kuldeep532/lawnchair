@@ -193,7 +193,7 @@ private fun OnlineRadioScreen(onBack: () -> Unit) {
                 padding = padding,
                 current = current,
                 playing = playing,
-                favorite = current?.let(store::isFavorite) == true,
+                favorite = current?.let { store.isFavorite(it.id) } == true,
                 favoriteCount = favorites.size,
                 onDiscovery = { page = RadioPage.DISCOVERY },
                 onFavorites = { page = RadioPage.DISCOVERY },
