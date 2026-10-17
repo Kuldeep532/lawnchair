@@ -20,19 +20,25 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
+import app.lawnchair.wellbeing.DigitalWellbeingBlockedActivity
+import app.lawnchair.wellbeing.DigitalWellbeingController
 
 class LawnchairAccessibilityService : AccessibilityService() {
+    private var lastBlockedPackage: String? = null
+    private var lastBlockedAt: Long = 0L
 
     override fun onServiceConnected() {
         serviceInfo = AccessibilityServiceInfo().apply {
             // Set the type of events that this service wants to listen to.  Others
             // won't be passed to this service.
-            eventTypes = 0
+            eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 
             // If you only want this service to work with specific applications, set their
             // package names here.  Otherwise, when the service is activated, it will listen
             // to events from all applications.
             packageNames = emptyArray()
+            feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
+            notificationTimeout = 100
         }
         lawnchairApp.accessibilityService = this
     }
@@ -46,5 +52,22 @@ class LawnchairAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {}
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        val packageName = event?.packageName?.toString() ?: return
+        if (packageName == this.packageName) return
+
+        val controller = DigitalWellbeingController(this)
+        if (!controller.shouldBlockPackage(packageName)) return
+
+        val now = System.currentTimeMillis()
+        if (lastBlockedPackage == packageName && now - lastBlockedAt < 5_000L) return
+        lastBlockedPackage = packageName
+        lastBlockedAt = now
+        runCatching {
+            startActivity(
+                Intent(this, DigitalWellbeingBlockedActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            )
+        }
+    }
 }
