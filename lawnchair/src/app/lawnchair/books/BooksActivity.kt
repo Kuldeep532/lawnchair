@@ -1,7 +1,6 @@
 package app.lawnchair.books
 
 import android.content.Intent
-import android.media.MediaPlayer
 import android.speech.tts.UtteranceProgressListener
 import android.net.Uri
 import android.os.Bundle
@@ -52,12 +51,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import app.lawnchair.assistant.ElevenLabsVoiceClient
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.Locale
@@ -267,7 +263,6 @@ private fun BookReaderScreen(
     var speech by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
     var speaking by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val audioPlayer = remember { arrayOfNulls<MediaPlayer>(1) }
     var ocrBusy by remember { mutableStateOf(false) }
     var ocrMessage by remember { mutableStateOf<String?>(null) }
 
@@ -389,52 +384,12 @@ private fun BookReaderScreen(
                             if (engine == null || text.isBlank()) return@IconButton
                             if (speaking) {
                                 engine.stop()
-                                runCatching { audioPlayer[0]?.stop() }
-                                audioPlayer[0]?.release()
-                                audioPlayer[0] = null
                                 speaking = false
                                 playing = false
                             } else {
                                 speaking = true
                                 playing = true
-                                if (ReaderVoicePreferences.provider(context) == ReaderVoicePreferences.ELEVENLABS) {
-                                    coroutineScope.launch {
-                                        val audioUrl = withContext(Dispatchers.IO) {
-                                            runCatching { ElevenLabsVoiceClient.synthesize(context, text) }.getOrNull()
-                                        }
-                                        if (!speaking) return@launch
-                                        if (audioUrl.isNullOrBlank()) {
-                                            engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
-                                            return@launch
-                                        }
-                                        runCatching {
-                                            audioPlayer[0]?.release()
-                                            val player = MediaPlayer()
-                                            audioPlayer[0] = player
-                                            player.setDataSource(audioUrl)
-                                            player.setOnPreparedListener { ready -> ready.start() }
-                                            player.setOnCompletionListener {
-                                                it.release()
-                                                audioPlayer[0] = null
-                                                speaking = false
-                                                playing = false
-                                            }
-                                            player.setOnErrorListener { failedPlayer, _, _ ->
-                                                failedPlayer.release()
-                                                audioPlayer[0] = null
-                                                engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
-                                                true
-                                            }
-                                            player.prepareAsync()
-                                        }.onFailure {
-                                            audioPlayer[0]?.release()
-                                            audioPlayer[0] = null
-                                            engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage-fallback")
-                                        }
-                                    }
-                                } else {
-                                    engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
-                                }
+                                engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
                             }
                         }) {
                             Icon(if (speaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (speaking) "Pause reading" else "Read page aloud")
