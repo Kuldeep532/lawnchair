@@ -262,15 +262,11 @@ private fun BookReaderScreen(
     var showMore by remember { mutableStateOf(false) }
     var speech by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
     var speaking by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
     var ocrBusy by remember { mutableStateOf(false) }
     var ocrMessage by remember { mutableStateOf<String?>(null) }
 
     fun stopReading() {
         runCatching { speech?.stop() }
-        runCatching { audioPlayer[0]?.stop() }
-        runCatching { audioPlayer[0]?.release() }
-        audioPlayer[0] = null
         speaking = false
         playing = false
     }
@@ -306,8 +302,6 @@ private fun BookReaderScreen(
         onDispose {
             engine.stop()
             engine.shutdown()
-            audioPlayer[0]?.release()
-            audioPlayer[0] = null
             speech = null
         }
     }
