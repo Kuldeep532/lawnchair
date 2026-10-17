@@ -170,25 +170,29 @@ class LawnchairLocalSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm
             }
 
             if (!musicQuery.isNullOrBlank()) {
-                actions.add(
-                    SearchResult.Action.WebSearch(
-                        query = musicQuery,
-                        providerName = "Music apps",
-                        searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
-                        providerIconRes = R.drawable.ic_search,
-                        tintIcon = true,
-                    ),
-                )
+                if (prefs.searchResultMusic.get()) {
+                    actions.add(
+                        SearchResult.Action.WebSearch(
+                            query = musicQuery,
+                            providerName = "Music apps",
+                            searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
+                            providerIconRes = R.drawable.ic_search,
+                            tintIcon = true,
+                        ),
+                    )
+                }
             } else if (!videoQuery.isNullOrBlank()) {
-                actions.add(
-                    SearchResult.Action.WebSearch(
-                        query = videoQuery,
-                        providerName = "YouTube Videos",
-                        searchUrl = "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
-                        providerIconRes = R.drawable.ic_search,
-                        tintIcon = true,
-                    ),
-                )
+                if (prefs.searchResultVideos.get()) {
+                    actions.add(
+                        SearchResult.Action.WebSearch(
+                            query = videoQuery,
+                            providerName = "YouTube Videos",
+                            searchUrl = "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
+                            providerIconRes = R.drawable.ic_search,
+                            tintIcon = true,
+                        ),
+                    )
+                }
             } else {
                 val provider = prefs2.webSuggestionProvider.firstCached()
                 val webProvider = provider.configure(context)
