@@ -9,7 +9,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import androidx.activity.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -43,8 +43,8 @@ import java.util.Locale
 class ImageCompressorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
-        setContent { LawnchairTheme { ImageCompressorScreen(::finish) } }
+        setContent { LawnchairTheme {
+                EdgeToEdge() ImageCompressorScreen(::finish) } }
     }
 }
 
