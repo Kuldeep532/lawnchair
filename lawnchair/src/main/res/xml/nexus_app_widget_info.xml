@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="Nexus App Widget"
+    android:description="@string/derived_app_name"
+    android:initialLayout="@layout/nexus_app_widget"
+    android:minWidth="110dp"
+    android:minHeight="70dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />
