@@ -447,7 +447,7 @@ private fun loadPdfPagePlaceholders(
 ): List<String> {
     val parcel = context.contentResolver.openFileDescriptor(uri, "r") ?: return emptyList()
     parcel.use { descriptor ->
-        val renderer = android.graphics.pdf.PdfRenderer(descriptor.fileDescriptor)
+        val renderer = android.graphics.pdf.PdfRenderer(descriptor)
         return try {
             (0 until renderer.pageCount).map { pageIndex ->
                 renderer.openPage(pageIndex).use { page ->
