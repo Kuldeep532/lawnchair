@@ -93,10 +93,6 @@ class NexusAssistantActivity : ComponentActivity() {
                             LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
                         }
                     } else false
-                    // A missing optional local model or neural voice must not block cloud and phone actions.
-                    if (modelState != AssistantModelStore.AssetState.DOWNLOADED || !localRuntimeReady) {
-                        showRequiredDownload = true
-                    }
                 }
 
                 NexusAssistantScreen(
