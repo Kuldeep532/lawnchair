@@ -216,7 +216,7 @@ class NexusAssistantActivity : ComponentActivity() {
             command.contains("टॉर्च") || command.contains("फ्लैशलाइट") ||
             command.contains("wifi") || command.contains("wi-fi") ||
             command.contains("वाई फाई") || command.contains("वाई-फाई") || command.contains("वाईफाई") ||
-            command.startsWith("search ") || command.startsWith("सर्च ") ||
+            command.startsWith("search ") || command.startsWith("play music ") || command.startsWith("सर्च ") ||
             command.startsWith("खोज ") || command.startsWith("ढूंढो ") || command.startsWith("खोजो ") ||
             command.startsWith("open ") || command.startsWith("खोलो ") ||
             command.startsWith("launch ") || command.startsWith("चलाओ ") || command.startsWith("start ") ||
@@ -274,6 +274,7 @@ class NexusAssistantActivity : ComponentActivity() {
             command.contains("wifi") || command.contains("wi-fi") ||
                 command.contains("वाई फाई") || command.contains("वाई-फाई") ||
                 command.contains("वाईफाई") -> openInternetPanel()
+            command.startsWith("play music ") -> openMusicAppChooser(raw.substringAfter("play music ").trim())
             command.startsWith("search ") || command.startsWith("सर्च ") ||
                 command.startsWith("खोज ") || command.startsWith("ढूंढो ") ||
                 command.startsWith("खोजो ") -> openUniversalSearch(raw)
@@ -356,6 +357,24 @@ class NexusAssistantActivity : ComponentActivity() {
      * "search music <title>", "search video <title>", "search apps <name>".
      * A plain "search <query>" uses Google web search.
      */
+    private fun openMusicAppChooser(rawQuery: String): String {
+        val query = rawQuery.trim()
+        if (query.isBlank()) return "Type a song or artist name first."
+        val playIntent = Intent("android.media.action.MEDIA_PLAY_FROM_SEARCH").apply {
+            putExtra(android.app.SearchManager.QUERY, query)
+            putExtra(android.provider.MediaStore.EXTRA_MEDIA_TITLE, query)
+        }
+        return runCatching {
+            startActivity(Intent.createChooser(playIntent, "Select music app to play"))
+            "Choose an installed music app to play $query."
+        }.getOrElse {
+            openUrlSearch(
+                "https://music.youtube.com/search?q=" + Uri.encode(query),
+                "No compatible music app was found, so I opened a music search for $query."
+            )
+        }
+    }
+
     private fun openUniversalSearch(rawCommand: String): String {
         val query = rawCommand.trim()
             .replaceFirst(Regex("^(search|सर्च|खोज|ढूंढो|खोजो)\\s+", RegexOption.IGNORE_CASE), "")
@@ -507,10 +526,10 @@ private fun NexusAssistantScreen(
                 enabled = query.isNotBlank(),
             ) { Text("Search the web") }
             Button(
-                onClick = { onCommand("search music $query") { response = it } },
+                onClick = { onCommand("play music $query") { response = it } },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = query.isNotBlank(),
-            ) { Text("Search music") }
+            ) { Text("Play with a music app") }
             Button(
                 onClick = { onCommand("search video $query") { response = it } },
                 modifier = Modifier.fillMaxWidth(),
