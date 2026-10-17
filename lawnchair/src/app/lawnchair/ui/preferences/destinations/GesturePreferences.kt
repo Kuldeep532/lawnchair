@@ -52,14 +52,6 @@ fun GesturePreferences(
                 adapter = prefs.backPressGestureHandler.getAdapter(),
                 label = stringResource(id = R.string.gesture_back_tap),
             )
-            GestureHandlerPreference(
-                adapter = prefs.swipeLeftGestureHandler.getAdapter(),
-                label = stringResource(id = R.string.gesture_swipe_left),
-            )
-            GestureHandlerPreference(
-                adapter = prefs.swipeRightGestureHandler.getAdapter(),
-                label = stringResource(id = R.string.gesture_swipe_right),
-            )
         }
         PreferenceGroup(heading = stringResource(id = R.string.sleep_mode_label)) {
             ListPreference(
