@@ -152,9 +152,9 @@ class SecureWorldActivity : FragmentActivity() {
         suggestedName: String,
         extractedText: String = "",
     ) {
-        EdgeToEdge()
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 DocumentDialog(
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
@@ -202,9 +202,9 @@ class SecureWorldActivity : FragmentActivity() {
     }
 
     private fun showSecureVault() {
-        EdgeToEdge()
         setContent {
             LawnchairTheme {
+                EdgeToEdge()
                 var selectedTab by remember { mutableIntStateOf(0) }
                     var contentTab by remember { mutableIntStateOf(0) }
                 var showAddSheet by remember { mutableStateOf(false) }
@@ -461,6 +461,7 @@ private fun SecureCategoriesTab(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun SecureAddBottomSheet(
     onDismiss: () -> Unit,
