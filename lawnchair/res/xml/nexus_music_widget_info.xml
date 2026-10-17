@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Required AppWidgetProvider metadata. Keep under src/main/res/xml so Android resource linking can resolve @xml/nexus_music_widget_info. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="Nexus Music"
+    android:description="@string/derived_app_name"
+    android:initialKeyguardLayout="@layout/nexus_music_widget"
+    android:initialLayout="@layout/nexus_music_widget"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />
