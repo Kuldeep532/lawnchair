@@ -7,7 +7,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.lawnchair.secureworld.SecureWorldStore
-import androidx.activity.BackHandler
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -42,8 +42,8 @@ import java.security.SecureRandom
 class PasswordGeneratorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        EdgeToEdge()
-        setContent { LawnchairTheme { PasswordGeneratorScreen(::finish) } }
+        setContent { LawnchairTheme {
+                EdgeToEdge() PasswordGeneratorScreen(::finish) } }
     }
 }
 
