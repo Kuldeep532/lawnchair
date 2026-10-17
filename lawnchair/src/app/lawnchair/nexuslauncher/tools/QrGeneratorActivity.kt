@@ -43,6 +43,7 @@ class QrGeneratorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { LawnchairTheme {
+                EdgeToEdge()
                 EdgeToEdge() QrScreen(::finish) } }
     }
 }
