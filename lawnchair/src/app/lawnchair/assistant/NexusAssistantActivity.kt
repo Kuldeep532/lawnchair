@@ -517,6 +517,11 @@ private fun NexusAssistantScreen(
                 enabled = query.isNotBlank(),
             ) { Text("Search videos") }
             Button(
+                onClick = { onCommand("open $query") { response = it } },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = query.isNotBlank(),
+            ) { Text("Find or open an app") }
+            Button(
                 onClick = { onListen { response = it } },
                 modifier = Modifier.fillMaxWidth(),
             ) {
