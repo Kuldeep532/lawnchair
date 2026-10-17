@@ -1,7 +1,6 @@
 package app.lawnchair.books
 
 import android.content.Intent
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
@@ -31,17 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
-import app.lawnchair.assistant.ElevenLabsVoiceClient
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListener {
     private var textToSpeech: TextToSpeech? = null
-    private var voicePlayer: MediaPlayer? = null
     private var voiceReady by mutableStateOf(false)
     private var statusMessage by mutableStateOf("Choose a voice for Books Reader and PDF Reader.")
 
@@ -71,55 +65,17 @@ class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListe
     }
 
     private fun testVoice(provider: String) {
-        val sample = "This is a voice preview for your book and PDF reader."
-        if (provider == ReaderVoicePreferences.LOCAL) {
-            val engine = textToSpeech
-            if (voiceReady && engine != null) {
-                statusMessage = "Playing the installed Android voice."
-                engine.speak(sample, TextToSpeech.QUEUE_FLUSH, null, "reader-voice-preview")
-            } else {
-                statusMessage = "The phone voice is not ready. Check Android TTS settings and install an offline voice if needed."
-            }
-            return
-        }
-
-        statusMessage = "Connecting to ElevenLabs…"
-        lifecycleScope.launch {
-            val audioUrl = withContext(Dispatchers.IO) {
-                runCatching { ElevenLabsVoiceClient.synthesize(this@BooksVoiceSettingsActivity, sample) }
-                    .getOrElse { error ->
-                        statusMessage = error.message ?: "ElevenLabs voice is unavailable."
-                        null
-                    }
-            }
-            if (isFinishing || isDestroyed) return@launch
-            if (audioUrl.isNullOrBlank()) return@launch
-            runCatching {
-                voicePlayer?.release()
-                val player = MediaPlayer()
-                voicePlayer = player
-                player.setDataSource(audioUrl)
-                player.setOnPreparedListener {
-                    statusMessage = "Playing ElevenLabs preview."
-                    it.start()
-                }
-                player.setOnCompletionListener {
-                    it.release()
-                    if (voicePlayer === it) voicePlayer = null
-                    statusMessage = "ElevenLabs preview finished."
-                }
-                player.setOnErrorListener { failed, _, _ ->
-                    failed.release()
-                    if (voicePlayer === failed) voicePlayer = null
-                    statusMessage = "ElevenLabs audio could not be played. Try the local voice."
-                    true
-                }
-                player.prepareAsync()
-            }.onFailure {
-                voicePlayer?.release()
-                voicePlayer = null
-                statusMessage = "ElevenLabs preview could not start. Try the local voice."
-            }
+        val engine = textToSpeech
+        if (voiceReady && engine != null) {
+            statusMessage = "Playing the installed Android voice."
+            engine.speak(
+                "This is a voice preview for your book and PDF reader.",
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "reader-voice-preview",
+            )
+        } else {
+            statusMessage = "The phone voice is not ready. Open Android voice settings and install offline voice data if needed."
         }
     }
 
@@ -142,9 +98,6 @@ class BooksVoiceSettingsActivity : ComponentActivity(), TextToSpeech.OnInitListe
         textToSpeech?.stop()
         textToSpeech?.shutdown()
         textToSpeech = null
-        runCatching { voicePlayer?.stop() }
-        runCatching { voicePlayer?.release() }
-        voicePlayer = null
         super.onDestroy()
     }
 }
@@ -178,9 +131,9 @@ private fun VoiceSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text("One voice setup for Books Reader and PDF Reader.", style = MaterialTheme.typography.titleMedium)
-            Text("These settings do not control Nexus Assistant. Choose the voice once and use it in either reader.")
+            Text("These settings use voice services installed on your phone. No account or online service is required.")
 
-            Text("Voice provider", style = MaterialTheme.typography.titleLarge)
+            Text("Local voice", style = MaterialTheme.typography.titleLarge)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -197,42 +150,19 @@ private fun VoiceSettingsScreen(
                     Text("Uses the voice installed on this phone. No large model download.", style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RadioButton(
-                    selected = selectedProvider == ReaderVoicePreferences.ELEVENLABS,
-                    onClick = {
-                        selectedProvider = ReaderVoicePreferences.ELEVENLABS
-                        onProviderChange(ReaderVoicePreferences.ELEVENLABS)
-                    },
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("ElevenLabs online voice")
-                    Text("Requires internet, a signed-in Nexus account, server configuration, and an eligible plan/credits.", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
             HorizontalDivider()
             Text(
-                if (selectedProvider == ReaderVoicePreferences.LOCAL) {
-                    if (voiceReady) "Local voice status: ready." else "Local voice status: not ready yet."
-                } else {
-                    "ElevenLabs status is checked when you test or start reading. If unavailable, the reader falls back to the phone voice."
-                },
+                if (voiceReady) "Local voice status: ready." else "Local voice status: not ready yet.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Button(
                 onClick = { onTestVoice(selectedProvider) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Test selected voice") }
-            if (selectedProvider == ReaderVoicePreferences.LOCAL) {
-                TextButton(
-                    onClick = onOpenSystemSettings,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Manage Android voices") }
-            }
+            TextButton(
+                onClick = onOpenSystemSettings,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Manage Android voices") }
             Text(statusMessage, style = MaterialTheme.typography.bodySmall)
         }
     }
