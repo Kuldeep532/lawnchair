@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Required AppWidgetProvider metadata. Keep under src/main/res/xml so Android resource linking can resolve @xml/nexus_app_widget_info. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="Nexus App Widget"
+    android:description="@string/derived_app_name"
+    android:configure="app.lawnchair.widgets.custom.NexusAppWidgetConfigActivity"
+    android:initialLayout="@layout/nexus_app_widget"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />
