@@ -57,6 +57,7 @@ class OnlineRadioActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { LawnchairTheme {
+                EdgeToEdge()
                 EdgeToEdge() OnlineRadioScreen(::finish) } }
     }
 }
