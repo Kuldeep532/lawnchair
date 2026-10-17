@@ -2,6 +2,7 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:label="Nexus App Widget"
     android:description="@string/derived_app_name"
+    android:configure="app.lawnchair.widgets.custom.NexusAppWidgetConfigActivity"
     android:initialLayout="@layout/nexus_app_widget"
     android:minWidth="110dp"
     android:minHeight="70dp"
