@@ -128,21 +128,27 @@ fun PreferencesDashboard(
         }
 
         val deckLayout = prefs2.deckLayout.getAdapter()
-        PreferenceGroup {
+        PreferenceGroup(heading = "Personalise") {
             PreferenceCategory(
-                label = "Models",
-                description = "Download Voice AI Models and manage on-device models",
+                label = "Voice models",
+                description = "Manage voices available on this device",
                 iconResource = R.drawable.ic_apps,
                 onNavigate = {
                     runCatching {
                         context.startActivity(app.lawnchair.assistant.NexusAssistantLauncher.modelsIntent(context))
+                    }.onFailure {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Voice models are unavailable right now. Please try again later.",
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
                     }
                 },
                 isSelected = false,
             )
             PreferenceCategory(
-                label = stringResource(R.string.general_label),
-                description = stringResource(R.string.general_description),
+                label = "Appearance & icons",
+                description = "Choose colours, icon packs and visual preferences",
                 iconResource = R.drawable.ic_general,
                 onNavigate = { onNavigate(General) },
                 isSelected = currentRoute is General,
@@ -157,11 +163,19 @@ fun PreferencesDashboard(
             )
 
             PreferenceCategory(
-                label = "Digital Wellbeing",
-                description = "Set healthy time limits and block distracting apps",
+                label = "Digital wellbeing",
+                description = "Set healthy time limits and reduce distractions",
                 iconResource = R.drawable.ic_apps,
                 onNavigate = { onNavigate(DigitalWellbeing) },
                 isSelected = currentRoute is DigitalWellbeing,
+            )
+
+            PreferenceCategory(
+                label = "Privacy & security",
+                description = "Manage your private space and protected shortcuts",
+                iconResource = R.drawable.ic_about,
+                onNavigate = { onNavigate(app.lawnchair.ui.preferences.navigation.SecureVault) },
+                isSelected = currentRoute == app.lawnchair.ui.preferences.navigation.SecureVault,
             )
 
             val isSmartspaceEnabled = prefs2.enableSmartspace.firstCached()
@@ -210,8 +224,8 @@ fun PreferencesDashboard(
             )
 
             PreferenceCategory(
-                label = stringResource(id = R.string.gestures_label),
-                description = stringResource(R.string.gestures_description),
+                label = "Gestures & shortcuts",
+                description = "Choose what taps and swipes do",
                 iconResource = R.drawable.ic_gestures,
                 onNavigate = { onNavigate(Gestures) },
                 isSelected = currentRoute is Gestures,
@@ -238,8 +252,8 @@ fun PreferencesDashboard(
             )
 
             PreferenceCategory(
-                label = stringResource(R.string.about_label),
-                description = aboutDescrption,
+                label = "Nexus UI",
+                description = "Version 1.0 · About this launcher",
                 iconResource = R.drawable.ic_about,
                 onNavigate = { onNavigate(About) },
                 isSelected = currentRoute is About,
@@ -345,7 +359,7 @@ fun PreferencesDebugWarning(
 ) {
     WarningPreference(
         // Don't move to strings.xml, no need to translate this warning
-        text = "You are using a development build, which may contain bugs and broken features. Use at your own risk!",
+        text = "Some features may change as Nexus Launcher improves. If something does not work as expected, please try again after updating.",
         modifier = modifier.padding(horizontal = 16.dp),
         standalone = true,
         colors = ListItemDefaults.segmentedColors(
