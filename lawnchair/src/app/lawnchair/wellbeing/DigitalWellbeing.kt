@@ -17,11 +17,13 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -34,6 +36,8 @@ private const val PREFS = "nexus_wellbeing"
 private const val KEY_DAILY_LIMIT = "daily_limit_minutes"
 private const val KEY_SOCIAL_BLOCK_MINUTES = "social_block_minutes"
 private const val KEY_BLOCKED_PACKAGES = "blocked_packages"
+private const val KEY_FOCUS_UNTIL = "focus_until"
+private const val KEY_FOCUS_PACKAGES = "focus_packages"
 private val DEFAULT_BLOCKED = setOf(
     "com.instagram.android",
     "com.facebook.katana",
@@ -42,7 +46,23 @@ private val DEFAULT_BLOCKED = setOf(
 private val ALLOWED = setOf(
     "com.phonepe.app",
     "com.google.android.apps.nbu.paisa.user",
-    "com.google.android.youtube",
+    "net.one97.paytm",
+    "in.org.npci.upiapp",
+    "com.google.android.dialer",
+    "com.android.dialer",
+    "com.android.phone",
+    "com.google.android.apps.messaging",
+    "com.android.messaging",
+    "com.whatsapp",
+    "org.telegram.messenger",
+    "com.android.settings",
+    "com.android.systemui",
+    "com.google.android.apps.maps",
+    "com.android.camera2",
+    "com.google.android.deskclock",
+    "com.google.android.contacts",
+    "com.android.contacts",
+    "com.android.vending",
 )
 
 class DigitalWellbeingController(private val context: Context) {
@@ -78,6 +98,24 @@ class DigitalWellbeingController(private val context: Context) {
 
     fun setBlockedPackages(packages: Set<String>) {
         prefs.edit().putStringSet(KEY_BLOCKED_PACKAGES, packages.toSet()).apply()
+    }
+
+    fun focusUntilMillis(): Long = prefs.getLong(KEY_FOCUS_UNTIL, 0L)
+    fun isFocusSessionActive(): Boolean = System.currentTimeMillis() < focusUntilMillis()
+
+    fun focusPackages(): Set<String> =
+        prefs.getStringSet(KEY_FOCUS_PACKAGES, emptySet())?.toSet() ?: emptySet()
+
+    fun startFocusSession(packages: Set<String>, durationMillis: Long = 24L * 60L * 60L * 1000L) {
+        val eligible = packages.filterNot { isAllowedApp(it) }.toSet()
+        prefs.edit()
+            .putStringSet(KEY_FOCUS_PACKAGES, eligible)
+            .putLong(KEY_FOCUS_UNTIL, System.currentTimeMillis() + durationMillis)
+            .apply()
+    }
+
+    fun endFocusSession() {
+        prefs.edit().putLong(KEY_FOCUS_UNTIL, 0L).putStringSet(KEY_FOCUS_PACKAGES, emptySet()).apply()
     }
 
     fun isSocialApp(packageName: String): Boolean =
@@ -137,6 +175,8 @@ class DigitalWellbeingController(private val context: Context) {
     }
 
     fun shouldBlockPackage(packageName: String): Boolean {
+        if (isAllowedApp(packageName)) return false
+        if (isFocusSessionActive() && packageName in focusPackages()) return true
         if (!isUsageAccessGranted() || !isSocialApp(packageName)) return false
         val appMinutes = packageUsageToday(packageName) / 60_000L
         val totalMinutes = totalBlockedUsageToday() / 60_000L
@@ -153,6 +193,10 @@ fun DigitalWellbeingSettings() {
     var socialBlock by remember { mutableIntStateOf(controller.socialBlockMinutes()) }
     var access by remember { mutableStateOf(controller.isUsageAccessGranted()) }
     var blockedPackages by remember { mutableStateOf(controller.blockedPackages()) }
+    var focusUntil by remember { mutableStateOf(controller.focusUntilMillis()) }
+    var showStartConsent by remember { mutableStateOf(false) }
+    var showEmergencyDialog by remember { mutableStateOf(false) }
+    var emergencyPhrase by remember { mutableStateOf("") }
     val installedApps = remember {
         runCatching {
             context.getSystemService(LauncherApps::class.java)
@@ -215,6 +259,20 @@ fun DigitalWellbeingSettings() {
                 Text(if (access) "Review usage access" else "Enable usage access")
             }
             Text("Apps to limit", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+            if (focusUntil > System.currentTimeMillis()) {
+                val remainingMinutes = ((focusUntil - System.currentTimeMillis()) / 60_000L).coerceAtLeast(0L)
+                Text("24-hour Focus Session active · about ${remainingMinutes / 60}h ${remainingMinutes % 60}m remaining")
+                Button(onClick = { showEmergencyDialog = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Emergency override")
+                }
+            } else {
+                Button(
+                    onClick = { showStartConsent = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = blockedPackages.isNotEmpty(),
+                ) { Text("Start 24-hour Focus Session") }
+                Text("Choose distracting apps below first. A focus session blocks only those apps for 24 hours; essential phone, messaging, payment and system apps are excluded.")
+            }
             LazyColumn(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -226,6 +284,7 @@ fun DigitalWellbeingSettings() {
                     ) {
                         Checkbox(
                             checked = packageName in blockedPackages,
+                            enabled = focusUntil <= System.currentTimeMillis(),
                             onCheckedChange = { checked ->
                                 blockedPackages = if (checked) blockedPackages + packageName else blockedPackages - packageName
                                 controller.setBlockedPackages(blockedPackages)
@@ -242,8 +301,22 @@ fun DigitalWellbeingSettings() {
                     }
                 }
             }
+                item {
+                    Text("Use your time to learn", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                    Text("Instead of endless scrolling, try a short lesson or a useful tutorial.")
+                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.duolingo.com/"))) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Learn English with Duolingo")
+                    }
+                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.youtube.com/@bbclearningenglish"))) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("BBC Learning English on YouTube")
+                    }
+                    Button(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.khanacademy.org/"))) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Study with Khan Academy")
+                    }
+                }
+            }
             Text(
-                "For live app-switch monitoring, enable Nexus Launcher in Android Accessibility settings too. Enforcement can still vary by Android version.",
+                "For live app-switch monitoring, enable Nexus Launcher in Android Accessibility settings too.",
                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
             )
             Button(
@@ -253,6 +326,58 @@ fun DigitalWellbeingSettings() {
                 Text("Enable accessibility monitoring")
             }
         }
+    }
+
+    if (showStartConsent) {
+        AlertDialog(
+            onDismissRequest = { showStartConsent = false },
+            title = { Text("Start a 24-hour Focus Session?") },
+            text = {
+                Text("You are choosing to block ${blockedPackages.size} selected apps for the next 24 hours. Phone, messages, payment and core utility apps are excluded. You can end early only through the visible emergency override. Continue?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    controller.startFocusSession(blockedPackages)
+                    focusUntil = controller.focusUntilMillis()
+                    showStartConsent = false
+                }) { Text("I agree — start") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartConsent = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showEmergencyDialog) {
+        AlertDialog(
+            onDismissRequest = { showEmergencyDialog = false; emergencyPhrase = "" },
+            title = { Text("Emergency override") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Only use this if an urgent situation requires access. Ending the focus session will immediately allow selected apps again.")
+                    OutlinedTextField(
+                        value = emergencyPhrase,
+                        onValueChange = { emergencyPhrase = it },
+                        label = { Text("Type END FOCUS to confirm") },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = emergencyPhrase == "END FOCUS",
+                    onClick = {
+                        controller.endFocusSession()
+                        focusUntil = 0L
+                        showEmergencyDialog = false
+                        emergencyPhrase = ""
+                    },
+                ) { Text("End focus session") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEmergencyDialog = false; emergencyPhrase = "" }) { Text("Keep focus on") }
+            },
+        )
     }
 }
 
