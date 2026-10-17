@@ -330,6 +330,18 @@
         </receiver>
 
         <receiver
+            android:name="app.lawnchair.widgets.custom.NexusAppWidgetProvider"
+            android:exported="true"
+            android:label="Nexus App Widget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/nexus_app_widget_info" />
+        </receiver>
+
+        <receiver
             android:name="app.lawnchair.widgets.music.NexusMusicWidgetProvider"
             android:exported="true"
             android:label="Nexus Music">
