@@ -509,6 +509,21 @@ private fun NexusAssistantScreen(
                 enabled = query.isNotBlank(),
             ) { Text("Send command") }
             Button(
+                onClick = { onCommand("search $query") { response = it } },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = query.isNotBlank(),
+            ) { Text("Search the web") }
+            Button(
+                onClick = { onCommand("search music $query") { response = it } },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = query.isNotBlank(),
+            ) { Text("Search music") }
+            Button(
+                onClick = { onCommand("search video $query") { response = it } },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = query.isNotBlank(),
+            ) { Text("Search videos") }
+            Button(
                 onClick = { onListen { response = it } },
                 modifier = Modifier.fillMaxWidth(),
             ) {
