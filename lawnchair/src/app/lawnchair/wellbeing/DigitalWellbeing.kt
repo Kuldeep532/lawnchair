@@ -135,6 +135,14 @@ class DigitalWellbeingController(private val context: Context) {
         ).filter { it.packageName in blocked && !isAllowedApp(it.packageName) }
             .sumOf { it.totalTimeInForeground }
     }
+
+    fun shouldBlockPackage(packageName: String): Boolean {
+        if (!isUsageAccessGranted() || !isSocialApp(packageName)) return false
+        val appMinutes = packageUsageToday(packageName) / 60_000L
+        val totalMinutes = totalBlockedUsageToday() / 60_000L
+        return appMinutes >= socialBlockMinutes().toLong() ||
+            totalMinutes >= dailyLimitMinutes().toLong()
+    }
 }
 
 @Composable
