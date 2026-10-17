@@ -276,7 +276,7 @@ class NexusAssistantActivity : ComponentActivity() {
                 command.contains("वाईफाई") -> openInternetPanel()
             command.startsWith("search ") || command.startsWith("सर्च ") ||
                 command.startsWith("खोज ") || command.startsWith("ढूंढो ") ||
-                command.startsWith("खोजो ") -> openSearch(raw.substringAfter(' ').trim())
+                command.startsWith("खोजो ") -> openUniversalSearch(raw)
             command.startsWith("open ") || command.startsWith("खोलो ") ||
                 command.startsWith("launch ") || command.startsWith("चलाओ ") ||
                 command.startsWith("start ") -> {
@@ -350,6 +350,62 @@ class NexusAssistantActivity : ComponentActivity() {
         onSuccess = { "Internet settings opened. Choose Wi-Fi there." },
         onFailure = { "I could not open Internet settings on this device." },
     )
+
+    /**
+     * One API-free search entry point. Prefixes let users choose the destination:
+     * "search music <title>", "search video <title>", "search apps <name>".
+     * A plain "search <query>" uses Google web search.
+     */
+    private fun openUniversalSearch(rawCommand: String): String {
+        val query = rawCommand.trim()
+            .replaceFirst(Regex("^(search|सर्च|खोज|ढूंढो|खोजो)\\\\s+", RegexOption.IGNORE_CASE), "")
+            .trim()
+        if (query.isBlank()) return "Type what you want to search for."
+
+        val lower = query.lowercase(Locale.ROOT)
+        val musicQuery = when {
+            lower.startsWith("music ") -> query.substringAfter(' ').trim()
+            lower.startsWith("music:") -> query.substringAfter(':').trim()
+            lower.startsWith("म्यूजिक ") -> query.substringAfter(' ').trim()
+            else -> null
+        }
+        val videoQuery = when {
+            lower.startsWith("video ") -> query.substringAfter(' ').trim()
+            lower.startsWith("video:") -> query.substringAfter(':').trim()
+            lower.startsWith("videos ") -> query.substringAfter(' ').trim()
+            lower.startsWith("वीडियो ") -> query.substringAfter(' ').trim()
+            else -> null
+        }
+        val appQuery = when {
+            lower.startsWith("apps ") -> query.substringAfter(' ').trim()
+            lower.startsWith("app ") -> query.substringAfter(' ').trim()
+            lower.startsWith("apps:") -> query.substringAfter(':').trim()
+            else -> null
+        }
+
+        if (!musicQuery.isNullOrBlank()) return openUrlSearch(
+            "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
+            "Searching music for $musicQuery."
+        )
+        if (!videoQuery.isNullOrBlank()) return openUrlSearch(
+            "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
+            "Searching videos for $videoQuery."
+        )
+        if (!appQuery.isNullOrBlank()) {
+            val launch = resolveInstalledApp(appQuery)
+            if (launch != null) return runCatching {
+                startActivity(launch)
+                "Opening $appQuery."
+            }.getOrElse { "I could not open $appQuery." }
+            return openSearch(appQuery + " app")
+        }
+        return openSearch(query)
+    }
+
+    private fun openUrlSearch(url: String, successMessage: String): String = runCatching {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        successMessage
+    }.getOrElse { "Search could not be opened. Please try again." }
 
     private fun openSearch(rawQuery: String): String {
         val query = rawQuery.trim()
