@@ -71,8 +71,9 @@ class PdfReaderActivity : ComponentActivity() {
                 )
             }
         }
-        setContent { LawnchairTheme {
-                EdgeToEdge() PdfReaderScreen(::finish, incomingPdf) } }
+        EdgeToEdge()
+
+        setContent { LawnchairTheme { PdfReaderScreen(::finish, incomingPdf) } }
     }
 }
 
