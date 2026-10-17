@@ -54,8 +54,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import app.lawnchair.LawnchairApp
-import app.lawnchair.account.NexusAccountActivity
-import app.lawnchair.account.NexusAccountStore
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences.observeAsState
@@ -131,15 +129,13 @@ fun PreferencesDashboard(
 
         val deckLayout = prefs2.deckLayout.getAdapter()
         PreferenceGroup {
-            val account = runCatching { NexusAccountStore.account(context) }.getOrNull()
             PreferenceCategory(
-                label = "Nexus Account",
-                description = account?.name?.takeIf { it.isNotBlank() }?.let { "Signed in as $it" }
-                    ?: "Login is optional; launcher works without an account",
-                iconResource = R.drawable.ic_about,
+                label = "Models",
+                description = "Download Voice AI Models and manage on-device models",
+                iconResource = R.drawable.ic_apps,
                 onNavigate = {
                     runCatching {
-                        context.startActivity(Intent(context, NexusAccountActivity::class.java))
+                        context.startActivity(app.lawnchair.assistant.NexusAssistantLauncher.modelsIntent(context))
                     }
                 },
                 isSelected = false,
