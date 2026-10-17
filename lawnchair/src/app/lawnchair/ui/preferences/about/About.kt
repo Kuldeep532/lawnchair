@@ -25,6 +25,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
@@ -44,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -100,46 +105,73 @@ fun About(
             )
         }
         item { Spacer(modifier = Modifier.height(14.dp)) }
+        item { Spacer(modifier = Modifier.height(8.dp)) }
         item {
             Text(
-                text = stringResource(R.string.nexus_fusion_ui_version),
-                style = MaterialTheme.typography.titleMedium,
+                text = "Nexus UI 1.0",
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             Text(
-                text = stringResource(R.string.nexus_fusion_ui_about),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-            )
-        }
-        item {
-            Text(
-                text = stringResource(R.string.nexus_fusion_ui_origin),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-            )
-        }
-        item {
-            Text(
-                text = stringResource(R.string.nexus_fusion_ui_framework_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-            )
-        }
-        item {
-            Text(
-                text = stringResource(R.string.nexus_about_description),
+                text = "A personalised interface for a simpler, more accessible home screen.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+        }
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+        item {
+            PreferenceGroupHeading("Interface information")
+        }
+        item {
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)) {
+                    NexusInfoRow("Interface", "Nexus UI")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    NexusInfoRow("UI version", "1.0")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    NexusInfoRow("Launcher", "Nexus Launcher")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    NexusInfoRow("Experience", "Nexus Fusion UI")
+                }
+            }
+        }
+        item { Spacer(modifier = Modifier.height(18.dp)) }
+        item {
+            PreferenceGroupHeading("About Nexus Launcher")
+        }
+        item {
+            Text(
+                text = "Nexus Launcher brings together a flexible home screen, customisable gestures, thoughtful privacy tools and an interface designed to be clear and comfortable to use.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        item {
+            Text(
+                text = "Nexus Fusion UI began as an experiment in creating a custom launcher experience and grew into a consistent visual language for Nexus Launcher.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        item {
+            Text(
+                text = "Created by Kuldeep Kumar Yadav",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
         item { Spacer(modifier = Modifier.height(18.dp)) }
@@ -202,6 +234,28 @@ fun About(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun NexusInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 13.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.End,
+        )
     }
 }
 
