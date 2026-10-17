@@ -1,6 +1,7 @@
 package app.lawnchair.search.algorithms
 
 import android.content.Context
+import android.net.Uri
 import app.lawnchair.preferences.PreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
@@ -65,7 +66,10 @@ class LawnchairLocalSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm
     override fun doSearch(query: String, callback: SearchCallback<BaseAllAppsAdapter.AdapterItem>) {
         modelRetryJob?.cancel()
         modelRetryJob = appState.model.runWhenModelLoaded(coroutineScope) { apps ->
-            val appResults = appSearchProvider.search(context, query, apps)
+            val normalizedQuery = query.trim().let { value ->
+                if (value.startsWith("app:", ignoreCase = true)) value.substringAfter(':').trim() else value
+            }
+            val appResults = appSearchProvider.search(context, normalizedQuery, apps)
             val shortcutResults = shortcutSearchProvider.search(context, appResults)
 
             currentJob?.cancel()
@@ -149,24 +153,63 @@ class LawnchairLocalSearchAlgorithm(context: Context) : LawnchairSearchAlgorithm
         val prefs2 = PreferenceManager2.getInstance(context)
 
         if (prefs.searchResultStartPageSuggestion.get()) {
-            val provider = prefs2.webSuggestionProvider.firstCached()
-            val webProvider = provider.configure(context)
-
-            val providerName = if (webProvider is CustomWebSearchProvider) {
-                webProvider.getDisplayName()
-            } else {
-                context.getString(webProvider.label)
+            val normalized = query.trim()
+            val lower = normalized.lowercase()
+            val musicQuery = when {
+                lower.startsWith("music:") -> normalized.substringAfter(':').trim()
+                lower.startsWith("music ") -> normalized.substringAfter(' ').trim()
+                lower.startsWith("म्यूजिक ") -> normalized.substringAfter(' ').trim()
+                else -> null
+            }
+            val videoQuery = when {
+                lower.startsWith("video:") -> normalized.substringAfter(':').trim()
+                lower.startsWith("video ") -> normalized.substringAfter(' ').trim()
+                lower.startsWith("videos ") -> normalized.substringAfter(' ').trim()
+                lower.startsWith("वीडियो ") -> normalized.substringAfter(' ').trim()
+                else -> null
             }
 
-            actions.add(
-                SearchResult.Action.WebSearch(
-                    query = query,
-                    providerName = providerName,
-                    searchUrl = webProvider.getSearchUrl(query),
-                    providerIconRes = webProvider.iconRes,
-                    tintIcon = webProvider is CustomWebSearchProvider,
-                ),
-            )
+            if (!musicQuery.isNullOrBlank()) {
+                actions.add(
+                    SearchResult.Action.WebSearch(
+                        query = musicQuery,
+                        providerName = "YouTube Music",
+                        searchUrl = "https://music.youtube.com/search?q=" + Uri.encode(musicQuery),
+                        providerIconRes = R.drawable.ic_search,
+                        tintIcon = true,
+                    ),
+                )
+            } else if (!videoQuery.isNullOrBlank()) {
+                actions.add(
+                    SearchResult.Action.WebSearch(
+                        query = videoQuery,
+                        providerName = "YouTube Videos",
+                        searchUrl = "https://www.youtube.com/results?search_query=" + Uri.encode(videoQuery),
+                        providerIconRes = R.drawable.ic_search,
+                        tintIcon = true,
+                    ),
+                )
+            } else {
+                val provider = prefs2.webSuggestionProvider.firstCached()
+                val webProvider = provider.configure(context)
+
+                val providerName = if (webProvider is CustomWebSearchProvider) {
+                    webProvider.getDisplayName()
+                } else {
+                    context.getString(webProvider.label)
+                }
+
+                val webQuery = if (lower.startsWith("app:")) normalized.substringAfter(':').trim() + " app" else normalized
+                actions.add(
+                    SearchResult.Action.WebSearch(
+                        query = webQuery,
+                        providerName = providerName,
+                        searchUrl = webProvider.getSearchUrl(webQuery),
+                        providerIconRes = webProvider.iconRes,
+                        tintIcon = webProvider is CustomWebSearchProvider,
+                    ),
+                )
+            }
         }
 
         if (SearchLinksTarget.resolveMarketSearchActivity(context) != null) {
