@@ -158,17 +158,17 @@ private fun QrScreen(onBack: () -> Unit) {
                 }
                 when (mode) {
                     QrMode.TEXT -> Field("Text", input) { input = it }
-                    QrMode.URL -> field("URL", input) { input = it }
+                    QrMode.URL -> Field("URL", input) { input = it }
                     QrMode.WIFI -> {
-                        field("Wi-Fi SSID", input) { input = it }
-                        field("Security: WPA, WEP or nopass", wifiSecurity) { wifiSecurity = it }
-                        field("Wi-Fi password", wifiPassword) { wifiPassword = it }
+                        Field("Wi-Fi SSID", input) { input = it }
+                        Field("Security: WPA, WEP or nopass", wifiSecurity) { wifiSecurity = it }
+                        Field("Wi-Fi password", wifiPassword) { wifiPassword = it }
                     }
                     QrMode.UPI -> {
-                        field("Payee name", upiName) { upiName = it }
-                        field("UPI ID", upiId) { upiId = it }
-                        field("Amount", amount) { amount = it }
-                        field("Payment note", notes) { notes = it }
+                        Field("Payee name", upiName) { upiName = it }
+                        Field("UPI ID", upiId) { upiId = it }
+                        Field("Amount", amount) { amount = it }
+                        Field("Payment note", notes) { notes = it }
                         Text("UPI supports name, ID, amount and note. Category selection will remain metadata-only.")
                     }
                 }
