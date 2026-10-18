@@ -46,9 +46,6 @@ ktlint_standard_no-wildcard-imports = disabled
 [/lawnchair/src/app/lawnchair/livetv/LiveTvModels.kt]
 ktlint_standard_filename = disabled
 
-[/lawnchair/src/app/lawnchair/radio/OnlineRadioActivity.kt]
-ktlint_standard_no-wildcard-imports = disabled
-
 [/lawnchair/src/app/lawnchair/search/algorithms/engine/provider/apps/AppSearchProvider.kt]
 ktlint_standard_kdoc = disabled
 
