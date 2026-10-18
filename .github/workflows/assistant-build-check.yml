@@ -30,6 +30,9 @@ jobs:
       - name: Configure Gradle cache
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Apply Kotlin and Java formatting
+        run: ./gradlew --no-daemon spotlessApply
+
       - name: Build Nexus Launcher for testing
         run: ./gradlew --no-daemon assembleLawnWithQuickstepGithubDebug
 
