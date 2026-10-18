@@ -1,31 +1,53 @@
 package app.lawnchair.nexuslauncher.tools
 
-import android.graphics.Bitmap
-import android.graphics.Color
-import android.os.Bundle
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.provider.MediaStore
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Save
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -36,6 +58,9 @@ import app.lawnchair.ui.theme.LawnchairTheme
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private enum class QrMode(val label: String) { TEXT("Text"), URL("URL"), WIFI("Wi-Fi"), UPI("UPI") }
 
@@ -132,7 +157,7 @@ private fun QrScreen(onBack: () -> Unit) {
                     QrMode.entries.forEach { item -> Tab(mode == item, { mode = item; error = null }) { Text(item.label) } }
                 }
                 when (mode) {
-                    QrMode.TEXT -> field("Text", input) { input = it }
+                    QrMode.TEXT -> Field("Text", input) { input = it }
                     QrMode.URL -> field("URL", input) { input = it }
                     QrMode.WIFI -> {
                         field("Wi-Fi SSID", input) { input = it }
@@ -155,7 +180,7 @@ private fun QrScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun field(label: String, value: String, onValueChange: (String) -> Unit) {
+private fun Field(label: String, value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(value, onValueChange, Modifier.fillMaxWidth(), label = { Text(label) }, singleLine = true)
 }
 
