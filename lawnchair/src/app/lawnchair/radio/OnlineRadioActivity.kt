@@ -30,7 +30,12 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -353,9 +358,9 @@ private fun StationList(
     favorites: List<RadioStation>,
     loading: Boolean,
     message: String?,
+    emptyMessage: String = "No stations found.",
     onPlay: (RadioStation) -> Unit,
     onFavorite: (RadioStation) -> Unit,
-    emptyMessage: String = "No stations found.",
 ) {
     when {
         loading -> Text("Loading stations…", Modifier.padding(16.dp))
