@@ -235,7 +235,7 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
         topBar = { TopAppBar(title = { Text("Digital Wellbeing") }) },
     ) { padding ->
         Column(
-            modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp),
+            modifier = modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Choose distracting apps and set daily usage limits. Phone, messaging, payment and core utility apps are protected. YouTube can be selected if you want to limit it.")
