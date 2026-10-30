@@ -90,34 +90,18 @@ class NexusChatBrowserActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Email address") },
-                            singleLine = true,
-                        )
-                        OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Password") },
-                            singleLine = true,
-                        )
-                        Button(
-                            onClick = {
-                                busy = true
-                                webView?.evaluateJavascript(
-                                    "window.nexusSignIn && window.nexusSignIn(" +
-                                        "'${email.jsString()}', '${password.jsString()}')",
-                                ) { result ->
-                                    busy = false
-                                    message = result?.trim('"')?.takeIf { it.isNotBlank() } ?: "The sign-in request could not be completed."
+                        AndroidView(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            factory = { context ->
+                                createChatWebView(context) { newProgress, pageTitle ->
+                                    progress = newProgress
+                                    title = pageTitle
+                                }.also {
+                                    webView = it
+                                    it.loadUrl(CHAT_PAGE_URL)
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = !busy && email.isNotBlank() && password.isNotBlank() && webView != null,
-                        ) { Text(if (busy) "Please wait…" else "Sign in") }
+                        )
                         Text(message)
                         AndroidView(
                             modifier = Modifier.weight(1f).fillMaxWidth(),
