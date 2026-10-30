@@ -24,11 +24,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
@@ -45,51 +40,12 @@ class NexusChatBrowserActivity : ComponentActivity() {
         setContent {
             LawnchairTheme {
                 EdgeToEdge()
-                var progress by remember { mutableIntStateOf(0) }
-                var title by remember { mutableStateOf("Nexus Chat") }
-                var webView by remember { mutableStateOf<WebView?>(null) }
 
-                BackHandler(enabled = webView?.canGoBack() == true) { webView?.goBack() }
 
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(title) },
-                            navigationIcon = {
-                                IconButton(onClick = {
-                                    if (webView?.canGoBack() == true) webView?.goBack() else finish()
-                                }) {
-                                    Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                                }
-                            },
-                        )
-                    },
-                ) { padding ->
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        if (progress in 1..99) {
-                            LinearProgressIndicator(
-                                progress = { progress / 100f },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                        AndroidView(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            factory = { context ->
-                                createChatWebView(context) { newProgress, pageTitle ->
-                                    progress = newProgress
-                                    title = pageTitle
-                                }.also {
-                                    webView = it
-                                    it.loadUrl(CHAT_PAGE_URL)
-                                }
-                            },
-                        )
-
-                    }
-                }
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { context -> createChatWebView(context).apply { loadUrl(CHAT_PAGE_URL) } },
+                )
             }
         }
     }
@@ -100,13 +56,9 @@ class NexusChatBrowserActivity : ComponentActivity() {
         fun intent(context: Context): Intent =
             Intent(context, NexusChatBrowserActivity::class.java)
     }
-}
 
 @SuppressLint("SetJavaScriptEnabled")
-private fun createChatWebView(
-    context: Context,
-    onPageState: (Int, String) -> Unit,
-): WebView = WebView(context).apply {
+private fun createChatWebView(context: Context): WebView = WebView(context).apply {
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
     settings.allowFileAccess = true
@@ -120,17 +72,6 @@ private fun createChatWebView(
     webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
             request.url.scheme != "https" && request.url.scheme != "http" && request.url.scheme != "file"
-
-        override fun onPageFinished(view: WebView, url: String?) {
-            onPageState(100, view.title?.takeIf { it.isNotBlank() } ?: "Nexus Chat")
-        }
     }
-    webChromeClient = object : WebChromeClient() {
-        override fun onProgressChanged(view: WebView, newProgress: Int) {
-            onPageState(newProgress, view.title?.takeIf { it.isNotBlank() } ?: "Nexus Chat")
-        }
-    }
+    loadUrl(CHAT_PAGE_URL)
 }
-
-private fun String.jsString(): String =
-    replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r")
