@@ -37,7 +37,7 @@ import app.lawnchair.ui.theme.LawnchairTheme
 
 /**
  * Lightweight in-app web view. It uses Android System WebView and adds no browser engine to the APK.
- * Chat authentication and AI requests live entirely in the web page.
+ * The Plus Search actions and keyword entry live on this dedicated search page.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class NexusSearchBrowserActivity : ComponentActivity() {
