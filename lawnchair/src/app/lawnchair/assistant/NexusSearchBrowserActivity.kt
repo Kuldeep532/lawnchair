@@ -1,12 +1,11 @@
 package app.lawnchair.assistant
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import java.io.ByteArrayInputStream
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -37,8 +36,8 @@ import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 
 /**
- * Lightweight in-app search viewer. It uses Android System WebView, so no browser
- * engine is bundled in the APK and no search API key is required.
+ * Lightweight in-app web view. It uses Android System WebView and adds no browser engine to the APK.
+ * Chat authentication and AI requests live entirely in the web page.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 class NexusSearchBrowserActivity : ComponentActivity() {
@@ -55,9 +54,7 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                 var pageTitle by remember { mutableStateOf("Nexus Search") }
                 var canGoBack by remember { mutableStateOf(false) }
                 var webView by remember { mutableStateOf<WebView?>(null) }
-                BackHandler(enabled = canGoBack) {
-                    webView?.goBack()
-                }
+                BackHandler(enabled = canGoBack) { webView?.goBack() }
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -87,69 +84,11 @@ class NexusSearchBrowserActivity : ComponentActivity() {
                         AndroidView(
                             modifier = Modifier.fillMaxSize(),
                             factory = { context ->
-                                WebView(context).apply {
-                                    webView = this
-                                    settings.javaScriptEnabled = true
-                                    settings.domStorageEnabled = true
-                                    settings.allowFileAccess = false
-                                    settings.allowContentAccess = false
-                                    settings.javaScriptCanOpenWindowsAutomatically = false
-                                    settings.setSupportMultipleWindows(false)
-                                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                                        settings.safeBrowsingEnabled = true
-                                    }
-                                    webViewClient = object : WebViewClient() {
-                                        override fun shouldOverrideUrlLoading(
-                                            view: WebView,
-                                            request: WebResourceRequest,
-                                        ): Boolean {
-                                            val uri = request.url
-                                            return uri.scheme != "http" && uri.scheme != "https"
-                                        }
-
-                                        override fun shouldInterceptRequest(
-                                            view: WebView,
-                                            request: WebResourceRequest,
-                                        ): WebResourceResponse? {
-                                            val uri = request.url
-                                            val host = uri.host.orEmpty().lowercase()
-                                            val knownAdHost = listOf(
-                                                "doubleclick.net",
-                                                "googlesyndication.com",
-                                                "googleadservices.com",
-                                                "adservice.google.com",
-                                                "amazon-adsystem.com",
-                                                "adnxs.com",
-                                            ).any { host == it || host.endsWith(".$it") }
-                                            val googleAdPath = host == "www.google.com" &&
-                                                (uri.path.orEmpty().startsWith("/pagead/") ||
-                                                    uri.path.orEmpty().startsWith("/ads/"))
-                                            if (knownAdHost || googleAdPath) {
-                                                return WebResourceResponse(
-                                                    "text/plain",
-                                                    "utf-8",
-                                                    ByteArrayInputStream(ByteArray(0)),
-                                                )
-                                            }
-                                            return super.shouldInterceptRequest(view, request)
-                                        }
-
-                                        override fun onPageFinished(view: WebView, url: String?) {
-                                            canGoBack = view.canGoBack()
-                                        }
-                                    }
-                                    webChromeClient = object : WebChromeClient() {
-                                        override fun onProgressChanged(view: WebView, newProgress: Int) {
-                                            progress = newProgress
-                                        }
-
-                                        override fun onReceivedTitle(view: WebView, title: String?) {
-                                            pageTitle = title?.takeIf { it.isNotBlank() } ?: "Nexus Search"
-                                        }
-                                    }
-                                    loadUrl(initialUrl)
-                                }
+                                createWebView(context, initialUrl) { title, value, back ->
+                                    pageTitle = title
+                                    progress = value
+                                    canGoBack = back
+                                }.also { webView = it }
                             },
                             update = { if (it.url.isNullOrBlank()) it.loadUrl(initialUrl) },
                         )
@@ -160,7 +99,6 @@ class NexusSearchBrowserActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        // WebView is hosted by Compose; Android releases its view resources with the activity.
         super.onDestroy()
     }
 
@@ -168,16 +106,48 @@ class NexusSearchBrowserActivity : ComponentActivity() {
         value.startsWith("https://", ignoreCase = true) || value.startsWith("http://", ignoreCase = true)
 
     private fun googleSearchUrl(query: String): String =
-        "https://www.google.com/search?q=" + Uri.encode(query)
+        "https://www.google.com/search?q=" + android.net.Uri.encode(query)
 
     companion object {
         const val EXTRA_QUERY = "app.lawnchair.assistant.SEARCH_QUERY"
         const val EXTRA_URL = "app.lawnchair.assistant.SEARCH_URL"
 
-        fun queryIntent(context: android.content.Context, query: String): Intent =
+        fun queryIntent(context: Context, query: String): Intent =
             Intent(context, NexusSearchBrowserActivity::class.java).putExtra(EXTRA_QUERY, query)
 
-        fun urlIntent(context: android.content.Context, url: String): Intent =
+        fun urlIntent(context: Context, url: String): Intent =
             Intent(context, NexusSearchBrowserActivity::class.java).putExtra(EXTRA_URL, url)
     }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+private fun createWebView(
+    context: Context,
+    url: String,
+    onState: (String, Int, Boolean) -> Unit,
+): WebView = WebView(context).apply {
+    settings.javaScriptEnabled = true
+    settings.domStorageEnabled = true
+    settings.allowFileAccess = false
+    settings.allowContentAccess = false
+    settings.javaScriptCanOpenWindowsAutomatically = false
+    settings.setSupportMultipleWindows(false)
+    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        settings.safeBrowsingEnabled = true
+    }
+    webViewClient = object : WebViewClient() {
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
+            request.url.scheme != "http" && request.url.scheme != "https"
+
+        override fun onPageFinished(view: WebView, loadedUrl: String?) {
+            onState(view.title?.takeIf { it.isNotBlank() } ?: "Nexus Search", 100, view.canGoBack())
+        }
+    }
+    webChromeClient = object : WebChromeClient() {
+        override fun onProgressChanged(view: WebView, newProgress: Int) {
+            onState(view.title?.takeIf { it.isNotBlank() } ?: "Nexus Search", newProgress, view.canGoBack())
+        }
+    }
+    loadUrl(url)
 }
