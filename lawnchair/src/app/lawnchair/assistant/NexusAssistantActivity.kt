@@ -12,7 +12,6 @@ import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,10 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
@@ -77,6 +72,9 @@ class NexusAssistantActivity : ComponentActivity() {
                 NexusAssistantScreen(
                     onOpenChat = {
                         startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
+                    },
+                    onOpenSearch = {
+                        startActivity(NexusSearchBrowserActivity.openSearchScreen(this@NexusAssistantActivity))
                     },
                     onBack = ::finish,
                     onListen = { onRecognized ->
@@ -126,8 +124,6 @@ class NexusAssistantActivity : ComponentActivity() {
             command.contains("टॉर्च") || command.contains("फ्लैशलाइट") ||
             command.contains("wifi") || command.contains("wi-fi") ||
             command.contains("वाई फाई") || command.contains("वाई-फाई") || command.contains("वाईफाई") ||
-            command.startsWith("search ") || command.startsWith("play music ") || command.startsWith("सर्च ") ||
-            command.startsWith("खोज ") || command.startsWith("ढूंढो ") || command.startsWith("खोजो ") ||
             command.startsWith("open ") || command.startsWith("खोलो ") ||
             command.startsWith("launch ") || command.startsWith("चलाओ ") || command.startsWith("start ") ||
             command.contains("settings") || command.contains("सेटिंग") || command.contains("सेटिंग्स") ||
@@ -362,6 +358,7 @@ class NexusAssistantActivity : ComponentActivity() {
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
     onOpenChat: () -> Unit,
+    onOpenSearch: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
@@ -402,6 +399,10 @@ private fun NexusAssistantScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = query.isNotBlank(),
             ) { Text("Run device command") }
+            Button(
+                onClick = onOpenSearch,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Plus Search") }
             Button(
                 onClick = onOpenChat,
                 modifier = Modifier.fillMaxWidth(),
