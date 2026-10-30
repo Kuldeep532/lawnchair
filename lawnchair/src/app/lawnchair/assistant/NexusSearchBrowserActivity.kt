@@ -112,7 +112,7 @@ class NexusSearchBrowserActivity : ComponentActivity() {
         const val EXTRA_QUERY = "app.lawnchair.assistant.SEARCH_QUERY"
         const val EXTRA_URL = "app.lawnchair.assistant.SEARCH_URL"
         const val EXTRA_SEARCH_HOME = "app.lawnchair.assistant.SEARCH_HOME"
-        private const val SEARCH_HOME_URL = "file:///android_asset/nexus-search/index.html"
+        private const val SEARCH_HOME_URL = "https://appassets.androidplatform.net/assets/nexus-search/index.html"
 
         fun queryIntent(context: Context, query: String): Intent =
             Intent(context, NexusSearchBrowserActivity::class.java).putExtra(EXTRA_QUERY, query)
@@ -133,7 +133,7 @@ private fun createWebView(
 ): WebView = WebView(context).apply {
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
-    settings.allowFileAccess = true
+    settings.allowFileAccess = false
     settings.allowContentAccess = false
     settings.javaScriptCanOpenWindowsAutomatically = false
     settings.setSupportMultipleWindows(false)
@@ -141,7 +141,19 @@ private fun createWebView(
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
         settings.safeBrowsingEnabled = true
     }
+    val assetLoader = androidx.webkit.WebViewAssetLoader.Builder()
+        .addPathHandler(
+            "/assets/",
+            androidx.webkit.WebViewAssetLoader.AssetsPathHandler(context),
+        )
+        .build()
     webViewClient = object : WebViewClient() {
+        override fun shouldInterceptRequest(
+            view: WebView,
+            request: WebResourceRequest,
+        ): android.webkit.WebResourceResponse? =
+            assetLoader.shouldInterceptRequest(request.url)
+
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
             request.url.scheme != "http" && request.url.scheme != "https"
 
