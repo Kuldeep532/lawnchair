@@ -45,7 +45,7 @@ class NexusSearchBrowserActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val initialUrl = intent.getStringExtra(EXTRA_URL)?.takeIf(::isHttpUrl)
             ?: intent.getStringExtra(EXTRA_QUERY)?.let(::googleSearchUrl)
-            ?: googleSearchUrl("")
+            ?: if (intent.getBooleanExtra(EXTRA_SEARCH_HOME, false)) SEARCH_HOME_URL else googleSearchUrl("")
 
         setContent {
             LawnchairTheme {
@@ -111,12 +111,17 @@ class NexusSearchBrowserActivity : ComponentActivity() {
     companion object {
         const val EXTRA_QUERY = "app.lawnchair.assistant.SEARCH_QUERY"
         const val EXTRA_URL = "app.lawnchair.assistant.SEARCH_URL"
+        const val EXTRA_SEARCH_HOME = "app.lawnchair.assistant.SEARCH_HOME"
+        private const val SEARCH_HOME_URL = "file:///android_asset/nexus-search/index.html"
 
         fun queryIntent(context: Context, query: String): Intent =
             Intent(context, NexusSearchBrowserActivity::class.java).putExtra(EXTRA_QUERY, query)
 
         fun urlIntent(context: Context, url: String): Intent =
             Intent(context, NexusSearchBrowserActivity::class.java).putExtra(EXTRA_URL, url)
+
+        fun openSearchScreen(context: Context): Intent =
+            Intent(context, NexusSearchBrowserActivity::class.java).putExtra(EXTRA_SEARCH_HOME, true)
     }
 }
 
