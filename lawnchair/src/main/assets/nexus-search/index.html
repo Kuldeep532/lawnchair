@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Plus Search</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:Canvas;color:CanvasText}
+main{max-width:760px;margin:auto}
+h1{font-size:1.35rem;margin:4px 0 6px}
+p{line-height:1.45}
+label{display:block;font-weight:600;margin:16px 0 7px}
+input,button{font:inherit;width:100%;padding:13px;border-radius:12px}
+input{border:1px solid GrayText;background:Field;color:FieldText}
+button{border:0;background:#245c48;color:#fff;margin-top:10px;min-height:48px;font-weight:650}
+button.secondary{background:transparent;border:1px solid GrayText;color:CanvasText}
+.small{opacity:.8;font-size:.9rem}
+.status{min-height:1.5em}
+</style>
+</head>
+<body>
+<main>
+<h1>Plus Search</h1>
+<p class="small">Search the web, music, videos or installed apps.</p>
+<label for="keyword">Keyword</label>
+<input id="keyword" type="search" autocomplete="off" placeholder="Enter a keyword" aria-label="Search keyword">
+<button id="web" type="button">Search the web</button>
+<button id="music" type="button">Search music</button>
+<button id="video" type="button">Search videos</button>
+<button id="apps" class="secondary" type="button">Find apps</button>
+<p class="status" id="status" role="status" aria-live="polite"></p>
+<script>
+const input=document.getElementById('keyword');
+const status=document.getElementById('status');
+function search(url){
+  if(!input.value.trim()){status.textContent='Enter a keyword first.';input.focus();return;}
+  window.location.href=url+encodeURIComponent(input.value.trim());
+}
+document.getElementById('web').addEventListener('click',()=>search('https://www.google.com/search?q='));
+document.getElementById('music').addEventListener('click',()=>search('https://music.youtube.com/search?q='));
+document.getElementById('video').addEventListener('click',()=>search('https://www.youtube.com/results?search_query='));
+document.getElementById('apps').addEventListener('click',()=>{
+  if(!input.value.trim()){status.textContent='Enter an app name first.';input.focus();return;}
+  window.location.href='https://www.google.com/search?q='+encodeURIComponent(input.value.trim()+' app');
+});
+input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();search('https://www.google.com/search?q=');}});
+input.focus();
+</script>
+</main>
+</body>
+</html>
