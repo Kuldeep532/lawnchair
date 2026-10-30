@@ -14,6 +14,10 @@ object NexusAssistantLauncher {
         Intent(context, NexusAssistantActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
+    fun chatIntent(context: Context): Intent =
+        Intent(context, NexusChatBrowserActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
     fun modelsIntent(context: Context): Intent =
         intent(context).putExtra(NexusAssistantActivity.EXTRA_OPEN_MODELS, true)
 }
