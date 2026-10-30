@@ -93,8 +93,6 @@ class NexusAssistantActivity : ComponentActivity() {
                         processInput(query, setResponse)
                     },
                 )
-
-
             }
         }
     }
@@ -148,7 +146,7 @@ class NexusAssistantActivity : ComponentActivity() {
         }
         runCatching {
             startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
-            onResult("Nexus Chat opened in the browser. Sign in there with your email and password.")
+            onResult("Nexus Chat opened in the browser. Sign in with your email and password.")
         }.onFailure {
             onResult("Nexus Chat could not be opened. Please check your connection and try again.")
         }
@@ -370,7 +368,7 @@ private fun NexusAssistantScreen(
 ) {
     var query by remember { mutableStateOf("") }
     var response by remember {
-        mutableStateOf("Welcome to Nexus Assistant. Device controls work on this phone. Open Nexus Chat for cloud AI.")
+        mutableStateOf("Welcome to Nexus Assistant. Device commands run on this phone. Use Nexus Chat for cloud AI.")
     }
     BackHandler(onBack = onBack)
     Scaffold(
@@ -390,7 +388,7 @@ private fun NexusAssistantScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Use the assistant for device actions. Open Nexus Chat to ask general questions using your Supabase account.")
+            Text("Use device commands here. Open Nexus Chat for general questions with your Supabase account.")
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
