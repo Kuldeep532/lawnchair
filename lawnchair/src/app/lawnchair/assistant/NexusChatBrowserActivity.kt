@@ -18,12 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Logout
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -50,12 +47,7 @@ class NexusChatBrowserActivity : ComponentActivity() {
                 EdgeToEdge()
                 var progress by remember { mutableIntStateOf(0) }
                 var title by remember { mutableStateOf("Nexus Chat") }
-                var loggedIn by remember { mutableStateOf(false) }
                 var webView by remember { mutableStateOf<WebView?>(null) }
-                var email by remember { mutableStateOf("") }
-                var password by remember { mutableStateOf("") }
-                var message by remember { mutableStateOf("Sign in with your email and password to use Nexus Chat.") }
-                var busy by remember { mutableStateOf(false) }
 
                 BackHandler(enabled = webView?.canGoBack() == true) { webView?.goBack() }
 
@@ -68,13 +60,6 @@ class NexusChatBrowserActivity : ComponentActivity() {
                                     if (webView?.canGoBack() == true) webView?.goBack() else finish()
                                 }) {
                                     Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                                }
-                            },
-                            actions = {
-                                if (loggedIn) {
-                                    IconButton(onClick = { webView?.evaluateJavascript("window.nexusSignOut && window.nexusSignOut()", null) }) {
-                                        Icon(Icons.Rounded.Logout, contentDescription = "Sign out")
-                                    }
                                 }
                             },
                         )
@@ -102,19 +87,7 @@ class NexusChatBrowserActivity : ComponentActivity() {
                                 }
                             },
                         )
-                        Text(message)
-                        AndroidView(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            factory = { context ->
-                                createChatWebView(context) { newProgress, pageTitle ->
-                                    progress = newProgress
-                                    title = pageTitle
-                                }.also {
-                                    webView = it
-                                    it.loadUrl(CHAT_PAGE_URL)
-                                }
-                            },
-                        )
+
                     }
                 }
             }
