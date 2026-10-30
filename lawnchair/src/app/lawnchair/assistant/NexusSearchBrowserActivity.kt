@@ -133,7 +133,7 @@ private fun createWebView(
 ): WebView = WebView(context).apply {
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
-    settings.allowFileAccess = false
+    settings.allowFileAccess = true
     settings.allowContentAccess = false
     settings.javaScriptCanOpenWindowsAutomatically = false
     settings.setSupportMultipleWindows(false)
