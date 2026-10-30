@@ -142,18 +142,10 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 
     private fun processInput(raw: String, onResult: (String) -> Unit) {
-        if (raw.trim().equals("models", ignoreCase = true) ||
-            raw.trim().equals("download models", ignoreCase = true) ||
-            raw.trim().equals("download voice ai models", ignoreCase = true)
-        ) {
-            startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
-            return
-        }
         if (isSystemCommand(raw)) {
             onResult(handleCommand(raw))
             return
         }
-        // General questions are handled by the browser-based Supabase chat. No model is downloaded.
         runCatching {
             startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
             onResult("Nexus Chat opened in the browser. Sign in there with your email and password.")
