@@ -74,91 +74,25 @@ class NexusAssistantActivity : ComponentActivity() {
         setContent {
             LawnchairTheme {
                 EdgeToEdge()
-                var showRequiredDownload by remember {
-                    mutableStateOf(intent.getBooleanExtra(EXTRA_OPEN_MODELS, false) || AssistantModelStore.localState(this@NexusAssistantActivity) != AssistantModelStore.AssetState.DOWNLOADED)
-                }
-                var modelState by remember { mutableStateOf(AssistantModelStore.localState(this)) }
-                var localRuntimeReady by remember { mutableStateOf(LocalAssistantEngine.isLoaded) }
-                var downloading by remember { mutableStateOf(false) }
-                var downloadProgress by remember { mutableIntStateOf(0) }
-                var downloadLabel by remember { mutableStateOf("") }
-                var downloadMessage by remember { mutableStateOf("") }
-                var downloadError by remember { mutableStateOf<String?>(null) }
-
-                LaunchedEffect(Unit) {
-                    modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
-                    localRuntimeReady = if (modelState == AssistantModelStore.AssetState.DOWNLOADED) {
-                        withContext(Dispatchers.IO) {
-                            LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
+                NexusAssistantScreen(
+                    onOpenChat = {
+                        startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
+                    },
+                    onBack = ::finish,
+                    onListen = { onRecognized ->
+                        speechResultHandler = { recognized -> processInput(recognized, onRecognized) }
+                        output = onRecognized
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            startSpeechRecognition()
+                        } else {
+                            microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
                         }
-                    } else false
-                }
-
-                if (showRequiredDownload) {
-                    AiGalleryScreen(
-                        modelState = modelState,
-                        localRuntimeReady = localRuntimeReady,
-                        downloading = downloading,
-                        downloadProgress = downloadProgress,
-                        downloadLabel = downloadLabel,
-                        downloadMessage = downloadMessage,
-                        downloadError = downloadError,
-                        onBack = ::finish,
-                        onDownloadChat = {
-                            downloading = true
-                            downloadError = null
-                            downloadProgress = 0
-                            lifecycleScope.launch {
-                                try {
-                                    withContext(Dispatchers.IO) {
-                                        AssistantModelStore.downloadRequired(this@NexusAssistantActivity) { progress ->
-                                            runOnUiThread {
-                                                downloadLabel = progress.label
-                                                downloadProgress = progress.percent
-                                                downloadMessage = progress.message
-                                            }
-                                        }
-                                    }
-                                    modelState = AssistantModelStore.localState(this@NexusAssistantActivity)
-                                    localRuntimeReady = withContext(Dispatchers.IO) {
-                                        LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
-                                    }
-                                    if (!localRuntimeReady) downloadError = "The local chat model could not be loaded on this device."
-                                    else downloadMessage = "Local AI is ready for offline chat."
-                                } catch (error: Exception) {
-                                    downloadError = error.message ?: "The download could not finish. Please try again."
-                                } finally {
-                                    downloading = false
-                                }
-                            }
-                        },
-                        onVoiceSettings = {
-                            runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
-                                .recoverCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-                                .recoverCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-                        },
-                        onOpenReader = {
-                            runCatching { startActivity(Intent(this@NexusAssistantActivity, app.lawnchair.books.BooksActivity::class.java)) }
-                        },
-                    )
-                } else {
-                    NexusAssistantScreen(
-                        onOpenModels = {
-                            startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
-                        },
-                        onBack = ::finish,
-                        onListen = { onRecognized ->
-                            speechResultHandler = { recognized -> processInput(recognized, onRecognized) }
-                            output = onRecognized
-                            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) startSpeechRecognition()
-                            else microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                        },
-                        onCommand = { query, setResponse ->
-                            output = setResponse
-                            processInput(query, setResponse)
-                        },
-                    )
-                }
+                    },
+                    onCommand = { query, setResponse ->
+                        output = setResponse
+                        processInput(query, setResponse)
+                    },
+                )
 
 
             }
@@ -188,30 +122,6 @@ class NexusAssistantActivity : ComponentActivity() {
             }
     }
 
-    private fun isDirectWebQuestion(raw: String): Boolean {
-        val query = raw.trim().lowercase(Locale.ROOT)
-        if (query.isBlank()) return false
-        return query.startsWith("what is ") ||
-            query.startsWith("what's ") ||
-            query.startsWith("who is ") ||
-            query.startsWith("who was ") ||
-            query.startsWith("where is ") ||
-            query.startsWith("when is ") ||
-            query.startsWith("when was ") ||
-            query.startsWith("why is ") ||
-            query.startsWith("how to ") ||
-            query.startsWith("how do ") ||
-            query.startsWith("how does ") ||
-            query.startsWith("tell me about ") ||
-            query.startsWith("latest news ") ||
-            query.startsWith("समझाओ ") ||
-            query.startsWith("क्या है ") ||
-            query.startsWith("कौन है ") ||
-            query.startsWith("कहाँ है ") ||
-            query.startsWith("कैसे ") ||
-            query.startsWith("बताओ ")
-    }
-
     private fun isSystemCommand(raw: String): Boolean {
         val command = raw.trim().lowercase(Locale.ROOT)
         return command.contains("flashlight") || command.contains("torch") ||
@@ -239,30 +149,16 @@ class NexusAssistantActivity : ComponentActivity() {
             startActivity(NexusAssistantLauncher.modelsIntent(this@NexusAssistantActivity))
             return
         }
-        // Common information questions should work even when no local AI model or API is available.
-        if (isDirectWebQuestion(raw)) {
-            onResult(openSearch(raw.trim()))
-            return
-        }
         if (isSystemCommand(raw)) {
-            val answer = handleCommand(raw)
-            onResult(answer)
+            onResult(handleCommand(raw))
             return
         }
-        lifecycleScope.launch {
-            val localAnswer = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                if (!LocalAssistantEngine.isLoaded) {
-                    LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)
-                }
-                if (LocalAssistantEngine.isLoaded) {
-                    runCatching { LocalAssistantEngine.reply(raw) }.getOrNull()
-                } else null
-            }
-            if (!localAnswer.isNullOrBlank()) {
-                onResult(localAnswer)
-            } else {
-                onResult("The local chat model is not ready on this device. Open Settings, then Models, to download Voice AI Models. Phone commands remain available.")
-            }
+        // General questions are handled by the browser-based Supabase chat. No model is downloaded.
+        runCatching {
+            startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
+            onResult("Nexus Chat opened in the browser. Sign in there with your email and password.")
+        }.onFailure {
+            onResult("Nexus Chat could not be opened. Please check your connection and try again.")
         }
     }
 
@@ -475,14 +371,14 @@ class NexusAssistantActivity : ComponentActivity() {
 
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
-    onOpenModels: () -> Unit,
+    onOpenChat: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
     var response by remember {
-        mutableStateOf("Hello! I'm Nexus Assistant. You can ask me to search the web, turn on the flashlight, open settings, or use voice input.")
+        mutableStateOf("Welcome to Nexus Assistant. Device controls work on this phone. Open Nexus Chat for cloud AI.")
     }
     BackHandler(onBack = onBack)
     Scaffold(
@@ -502,43 +398,24 @@ private fun NexusAssistantScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text("Nexus Assistant is local-first: phone commands and downloaded local chat work without signing in.")
-            Text("Try commands like: search weather, open YouTube, turn on flashlight, open Wi-Fi settings, open Bluetooth settings, set a timer, or what time is it?")
+            Text("Use the assistant for device actions. Open Nexus Chat to ask general questions using your Supabase account.")
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ask Nexus Assistant") },
+                label = { Text("Device command") },
                 placeholder = { Text("For example: turn on flashlight") },
                 minLines = 2,
             )
             Button(
-                onClick = {
-                    onCommand(query) { response = it }
-                },
+                onClick = { onCommand(query) { response = it } },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = query.isNotBlank(),
-            ) { Text("Send command") }
+            ) { Text("Run device command") }
             Button(
-                onClick = { onCommand("search $query") { response = it } },
+                onClick = onOpenChat,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = query.isNotBlank(),
-            ) { Text("Search the web") }
-            Button(
-                onClick = { onCommand("play music $query") { response = it } },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = query.isNotBlank(),
-            ) { Text("Play with a music app") }
-            Button(
-                onClick = { onCommand("search video $query") { response = it } },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = query.isNotBlank(),
-            ) { Text("Search videos") }
-            Button(
-                onClick = { onCommand("open $query") { response = it } },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = query.isNotBlank(),
-            ) { Text("Find or open an app") }
+            ) { Text("Open Nexus Chat") }
             Button(
                 onClick = { onListen { response = it } },
                 modifier = Modifier.fillMaxWidth(),
@@ -546,13 +423,9 @@ private fun NexusAssistantScreen(
                 Icon(Icons.Rounded.Mic, contentDescription = "Voice input")
                 Text("  Speak")
             }
-            Button(
-                onClick = onOpenModels,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Open AI Gallery · Download models") }
             Text("Assistant response")
             Text(response)
-            Text("Note: Android may ask for microphone permission. Wi-Fi opens the system Internet panel because Android does not allow ordinary apps to switch Wi-Fi directly.")
+            Text("Nexus Chat requires an internet connection and uses email and password sign-in in the browser. No local AI model is needed.")
         }
     }
 }
