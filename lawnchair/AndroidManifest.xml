@@ -89,11 +89,7 @@
             android:label="Nexus Search"
             android:theme="@style/Theme.Lawnchair" />
 
-        <activity
-            android:name="app.lawnchair.assistant.NexusChatBrowserActivity"
-            android:exported="false"
-            android:label="Nexus Chat"
-            android:theme="@style/Theme.Lawnchair" />
+
 
         <activity
             android:name="app.lawnchair.assistant.NexusChatBrowserActivity"
