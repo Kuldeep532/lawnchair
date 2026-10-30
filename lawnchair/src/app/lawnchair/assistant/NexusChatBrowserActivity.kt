@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -35,7 +34,7 @@ class NexusChatBrowserActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val CHAT_PAGE_URL = "file:///android_asset/nexus-chat/index.html"
+        private const val CHAT_PAGE_URL = "https://appassets.androidplatform.net/assets/nexus-chat/index.html"
 
         fun intent(context: Context): Intent =
             Intent(context, NexusChatBrowserActivity::class.java)
@@ -46,7 +45,7 @@ class NexusChatBrowserActivity : ComponentActivity() {
 private fun createChatWebView(context: Context): WebView = WebView(context).apply {
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
-    settings.allowFileAccess = true
+    settings.allowFileAccess = false
     settings.allowContentAccess = false
     settings.javaScriptCanOpenWindowsAutomatically = false
     settings.setSupportMultipleWindows(false)
@@ -54,9 +53,21 @@ private fun createChatWebView(context: Context): WebView = WebView(context).appl
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
         settings.safeBrowsingEnabled = true
     }
+    val assetLoader = androidx.webkit.WebViewAssetLoader.Builder()
+        .addPathHandler(
+            "/assets/",
+            androidx.webkit.WebViewAssetLoader.AssetsPathHandler(context),
+        )
+        .build()
     webViewClient = object : WebViewClient() {
+        override fun shouldInterceptRequest(
+            view: WebView,
+            request: WebResourceRequest,
+        ): android.webkit.WebResourceResponse? =
+            assetLoader.shouldInterceptRequest(request.url)
+
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-            request.url.scheme != "https" && request.url.scheme != "http" && request.url.scheme != "file"
+            request.url.scheme != "https" && request.url.scheme != "http"
     }
     loadUrl(CHAT_PAGE_URL)
 }
