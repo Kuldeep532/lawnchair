@@ -235,10 +235,6 @@ private fun BooksLibraryScreen(
                 Icon(Icons.Rounded.MenuBook, contentDescription = null)
                 Text("Your library is empty", style = MaterialTheme.typography.headlineSmall)
                 Text("Add a PDF, EPUB, text or Markdown book to start reading.")
-                Button(onClick = onImport, modifier = Modifier.padding(top = 16.dp)) {
-                    Icon(Icons.Rounded.Add, contentDescription = null)
-                    Text(" Add a book")
-                }
             }
         } else {
             LazyColumn(
@@ -262,8 +258,19 @@ private fun BooksLibraryScreen(
                                     color = MaterialTheme.colorScheme.secondary,
                                 )
                             }
-                            IconButton(onClick = { onDelete(book) }) {
-                                Icon(Icons.Rounded.Delete, contentDescription = "Remove ${book.title} from library")
+                            var showBookMenu by remember(book.id) { mutableStateOf(false) }
+                            IconButton(onClick = { showBookMenu = true }) {
+                                Icon(Icons.Rounded.MoreVert, contentDescription = "Options for ${book.title}")
+                            }
+                            DropdownMenu(
+                                expanded = showBookMenu,
+                                onDismissRequest = { showBookMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Remove from library") },
+                                    onClick = { showBookMenu = false; onDelete(book) },
+                                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                                )
                             }
                         }
                     }
@@ -366,7 +373,7 @@ private fun BookReaderScreen(
                 title = {
                     Column {
                         Text(book.title, maxLines = 1)
-                        Text("BOOK", style = MaterialTheme.typography.labelSmall)
+                        Text("Reading", style = MaterialTheme.typography.labelSmall)
                     }
                 },
                 actions = {
@@ -374,10 +381,6 @@ private fun BookReaderScreen(
                         Icon(Icons.Rounded.MoreVert, contentDescription = "Reading options")
                     }
                     DropdownMenu(expanded = showMore, onDismissRequest = { showMore = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Go to page") },
-                            onClick = { showMore = false; showPageDialog = true },
-                        )
                         DropdownMenuItem(
                             text = { Text("Smaller text") },
                             onClick = { readerFontSize = (readerFontSize - 1f).coerceAtLeast(16f); showMore = false },
