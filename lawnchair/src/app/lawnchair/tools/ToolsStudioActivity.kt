@@ -128,7 +128,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         ),
                     ) {
                         Column(
