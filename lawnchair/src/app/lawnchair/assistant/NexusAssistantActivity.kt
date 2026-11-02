@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.provider.CalendarContract
+import android.provider.OpenableColumns
 import java.util.Calendar
 import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
@@ -60,6 +61,8 @@ import java.util.Locale
  */
 class NexusAssistantActivity : ComponentActivity() {
     private var browserUrl by mutableStateOf<String?>(null)
+    private var attachmentName by mutableStateOf<String?>(null)
+    private var attachmentText by mutableStateOf<String?>(null)
     private var output: ((String) -> Unit)? = null
     private var speechResultHandler: ((String) -> Unit)? = null
 
@@ -78,6 +81,36 @@ class NexusAssistantActivity : ComponentActivity() {
         if (granted) startSpeechRecognition()
         else output?.invoke("Microphone permission is needed for voice input.")
     }
+    private val attachmentPicker = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val name = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+                ?: "Text file"
+            attachmentName = name
+            attachmentText = null
+            lifecycleScope.launch {
+                val extracted = withContext(Dispatchers.IO) {
+                    runCatching {
+                        if (contentResolver.getType(uri)?.startsWith("text/") == true ||
+                            name.endsWith(".txt", true) || name.endsWith(".md", true)) {
+                            contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText().take(50000) }
+                        } else null
+                    }.getOrNull()
+                }
+                attachmentText = extracted
+                output?.invoke(
+                    if (extracted != null) "Attached $name. Its text is ready to include with your message."
+                    else "This Assistant can currently read text and Markdown files. Please choose a .txt or .md file."
+                )
+                if (extracted == null) attachmentName = null
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +122,10 @@ class NexusAssistantActivity : ComponentActivity() {
                         startActivity(NexusAssistantLauncher.aiGalleryIntent(this@NexusAssistantActivity))
                     },
                     browserUrl = browserUrl,
+                    attachmentName = attachmentName,
+                    attachmentText = attachmentText,
+                    onPickAttachment = { attachmentPicker.launch(arrayOf("text/plain", "text/markdown")) },
+                    onClearAttachment = { attachmentName = null; attachmentText = null },
                     onOpenSearch = { browserUrl = "https://www.google.com" },
                     onCloseBrowser = { browserUrl = null },
                     onBack = ::finish,
@@ -439,6 +476,10 @@ class NexusAssistantActivity : ComponentActivity() {
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
     browserUrl: String?,
+    attachmentName: String?,
+    attachmentText: String?,
+    onPickAttachment: () -> Unit,
+    onClearAttachment: () -> Unit,
     onOpenAiGallery: () -> Unit,
     onOpenSearch: () -> Unit,
     onCloseBrowser: () -> Unit,
@@ -537,6 +578,12 @@ private fun NexusAssistantScreen(
                 "Ask a question or tell me what to do.",
                 style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
             )
+            if (attachmentName != null) {
+                androidx.compose.material3.AssistChip(
+                    onClick = onClearAttachment,
+                    label = { Text("Attached: $attachmentName — Remove") },
+                )
+            }
             Card(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                     Text("Assistant", style = androidx.compose.material3.MaterialTheme.typography.labelLarge)
@@ -566,7 +613,15 @@ private fun NexusAssistantScreen(
                 Spacer(Modifier.weight(1f))
                 Button(
                     onClick = {
-                        val message = query
+                        val message = buildString {
+                            append(query)
+                            if (!attachmentText.isNullOrBlank()) {
+                                append("\n\nFile content (")
+                                append(attachmentName.orEmpty())
+                                append("):\n")
+                                append(attachmentText)
+                            }
+                        }
                         query = ""
                         onCommand(message) { response = it }
                     },
@@ -586,6 +641,10 @@ private fun NexusAssistantScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                 style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
             )
+            TextButton(
+                onClick = { showAttach = false; onPickAttachment() },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Attach a text file") }
             TextButton(
                 onClick = { showAttach = false; onOpenSearch() },
                 modifier = Modifier.fillMaxWidth(),
