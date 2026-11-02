@@ -64,7 +64,7 @@ class NexusChatBrowserActivity : ComponentActivity() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-internal fun createChatWebView(context: Context): WebView = WebView(context).apply {
+internal fun createChatWebView(context: Context, initialUrl: String = CHAT_PAGE_URL): WebView = WebView(context).apply {
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
     settings.allowFileAccess = false
@@ -91,5 +91,5 @@ internal fun createChatWebView(context: Context): WebView = WebView(context).app
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
             request.url.scheme != "https" && request.url.scheme != "http"
     }
-    loadUrl(CHAT_PAGE_URL)
+    loadUrl(initialUrl)
 }
