@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AttachFile
@@ -488,7 +490,7 @@ private fun NexusAssistantScreen(
     onCommand: (String, (String) -> Unit) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    var response by remember { mutableStateOf("Hi, how can I help?") }
+    val messages = remember { mutableStateListOf(false to "Hi, how can I help?") }
     var showAttach by remember { mutableStateOf(false) }
     var showOnlineAi by remember { mutableStateOf(false) }
     var embeddedWebView by remember { mutableStateOf<WebView?>(null) }
@@ -586,10 +588,35 @@ private fun NexusAssistantScreen(
                     label = { Text("Attached: $attachmentName — Remove") },
                 )
             }
-            Card(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text("Assistant", style = androidx.compose.material3.MaterialTheme.typography.labelLarge)
-                    Text(response, modifier = Modifier.padding(top = 8.dp))
+            Card(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    itemsIndexed(messages) { _, message ->
+                        androidx.compose.foundation.layout.Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (message.first) androidx.compose.foundation.layout.Arrangement.End
+                            else androidx.compose.foundation.layout.Arrangement.Start,
+                        ) {
+                            Card(
+                                colors = androidx.compose.material3.CardDefaults.cardColors(
+                                    containerColor = if (message.first) {
+                                        androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                                ),
+                                modifier = Modifier.fillMaxWidth(0.88f),
+                            ) {
+                                Text(
+                                    message.second,
+                                    modifier = Modifier.padding(14.dp),
+                                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                                )
+                            }
+                        }
+                    }
                 }
             }
             OutlinedTextField(
@@ -609,7 +636,7 @@ private fun NexusAssistantScreen(
                 IconButton(onClick = { showAttach = true }) {
                     Icon(Icons.Rounded.AttachFile, contentDescription = "Attach")
                 }
-                IconButton(onClick = { onListen { response = it } }) {
+                IconButton(onClick = { onListen { messages.add(false to it) } }) {
                     Icon(Icons.Rounded.Mic, contentDescription = "Speak")
                 }
                 Spacer(Modifier.weight(1f))
@@ -626,7 +653,8 @@ private fun NexusAssistantScreen(
                         }
                         query = ""
                         onClearAttachment()
-                        onCommand(message) { response = it }
+                        if (message.isNotBlank()) messages.add(true to message)
+                        onCommand(message) { messages.add(false to it) }
                     },
                     enabled = query.isNotBlank() || !attachmentText.isNullOrBlank(),
                 ) {
