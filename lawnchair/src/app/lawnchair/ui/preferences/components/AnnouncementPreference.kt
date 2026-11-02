@@ -70,29 +70,7 @@ fun AnnouncementPreference(
     onDismiss: (Announcement) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 1. Add animateContentSize with a spring spec to the Column
-    // This makes the list "spring" into place when an item is removed.
-    Column(
-        modifier = modifier.animateContentSize(
-            animationSpec = spring(
-                stiffness = Spring.StiffnessMediumLow,
-                dampingRatio = Spring.DampingRatioLowBouncy,
-            ),
-        ),
-    ) {
-        announcements.forEachIndexed { index, announcement ->
-            var dismissed by rememberSaveable { mutableStateOf(false) }
-            val visible = announcement.shouldBeVisible && !dismissed
-
-            AnnouncementItem(visible, announcement) {
-                onDismiss(announcement)
-                dismissed = true
-            }
-            if (index != announcements.lastIndex && visible) {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
+    // Announcements are disabled in Nexus Launcher.
 }
 
 @Composable
