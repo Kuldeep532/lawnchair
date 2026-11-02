@@ -298,13 +298,13 @@ class SecureWorldActivity : FragmentActivity() {
                 }
 
                 if (showNoteDialog) {
-                    NoteDialog(onDismiss = { showNoteDialog = false }, onSave = { title, body, category ->
+                    NoteDialog(categories = store.categories().map { it.name }, onDismiss = { showNoteDialog = false }, onSave = { title, body, category ->
                         store.saveNote(title, body, category); showNoteDialog = false; showSecureVault()
                     })
                 }
 
                 if (showPasswordDialog) {
-                    PasswordDialog(onDismiss = { showPasswordDialog = false }, onSave = { title, username, password, category ->
+                    PasswordDialog(categories = store.categories().map { it.name }, onDismiss = { showPasswordDialog = false }, onSave = { title, username, password, category ->
                         store.savePassword(title, username, password, category)
                         showPasswordDialog = false
                         showSecureVault()
@@ -465,9 +465,9 @@ private fun SecureAddBottomSheet(
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Add new", style = MaterialTheme.typography.titleLarge)
             Button(onClick = onAddText, modifier = Modifier.fillMaxWidth()) { Text("Text") }
-            Button(onClick = onAddDocument, modifier = Modifier.fillMaxWidth()) { Text("Add New Document") }
-            Button(onClick = onAddPassword, modifier = Modifier.fillMaxWidth()) { Text("Add New Password") }
-            Button(onClick = onAddCard, modifier = Modifier.fillMaxWidth()) { Text("Add Credit / Debit Card") }
+            Button(onClick = onAddDocument, modifier = Modifier.fillMaxWidth()) { Text("Document") }
+            Button(onClick = onAddPassword, modifier = Modifier.fillMaxWidth()) { Text("Password") }
+            Button(onClick = onAddCard, modifier = Modifier.fillMaxWidth()) { Text("Bank card") }
             Button(onClick = onAddCategory, modifier = Modifier.fillMaxWidth()) { Text("Category") }
             Spacer(Modifier.height(12.dp))
         }
@@ -476,16 +476,34 @@ private fun SecureAddBottomSheet(
 
 @androidx.compose.runtime.Composable
 private fun CategoryDialog(
+    existingCategories: List<String>,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
+    val duplicate = existingCategories.any { it.equals(name.trim(), ignoreCase = true) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New category") },
-        text = { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Category name") }, singleLine = true) },
+        title = { Text("Create category") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Add a category to organize your saved items.")
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Category name") },
+                    singleLine = true,
+                    isError = duplicate,
+                )
+                if (duplicate) Text("This category already exists.", color = MaterialTheme.colorScheme.error)
+            }
+        },
         dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } },
-        confirmButton = { Button(enabled = name.isNotBlank(), onClick = { onSave(name.trim()) }) { Text("Create") } },
+        confirmButton = {
+            Button(enabled = name.isNotBlank() && !duplicate, onClick = { onSave(name.trim()) }) {
+                Text("Create")
+            }
+        },
     )
 }
 @androidx.compose.runtime.Composable
@@ -741,7 +759,41 @@ private fun CloseSecureVaultDialog(
 }
 
 @androidx.compose.runtime.Composable
+private fun CategorySelector(
+    selected: String,
+    categories: List<String>,
+    onCategoryChange: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = categories.distinct().ifEmpty { listOf("General", "Personal", "Work", "Other") }
+    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Category") },
+            modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+            trailingIcon = {
+                androidx.compose.material3.IconButton(onClick = { expanded = true }) { Text("▼") }
+            },
+        )
+        androidx.compose.material3.DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { option ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = { onCategoryChange(option); expanded = false },
+                )
+            }
+        }
+    }
+}
+
+@androidx.compose.runtime.Composable
 private fun NoteDialog(
+    categories: List<String>,
     onDismiss: () -> Unit,
     onSave: (String, String, String) -> Unit,
 ) {
@@ -755,7 +807,7 @@ private fun NoteDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(title, { title = it }, label = { Text("Title") })
                 OutlinedTextField(body, { body = it }, label = { Text("Text") })
-                OutlinedTextField(category, { category = it }, label = { Text("Category") }, singleLine = true)
+                CategorySelector(category, categories, onCategoryChange = { category = it })
             }
         },
         dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } },
@@ -829,6 +881,7 @@ private fun isValidCardNumber(number: String): Boolean {
 
 @androidx.compose.runtime.Composable
 private fun PasswordDialog(
+    categories: List<String>,
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit,
 ) {
