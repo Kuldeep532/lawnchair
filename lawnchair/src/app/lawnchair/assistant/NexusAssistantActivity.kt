@@ -45,6 +45,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import android.webkit.WebView
 import androidx.core.content.ContextCompat
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
@@ -82,9 +84,6 @@ class NexusAssistantActivity : ComponentActivity() {
             LawnchairTheme {
                 EdgeToEdge()
                 NexusAssistantScreen(
-                    onOpenChat = {
-                        startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
-                    },
                     onOpenAiGallery = {
                         startActivity(NexusAssistantLauncher.aiGalleryIntent(this@NexusAssistantActivity))
                     },
@@ -438,7 +437,6 @@ class NexusAssistantActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
-    onOpenChat: () -> Unit,
     onOpenAiGallery: () -> Unit,
     onOpenSearch: () -> Unit,
     onBack: () -> Unit,
@@ -448,7 +446,46 @@ private fun NexusAssistantScreen(
     var query by remember { mutableStateOf("") }
     var response by remember { mutableStateOf("Hi, how can I help?") }
     var showAttach by remember { mutableStateOf(false) }
-    BackHandler(onBack = onBack)
+    var showOnlineAi by remember { mutableStateOf(false) }
+    var onlineWebView by remember { mutableStateOf<WebView?>(null) }
+    BackHandler(onBack = {
+        if (showOnlineAi) showOnlineAi = false else onBack()
+    })
+
+    if (showOnlineAi) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Assistant") },
+                    navigationIcon = {
+                        IconButton(onClick = { showOnlineAi = false }) {
+                            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to Assistant")
+                        }
+                    },
+                )
+            },
+        ) { padding ->
+            AndroidView(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                factory = { context ->
+                    NexusChatBrowserActivity.createChatWebView(context).also { onlineWebView = it }
+                },
+                update = { onlineWebView = it },
+            )
+        }
+        DisposableEffect(Unit) {
+            onDispose {
+                onlineWebView?.apply {
+                    stopLoading()
+                    loadUrl("about:blank")
+                    removeAllViews()
+                    destroy()
+                }
+                onlineWebView = null
+            }
+        }
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -526,9 +563,9 @@ private fun NexusAssistantScreen(
             TextButton(
                 onClick = { showAttach = false; onOpenAiGallery() },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Manage on-device AI") }
+            ) { Text("On-device AI settings") }
             TextButton(
-                onClick = { showAttach = false; onOpenChat() },
+                onClick = { showAttach = false; showOnlineAi = true },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Online AI") }
             Spacer(Modifier.padding(bottom = 20.dp))
