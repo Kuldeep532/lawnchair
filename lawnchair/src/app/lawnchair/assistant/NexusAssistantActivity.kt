@@ -529,19 +529,21 @@ private fun NexusAssistantScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { context ->
-                        if (showOnlineAi) {
-                            createChatWebView(context).also { embeddedWebView = it }
-                        } else {
-                            createWebView(context, browserUrl.orEmpty()) { title, progress, _ ->
-                                embeddedPageTitle = title
-                                embeddedProgress = progress
-                            }.also { embeddedWebView = it }
-                        }
-                    },
-                )
+                key(showOnlineAi, browserUrl) {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { context ->
+                            if (showOnlineAi) {
+                                createChatWebView(context).also { embeddedWebView = it }
+                            } else {
+                                createWebView(context, browserUrl.orEmpty()) { title, progress, _ ->
+                                    embeddedPageTitle = title
+                                    embeddedProgress = progress
+                                }.also { embeddedWebView = it }
+                            }
+                        },
+                    )
+                }
             }
         }
         DisposableEffect(showOnlineAi, browserUrl) {
