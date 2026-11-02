@@ -207,6 +207,8 @@ class SecureWorldActivity : FragmentActivity() {
             LawnchairTheme {
                 EdgeToEdge()
                 var contentTab by remember { mutableIntStateOf(0) }
+                var categoryRefresh by remember { mutableIntStateOf(0) }
+                val vaultCategories = remember(categoryRefresh) { store.categories() }
                 var showAddSheet by remember { mutableStateOf(false) }
                 var showNoteDialog by remember { mutableStateOf(false) }
                 var showDocumentChoice by remember { mutableStateOf(false) }
@@ -266,11 +268,11 @@ class SecureWorldActivity : FragmentActivity() {
                             }
                         } else {
                             SecureCategoriesTab(
-                                categories = store.categories(),
+                                categories = vaultCategories,
                                 selectedCategory = selectedCategory,
                                 onSelectCategory = { selectedCategory = it },
                                 onCreateCategory = { showCategoryDialog = true },
-                                onDeleteCategory = { store.deleteCategory(it); selectedCategory = null },
+                                onDeleteCategory = { store.deleteCategory(it); selectedCategory = null; categoryRefresh++ },
                                 items = allItems,
                                 onDelete = { item -> deleteVaultItem(item); showSecureVault() },
                                 onOpenDocument = ::openDocument,
@@ -299,13 +301,13 @@ class SecureWorldActivity : FragmentActivity() {
                 }
 
                 if (showNoteDialog) {
-                    NoteDialog(categories = store.categories().map { it.name }, onDismiss = { showNoteDialog = false }, onSave = { title, body, category ->
+                    NoteDialog(categories = vaultCategories.map { it.name }, onDismiss = { showNoteDialog = false }, onSave = { title, body, category ->
                         store.saveNote(title, body, category); showNoteDialog = false; showSecureVault()
                     })
                 }
 
                 if (showPasswordDialog) {
-                    PasswordDialog(categories = store.categories().map { it.name }, onDismiss = { showPasswordDialog = false }, onSave = { title, username, password, category ->
+                    PasswordDialog(categories = vaultCategories.map { it.name }, onDismiss = { showPasswordDialog = false }, onSave = { title, username, password, category ->
                         store.savePassword(title, username, password, category)
                         showPasswordDialog = false
                         showSecureVault()
@@ -328,9 +330,9 @@ class SecureWorldActivity : FragmentActivity() {
 
                 if (showCategoryDialog) {
                     CategoryDialog(
-                        existingCategories = store.categories().map { it.name },
+                        existingCategories = vaultCategories.map { it.name },
                         onDismiss = { showCategoryDialog = false },
-                        onSave = { store.addCategory(it); showCategoryDialog = false; showSecureVault() },
+                        onSave = { store.addCategory(it); showCategoryDialog = false; categoryRefresh++; contentTab = 4 },
                     )
                 }
 
