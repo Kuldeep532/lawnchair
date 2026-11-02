@@ -10,7 +10,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,7 +30,6 @@ internal fun AiGalleryScreen(
     onBack: () -> Unit,
     onDownloadChat: () -> Unit,
     onVoiceSettings: () -> Unit,
-    onOpenReader: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     Scaffold(
@@ -46,25 +44,33 @@ internal fun AiGalleryScreen(
             modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Manage AI assets currently supported by Nexus Launcher. Model downloads are available from the Assistant model manager. Unsupported voice engines are not shown as installed.", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "Manage the AI features available on this device.",
+                style = MaterialTheme.typography.bodyLarge,
+            )
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Local AI Chat Model", style = MaterialTheme.typography.titleMedium)
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text("Offline AI Assistant", style = MaterialTheme.typography.titleLarge)
                     Text(
                         when {
-                            localRuntimeReady -> "Ready for offline chat."
-                            modelState == AssistantModelStore.AssetState.DOWNLOADED -> "The model file is present, but an offline inference engine is not connected yet."
-                            modelState == AssistantModelStore.AssetState.PARTIAL -> "An incomplete download was found. Download again to finish setup."
-                            else -> "Not downloaded. Download this model before using offline AI chat."
+                            localRuntimeReady -> "Ready. You can use the assistant without an internet connection."
+                            modelState == AssistantModelStore.AssetState.DOWNLOADED ->
+                                "The model is downloaded. Prepare it to start offline AI."
+                            modelState == AssistantModelStore.AssetState.PARTIAL ->
+                                "The previous download was incomplete. Download it again to continue."
+                            else -> "Download the local model to use AI on this device."
                         },
                     )
                     if (downloading) {
-                        Text(downloadLabel)
+                        if (downloadLabel.isNotBlank()) Text(downloadLabel)
                         LinearProgressIndicator(
                             progress = { downloadProgress / 100f },
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        Text(downloadMessage)
+                        if (downloadMessage.isNotBlank()) Text(downloadMessage)
                     }
                     if (!downloadError.isNullOrBlank()) {
                         Text(downloadError, color = MaterialTheme.colorScheme.error)
@@ -73,24 +79,41 @@ internal fun AiGalleryScreen(
                         onClick = onDownloadChat,
                         enabled = !downloading && !localRuntimeReady,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text(if (downloading) "Downloading…" else if (localRuntimeReady) "Downloaded and ready" else "Download local AI model") }
+                    ) {
+                        Text(
+                            when {
+                                downloading -> "Preparing…"
+                                localRuntimeReady -> "Ready for offline use"
+                                modelState == AssistantModelStore.AssetState.DOWNLOADED -> "Start offline AI"
+                                else -> "Download and prepare model"
+                            },
+                        )
+                    }
                 }
             }
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Local Voice", style = MaterialTheme.typography.titleMedium)
-                    Text("Books Reader and PDF Reader use Android's installed text-to-speech voice. Voice availability depends on the device and downloaded language data.")
-                    Button(onClick = onVoiceSettings, modifier = Modifier.fillMaxWidth()) {
-                        Text("Manage and download voice")
-                    }
-                    OutlinedButton(onClick = onOpenReader, modifier = Modifier.fillMaxWidth()) {
-                        Text("Open voice settings")
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text("Device Voice", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "Books Reader and PDF Reader use the speech voices installed on your Android device. " +
+                            "Available languages and offline voice data depend on your phone.",
+                    )
+                    Button(
+                        onClick = onVoiceSettings,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Manage device voices")
                     }
                 }
             }
             Text(
-                "Chatterbox, Coqui and Piper inference are not connected in this build. This gallery links to working device settings and the existing local model manager.",
+                "Chatterbox, Coqui and Piper are not available as working on-device voice engines in this version. " +
+                    "They are not shown as installed or ready.",
                 style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
