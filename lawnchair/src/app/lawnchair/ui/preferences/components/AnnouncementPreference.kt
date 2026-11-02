@@ -61,27 +61,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AnnouncementPreference() {
-    val liveInformationManager = liveInformationManager()
-
-    val coroutineScope = rememberCoroutineScope()
-    val enabled by liveInformationManager.enabled.asState()
-    val showAnnouncements by liveInformationManager.showAnnouncements.asState()
-    val dismissedAnnouncementIds by liveInformationManager.dismissedAnnouncementIds.asState()
-    val liveInformation by liveInformationManager.liveInformation.asState()
-
-    val announcements = remember(liveInformation, dismissedAnnouncementIds) {
-        liveInformation.announcements.filter { it.id !in dismissedAnnouncementIds }
-    }
-
-    if (enabled && showAnnouncements) {
-        AnnouncementPreference(
-            announcements = announcements,
-            onDismiss = { announcement ->
-                val dismissed = dismissedAnnouncementIds.toMutableSet().apply { add(announcement.id) }
-                coroutineScope.launch { liveInformationManager.dismissedAnnouncementIds.set(dismissed) }
-            },
-        )
-    }
+    // Launcher announcements are intentionally disabled in this local-first build.
 }
 
 @Composable
