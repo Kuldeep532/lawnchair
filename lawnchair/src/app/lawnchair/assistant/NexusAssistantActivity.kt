@@ -468,7 +468,7 @@ private fun NexusAssistantScreen(
             AndroidView(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 factory = { context ->
-                    NexusChatBrowserActivity.createChatWebView(context).also { onlineWebView = it }
+                    createChatWebView(context).also { onlineWebView = it }
                 },
                 update = { onlineWebView = it },
             )
