@@ -126,7 +126,7 @@ class NexusSearchBrowserActivity : ComponentActivity() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-private fun createWebView(
+internal fun createWebView(
     context: Context,
     url: String,
     onState: (String, Int, Boolean) -> Unit,
