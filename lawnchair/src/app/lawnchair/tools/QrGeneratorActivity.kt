@@ -167,13 +167,13 @@ private fun QrScreen(onBack: () -> Unit) {
         loading = false
     }
 
-    BackHandler { if (result != null) reset() else onBack() }
+    BackHandler(onBack = onBack)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = { if (result != null) reset() else onBack() }) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to Tools Studio")
                     }
                 },
