@@ -446,7 +446,7 @@ private fun BookReaderScreen(
                         }
                     }
                     Slider(
-                        value = currentPage.toFloat(),
+                        value = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0)).toFloat(),
                         onValueChange = { currentPage = it.toInt().coerceIn(0, pages.lastIndex.coerceAtLeast(0)) },
                         onValueChangeFinished = { onPositionChanged(currentPage) },
                         valueRange = 0f..pages.lastIndex.coerceAtLeast(0).toFloat(),
