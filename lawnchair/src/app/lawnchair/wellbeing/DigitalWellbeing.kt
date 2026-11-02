@@ -181,6 +181,16 @@ class DigitalWellbeingController(private val context: Context) {
         ).filter { it.packageName == packageName }.sumOf { it.totalTimeInForeground }
     }
 
+    fun totalUsageToday(): Long {
+        if (!isUsageAccessGranted()) return 0L
+        val manager = context.getSystemService(UsageStatsManager::class.java)
+        return manager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            startOfDayMillis(),
+            System.currentTimeMillis(),
+        ).sumOf { it.totalTimeInForeground }
+    }
+
     fun totalBlockedUsageToday(): Long {
         if (!isUsageAccessGranted()) return 0L
         val blocked = blockedPackages()
@@ -230,6 +240,21 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
         }.getOrDefault(emptyList())
     }
 
+    val totalUsageMinutes = if (access) controller.totalUsageToday() / 60_000L else 0L
+    val highestUsageApp = remember(access, installedApps) {
+        if (!access) null else installedApps
+            .map { it.first to it.second to controller.packageUsageToday(it.first) }
+            .maxByOrNull { it.third }
+            ?.takeIf { it.third > 0L }
+    }
+    val usageInsight = when {
+        !access -> "Turn on usage access to see your screen-time summary and helpful suggestions."
+        totalUsageMinutes >= dailyLimit -> "You have reached your daily screen-time limit. Consider taking a short break."
+        highestUsageApp != null && highestUsageApp.third >= 90L * 60L * 1000L ->
+            "You have spent a lot of time in ${highestUsageApp.second}. Try a short break or a Focus Session."
+        else -> "Your screen time is within the daily limit. Keep your breaks regular and stay focused on what matters."
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             access = controller.isUsageAccessGranted()
@@ -247,7 +272,14 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Your focus plan uses app-usage totals and the launcher's foreground-app monitor. Enable both Android permissions below for reliable limits. Phone, messages, payment and core utility apps stay protected.")
+            Text("Set a daily limit, choose distracting apps, and take focused breaks. Calls, messages, maps and payment apps remain available.")
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Your usage insight", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+                    Text("Screen time today: ${totalUsageMinutes / 60}h ${totalUsageMinutes % 60}m")
+                    Text(usageInsight)
+                }
+            }
             Text("Daily total limit: $dailyLimit minutes", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = dailyLimit.toString(),
