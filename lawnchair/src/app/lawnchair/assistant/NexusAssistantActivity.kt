@@ -227,7 +227,14 @@ class NexusAssistantActivity : ComponentActivity() {
                     } else null
                 }.getOrNull()
             }
-            onResult(localAnswer ?: openSearch(command))
+            if (localAnswer != null) {
+                onResult(localAnswer)
+            } else if (command.contains("File content (", ignoreCase = true)) {
+                onResult("To keep your file private, download and enable the on-device AI model before asking me to read an attachment.")
+            } else {
+                browserUrl = CHAT_PAGE_URL + "?prompt=" + Uri.encode(command)
+                onResult("Opening your question in Online AI. Sign in if asked, then tap Send.")
+            }
         }
     }
 
@@ -535,8 +542,11 @@ private fun NexusAssistantScreen(
                     AndroidView(
                         modifier = Modifier.fillMaxSize(),
                         factory = { context ->
-                            if (showOnlineAi) {
-                                createChatWebView(context).also { embeddedWebView = it }
+                            if (showOnlineAi || browserUrl?.startsWith(CHAT_PAGE_URL) == true) {
+                                createChatWebView(
+                                    context,
+                                    if (showOnlineAi) CHAT_PAGE_URL else browserUrl.orEmpty(),
+                                ).also { embeddedWebView = it }
                             } else {
                                 createWebView(context, browserUrl.orEmpty()) { title, progress, _ ->
                                     embeddedPageTitle = title
