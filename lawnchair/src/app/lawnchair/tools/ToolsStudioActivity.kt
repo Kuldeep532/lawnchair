@@ -91,11 +91,21 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Text("AI & Focus", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
+            Button(
+                onClick = { context.startActivity(app.lawnchair.assistant.NexusAssistantLauncher.aiGalleryIntent(context)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("AI Gallery") }
+            Button(
+                onClick = { context.startActivity(Intent(context, app.lawnchair.wellbeing.DigitalWellbeingActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Digital Wellbeing") }
             Button(
                 onClick = { context.startActivity(app.lawnchair.assistant.NexusAssistantLauncher.intent(context)) },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Nexus Assistant") }
 
+            Text("Files & Documents", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             Button(
                 onClick = { context.startActivity(Intent(context, QrGeneratorActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -125,6 +135,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("PDF Reader") }
 
+            Text("Media & Voice", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             Button(
                 onClick = { context.startActivity(Intent(context, app.lawnchair.books.BooksVoiceSettingsActivity::class.java)) },
                 modifier = Modifier.fillMaxWidth(),
@@ -138,6 +149,7 @@ private fun ToolsStudioScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Live TV") }
 
+            Text("Privacy Tools", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             TabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Protect") })
                 Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Open") })
