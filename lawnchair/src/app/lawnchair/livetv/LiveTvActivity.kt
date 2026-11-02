@@ -43,8 +43,12 @@ import com.google.common.util.concurrent.ListenableFuture
 class LiveTvActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent { LawnchairTheme { EdgeToEdge(); LiveTvScreen(::finish) } }
+    }
+
+    override fun onDestroy() {
+        LiveTvController.stop(this)
+        super.onDestroy()
     }
 }
 
