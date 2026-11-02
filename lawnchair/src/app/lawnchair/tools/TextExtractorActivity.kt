@@ -173,7 +173,7 @@ private fun TextExtractorScreen(onBack: () -> Unit) {
         }
     }
 
-    BackHandler { if (selectedUri != null || extractedText.isNotBlank() || message != null) clearResult() else onBack() }
+    BackHandler(onBack = onBack)
 
     Scaffold(
         topBar = {
