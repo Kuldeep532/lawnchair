@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Nexus Chat</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; background: Canvas; color: CanvasText; }
+    .panel { max-width: 760px; margin: 0 auto; }
+    h1 { font-size: 1.35rem; margin: 4px 0 8px; }
+    p { line-height: 1.5; }
+    label { display: block; font-weight: 600; margin: 12px 0 6px; }
+    input, textarea, button, select { width: 100%; border-radius: 12px; padding: 12px; font: inherit; }
+    input, textarea, select { border: 1px solid GrayText; background: Field; color: FieldText; }
+    button { border: 0; background: #245c48; color: white; font-weight: 650; margin-top: 10px; min-height: 46px; }
+    button.secondary { background: transparent; color: CanvasText; border: 1px solid GrayText; }
+    button:disabled { opacity: .6; }
+    .status { min-height: 1.5em; margin: 12px 0; }
+    #chat { border: 1px solid GrayText; border-radius: 14px; padding: 10px; min-height: 220px; max-height: 48vh; overflow: auto; }
+    .msg { padding: 10px 12px; margin: 8px 0; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .user { background: color-mix(in srgb, Highlight 20%, Canvas); }
+    .assistant { background: color-mix(in srgb, CanvasText 8%, Canvas); }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .row button { width: auto; flex: 1; }
+    .hidden { display: none !important; }
+    .small { font-size: .9rem; opacity: .8; }
+    a { color: LinkText; }
+  </style>
+</head>
+<body>
+<main class="panel">
+  <h1>Nexus Chat</h1>
+  <p class="small">Cloud AI chat powered by your Nexus Supabase account. No AI model is downloaded to this phone.</p>
+
+  <section id="auth">
+    <label for="email">Email address</label>
+    <input id="email" type="email" autocomplete="username" inputmode="email" aria-label="Email address">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" aria-label="Password">
+    <button id="sign-in" type="button">Sign in</button>
+    <button id="create-account" class="secondary" type="button">Create account</button>
+    <button id="reset-password" class="secondary" type="button">Forgot password</button>
+  </section>
+
+  <section id="chat-area" class="hidden">
+    <div class="row">
+      <span id="account" class="small" aria-live="polite"></span>
+      <button id="sign-out" class="secondary" type="button">Sign out</button>
+    </div>
+    <label for="provider">AI provider</label>
+    <select id="provider" aria-label="AI provider">
+      <option value="gemini">Gemini</option>
+      <option value="openai">OpenAI (Premium)</option>
+      <option value="anthropic">Anthropic (Premium)</option>
+    </select>
+    <div id="chat" role="log" aria-live="polite" aria-relevant="additions text"></div>
+    <label for="message">Your message</label>
+    <textarea id="message" rows="3" placeholder="Type your question…" aria-label="Your message"></textarea>
+    <button id="send" type="button">Send message</button>
+  </section>
+  <p id="status" class="status" role="status" aria-live="polite">Connecting to Nexus…</p>
+</main>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const SUPABASE_URL = 'https://cpbwiarqlvtlnwbkmpws.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_7uUT1Hx6rRj7Nv6N9qa7og_-dqxZ4j3';
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+
+  const $ = (id) => document.getElementById(id);
+  const authBox = $('auth');
+  const chatArea = $('chat-area');
+  const status = $('status');
+  let history = [];
+  let sending = false;
+
+  function setStatus(message) { status.textContent = message; }
+  function showAuthenticated(user) {
+    authBox.classList.add('hidden');
+    chatArea.classList.remove('hidden');
+    $('account').textContent = user.email || 'Signed in';
+    setStatus('You are signed in. Your messages are sent securely to Nexus AI.');
+  }
+  function showSignedOut() {
+    authBox.classList.remove('hidden');
+    chatArea.classList.add('hidden');
+    $('account').textContent = '';
+    $('password').value = '';
+    setStatus('Sign in with your email and password to continue.');
+  }
+  function appendMessage(role, text) {
+    const item = document.createElement('div');
+    item.className = 'msg ' + (role === 'user' ? 'user' : 'assistant');
+    item.textContent = text;
+    $('chat').append(item);
+    $('chat').scrollTop = $('chat').scrollHeight;
+  }
+  async function requireSession() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) throw new Error('Please sign in again to continue.');
+    return data.session;
+  }
+  async function signIn() {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    if (!email || !password) { setStatus('Enter your email address and password.'); return; }
+    setStatus('Signing in…');
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { setStatus(error.message); return; }
+    showAuthenticated(data.user);
+  }
+  async function signUp() {
+    const email = $('email').value.trim();
+    const password = $('password').value;
+    if (!email || !password) { setStatus('Enter your email address and choose a password.'); return; }
+    if (password.length < 8) { setStatus('Choose a password with at least 8 characters.'); return; }
+    setStatus('Creating your account…');
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) { setStatus(error.message); return; }
+    if (data.session) showAuthenticated(data.user);
+    else setStatus('Account created. Check your email to confirm your account, then sign in.');
+  }
+  async function resetPassword() {
+    const email = $('email').value.trim();
+    if (!email) { setStatus('Enter your email address first.'); return; }
+    setStatus('Sending password reset email…');
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    setStatus(error ? error.message : 'Password reset instructions have been sent to your email.');
+  }
+  async function sendMessage() {
+    const message = $('message').value.trim();
+    if (!message || sending) return;
+    sending = true;
+    $('send').disabled = true;
+    $('message').value = '';
+    appendMessage('user', message);
+    history = [...history, { role: 'user', text: message }].slice(-20);
+    setStatus('Nexus AI is preparing a response…');
+    try {
+      const session = await requireSession();
+      const { data, error } = await supabase.functions.invoke('nexus-ai-chat', {
+        body: { provider: $('provider').value, message, history: history.slice(0, -1) },
+        headers: { Authorization: 'Bearer ' + session.access_token }
+      });
+      if (error) {
+        const detail = data?.error || error.message || 'The AI service is temporarily unavailable.';
+        throw new Error(detail);
+      }
+      if (data?.error) throw new Error(data.error);
+      if (typeof data?.text !== 'string' || !data.text.trim()) throw new Error('The AI service returned an empty answer.');
+      appendMessage('assistant', data.text);
+      history = [...history, { role: 'assistant', text: data.text }].slice(-20);
+      setStatus('Response received.');
+    } catch (error) {
+      const text = error?.message || 'Could not send the message. Please try again.';
+      appendMessage('assistant', text);
+      setStatus(text);
+    } finally {
+      sending = false;
+      $('send').disabled = false;
+    }
+  }
+
+  $('sign-in').addEventListener('click', () => signIn().catch(error => setStatus(error.message)));
+  $('create-account').addEventListener('click', () => signUp().catch(error => setStatus(error.message)));
+  $('reset-password').addEventListener('click', () => resetPassword().catch(error => setStatus(error.message)));
+  $('send').addEventListener('click', sendMessage);
+  $('message').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }
+  });
+  $('sign-out').addEventListener('click', async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) setStatus(error.message);
+    else { history = []; $('chat').replaceChildren(); showSignedOut(); }
+  });
+  window.nexusSignIn = async (email, password) => {
+    $('email').value = email;
+    $('password').value = password;
+    await signIn();
+    return status.textContent;
+  };
+  window.nexusSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) setStatus(error.message);
+    else { history = []; $('chat').replaceChildren(); showSignedOut(); }
+  };
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) showAuthenticated(session.user);
+    else showSignedOut();
+  });
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user) showAuthenticated(data.session.user);
+  else showSignedOut();
+</script>
+</body>
+</html>

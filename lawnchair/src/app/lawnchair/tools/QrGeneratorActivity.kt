@@ -224,10 +224,10 @@ private fun QrScreen(onBack: () -> Unit) {
                     QrMode.entries.forEach { item -> Tab(mode == item, { mode = item; error = null }) { Text(item.label) } }
                 }
                 when (mode) {
-                    QrMode.TEXT -> field("Text", input) { input = it }
-                    QrMode.URL -> field("URL", input) { input = it }
+                    QrMode.TEXT -> InputField("Text", input) { input = it }
+                    QrMode.URL -> InputField("URL", input) { input = it }
                     QrMode.WIFI -> {
-                        field("Wi-Fi SSID", input) { input = it }
+                        InputField("Wi-Fi SSID", input) { input = it }
                         Text("Security")
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf("WPA", "WEP", "nopass").forEach { security ->
@@ -239,14 +239,14 @@ private fun QrScreen(onBack: () -> Unit) {
                             }
                         }
                         if (wifiSecurity != "nopass") {
-                            field("Wi-Fi password", wifiPassword) { wifiPassword = it }
+                            InputField("Wi-Fi password", wifiPassword) { wifiPassword = it }
                         }
                     }
                     QrMode.UPI -> {
-                        field("Payee name", upiName) { upiName = it }
-                        field("UPI ID", upiId) { upiId = it }
-                        field("Amount", amount) { amount = it }
-                        field("Payment note", notes) { notes = it }
+                        InputField("Payee name", upiName) { upiName = it }
+                        InputField("UPI ID", upiId) { upiId = it }
+                        InputField("Amount", amount) { amount = it }
+                        InputField("Payment note", notes) { notes = it }
                         Text("UPI supports name, ID, amount and note. Category selection will remain metadata-only.")
                     }
                 }
@@ -258,7 +258,7 @@ private fun QrScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun field(label: String, value: String, onValueChange: (String) -> Unit) {
+private fun InputField(label: String, value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(value, onValueChange, Modifier.fillMaxWidth(), label = { Text(label) }, singleLine = true)
 }
 
