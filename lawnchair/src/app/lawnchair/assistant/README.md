@@ -6,7 +6,9 @@ Nexus Assistant is embedded in Nexus Launcher. This document describes current s
 
 - Compose screen with text and voice input, plus Android TextToSpeech output.
 - Hindi-capable speech recognition through Android's recognizer. Recognition can depend on system/network services and is not guaranteed to work offline.
-- Device actions for web search, launching apps by label, flashlight, opening Internet/Wi-Fi and Bluetooth settings, general settings, alarms, and timers.
+- Device actions for web search, launching apps by label (including YouTube when installed), flashlight, opening Internet/Wi-Fi and Bluetooth settings, general settings, alarms, and timers.
+- Weather requests open a live web search rather than asking the offline model to guess current conditions.
+- Reminder requests with a clear time open the Android calendar event editor. The user reviews and saves the event; Nexus Assistant does not silently write to a calendar.
 - Optional on-device chat through Llamatik/llama.cpp using a downloaded GGUF model.
 - Optional ElevenLabs online speech through the configured Supabase gateway. The provider key must remain on the server.
 - Tools Studio shortcuts and protected-text utility are maintained separately in the Tools Studio activity.
@@ -31,7 +33,7 @@ Model source: [Hugging Face — SmolLM2 GGUF](https://huggingface.co/bartowski/S
 
 ## Online AI and session status
 
-The assistant has a provider selector for Gemini, OpenAI, and Anthropic and attempts to use the configured Supabase AI gateway before using local chat. Online access is not verified until the app's actual sign-in/sign-out flow supplies and refreshes the user's session consistently. Conversation history is not yet confirmed as persistent across requests.
+The separate online AI page uses the configured Supabase AI gateway after account sign-in. The main Assistant screen offers this as an optional destination from its Attach menu. Online access is not verified until the app's actual sign-in/sign-out flow supplies and refreshes the user's session consistently. Conversation history is not yet confirmed as persistent across requests.
 
 API secrets belong on the server, never in the APK. Provider and premium access depend on server configuration.
 
