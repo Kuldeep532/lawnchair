@@ -33,7 +33,7 @@ class OnlineRadioService : Service() {
             ACTION_PAUSE -> pause()
             ACTION_STOP -> stopPlayback()
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun play() {
