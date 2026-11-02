@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
