@@ -297,6 +297,11 @@ private fun BookReaderScreen(
     var speaking by remember { mutableStateOf(false) }
     var ocrBusy by remember { mutableStateOf(false) }
     var ocrMessage by remember { mutableStateOf<String?>(null) }
+    val pageScrollState = remember { androidx.compose.foundation.ScrollState(0) }
+
+    LaunchedEffect(currentPage) {
+        pageScrollState.scrollTo(0)
+    }
 
     fun stopReading() {
         runCatching { speech?.stop() }
@@ -486,7 +491,7 @@ private fun BookReaderScreen(
             ) {
                 SelectionContainer {
                     Column(
-                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                        modifier = Modifier.fillMaxWidth().verticalScroll(pageScrollState),
                     ) {
                         Text(
                             pages.getOrNull(currentPage).orEmpty().ifBlank { "Opening your book…" },
