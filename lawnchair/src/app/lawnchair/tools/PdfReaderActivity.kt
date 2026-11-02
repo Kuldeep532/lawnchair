@@ -258,9 +258,7 @@ private fun PdfReaderScreen(onBack: () -> Unit, initialUri: Uri? = null) {
         )
     }
 
-    BackHandler {
-        if (uri != null || bitmap != null || extracted.isNotBlank()) reset() else onBack()
-    }
+    BackHandler(onBack = onBack)
 
     LaunchedEffect(uri, page) {
         if (speaking) stopReading()
