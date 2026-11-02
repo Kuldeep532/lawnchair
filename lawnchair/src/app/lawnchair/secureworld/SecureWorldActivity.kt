@@ -424,31 +424,47 @@ private fun SecureCategoriesTab(
     onDelete: (VaultListItem) -> Unit,
     onOpenDocument: (String) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(modifier = Modifier.weight(if (selectedCategory == null) 1f else 0.5f)) {
+    if (selectedCategory == null) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
                 androidx.compose.material3.ListItem(
-                    headlineContent = { Text("Create custom category") },
-                    supportingContent = { Text("Use your own category for anything in the vault.") },
+                    headlineContent = { Text("Create a category") },
+                    supportingContent = { Text("Organize notes, documents and passwords.") },
                     modifier = Modifier.clickable(onClick = onCreateCategory),
                 )
             }
             items(categories, key = { it.id }) { category ->
+                val count = items.count { it.category.equals(category.name, ignoreCase = true) }
                 androidx.compose.material3.ListItem(
                     headlineContent = { Text(category.name) },
-                    supportingContent = { Text("Category") },
+                    supportingContent = { Text("$count saved items") },
                     modifier = Modifier.clickable { onSelectCategory(category.name) },
                     trailingContent = {
-                        if (!category.isBuiltIn) IconButton(onClick = { onDeleteCategory(category.name) }) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Delete category")
+                        if (!category.isBuiltIn) {
+                            IconButton(onClick = { onDeleteCategory(category.name) }) {
+                                Icon(Icons.Rounded.Delete, contentDescription = "Delete category")
+                            }
                         }
                     },
                 )
             }
         }
-        if (selectedCategory != null) {
-            Text(selectedCategory, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
-            SecureAllList(items.filter { it.category.equals(selectedCategory, true) }, onDelete, onOpenDocument)
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(selectedCategory, style = MaterialTheme.typography.titleMedium)
+                androidx.compose.material3.TextButton(onClick = { onSelectCategory(null) }) {
+                    Text("All categories")
+                }
+            }
+            SecureAllList(
+                items = items.filter { it.category.equals(selectedCategory, ignoreCase = true) },
+                onDelete = onDelete,
+                onOpenDocument = onOpenDocument,
+            )
         }
     }
 }
