@@ -109,7 +109,7 @@ class SecureWorldActivity : FragmentActivity() {
         ).authenticate(
             BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Secure Vault")
-                .setSubtitle("Unlock your private space")
+                .setSubtitle("Use your fingerprint to continue")
                 .setNegativeButtonText("Cancel")
                 .setConfirmationRequired(false)
                 .build(),
@@ -205,8 +205,7 @@ class SecureWorldActivity : FragmentActivity() {
         setContent {
             LawnchairTheme {
                 EdgeToEdge()
-                var selectedTab by remember { mutableIntStateOf(0) }
-                    var contentTab by remember { mutableIntStateOf(0) }
+                var contentTab by remember { mutableIntStateOf(0) }
                 var showAddSheet by remember { mutableStateOf(false) }
                 var showNoteDialog by remember { mutableStateOf(false) }
                 var showDocumentChoice by remember { mutableStateOf(false) }
@@ -229,32 +228,23 @@ class SecureWorldActivity : FragmentActivity() {
                         androidx.compose.material3.TopAppBar(
                             title = { Text("Secure Vault") },
                             actions = {
-                                IconButton(onClick = { showAddSheet = true }) {
-                                    Icon(Icons.Rounded.Add, contentDescription = "Add new")
+                                Button(onClick = { showAddSheet = true }, modifier = Modifier.padding(end = 8.dp)) {
+                                    Text("Add New")
                                 }
-                                Icon(Icons.Rounded.Lock, contentDescription = "Protected Secure Vault")
                             },
                         )
                     },
                 ) { padding ->
                     Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            androidx.compose.material3.OutlinedButton(onClick = { showNoteDialog = true }) { Text("Add New Text") }
-                            androidx.compose.material3.OutlinedButton(onClick = { showDocumentChoice = true }) { Text("Add New Document") }
-                            androidx.compose.material3.OutlinedButton(onClick = { showPasswordDialog = true }) { Text("Add New Password") }
-                        }
-
                         TabRow(selectedTabIndex = contentTab) {
                             Tab(selected = contentTab == 0, onClick = { contentTab = 0 }, text = { Text("Text") })
                             Tab(selected = contentTab == 1, onClick = { contentTab = 1 }, text = { Text("Documents") })
                             Tab(selected = contentTab == 2, onClick = { contentTab = 2 }, text = { Text("Passwords") })
                             Tab(selected = contentTab == 3, onClick = { contentTab = 3 }, text = { Text("Cards") })
+                            Tab(selected = contentTab == 4, onClick = { contentTab = 4 }, text = { Text("Categories") })
                         }
 
-                        if (selectedTab == 0) {
+                        if (contentTab != 4) {
                             val filtered = when (contentTab) {
                                 0 -> allItems.filter { it is VaultListItem.NoteItem }
                                 1 -> allItems.filter { it is VaultListItem.DocumentItem }
@@ -474,7 +464,7 @@ private fun SecureAddBottomSheet(
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Add new", style = MaterialTheme.typography.titleLarge)
-            Button(onClick = onAddText, modifier = Modifier.fillMaxWidth()) { Text("Add New Text") }
+            Button(onClick = onAddText, modifier = Modifier.fillMaxWidth()) { Text("Text") }
             Button(onClick = onAddDocument, modifier = Modifier.fillMaxWidth()) { Text("Add New Document") }
             Button(onClick = onAddPassword, modifier = Modifier.fillMaxWidth()) { Text("Add New Password") }
             Button(onClick = onAddCard, modifier = Modifier.fillMaxWidth()) { Text("Add Credit / Debit Card") }
@@ -760,7 +750,7 @@ private fun NoteDialog(
     var category by remember { mutableStateOf("General") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Text") },
+        title = { Text("Text") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(title, { title = it }, label = { Text("Title") })
