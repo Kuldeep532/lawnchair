@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -461,19 +463,22 @@ private fun BookReaderScreen(
             Card(
                 modifier = Modifier.fillMaxSize(),
                 colors = androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 ),
             ) {
                 SelectionContainer {
-                    androidx.compose.foundation.verticalScroll(remember { androidx.compose.foundation.rememberScrollState() })
-                    Text(
-                        pages.getOrNull(currentPage).orEmpty().ifBlank { "Opening your book…" },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 26.dp),
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontSize = readerFontSize.sp,
-                            lineHeight = (readerFontSize * 1.6f).sp,
-                        ),
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    ) {
+                        Text(
+                            pages.getOrNull(currentPage).orEmpty().ifBlank { "Opening your book…" },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 26.dp),
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = readerFontSize.sp,
+                                lineHeight = (readerFontSize * 1.6f).sp,
+                            ),
+                        )
+                    }
                 }
             }
         }
