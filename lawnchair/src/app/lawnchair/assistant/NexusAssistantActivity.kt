@@ -239,7 +239,7 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 
     private fun createCalendarEvent(raw: String): String {
-        val timeMatch = Regex("(?:at\\s*)?(\\d{1,2})(?::(\\d{2}))?\\s*(a\\.?m\\.?|p\\.?m\\.?)", RegexOption.IGNORE_CASE)
+        val timeMatch = Regex("(?:(?:at|for)\\s*)?(\\d{1,2})(?::(\\d{2}))?\\s*(a\\.?m\\.?|p\\.?m\\.?)", RegexOption.IGNORE_CASE)
             .find(raw)
         if (timeMatch == null) return "Tell me the time, for example: Add drinking water at 7:30 PM."
         val hourInput = timeMatch.groupValues[1].toIntOrNull() ?: return "Please say the time again."
