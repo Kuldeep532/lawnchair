@@ -625,9 +625,10 @@ private fun NexusAssistantScreen(
                             }
                         }
                         query = ""
+                        onClearAttachment()
                         onCommand(message) { response = it }
                     },
-                    enabled = query.isNotBlank(),
+                    enabled = query.isNotBlank() || !attachmentText.isNullOrBlank(),
                 ) {
                     Icon(Icons.Rounded.Send, contentDescription = null)
                     Text(" Send")
