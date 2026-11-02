@@ -59,6 +59,7 @@ import java.util.Locale
  * for input; spoken playback is intentionally reserved for Books Reader and PDF Reader.
  */
 class NexusAssistantActivity : ComponentActivity() {
+    private var browserUrl by mutableStateOf<String?>(null)
     private var output: ((String) -> Unit)? = null
     private var speechResultHandler: ((String) -> Unit)? = null
 
@@ -87,9 +88,8 @@ class NexusAssistantActivity : ComponentActivity() {
                     onOpenAiGallery = {
                         startActivity(NexusAssistantLauncher.aiGalleryIntent(this@NexusAssistantActivity))
                     },
-                    onOpenSearch = {
-                        startActivity(NexusSearchBrowserActivity.openSearchScreen(this@NexusAssistantActivity))
-                    },
+                    browserUrl = browserUrl,
+                    onOpenSearch = { browserUrl = "https://www.google.com" },
                     onBack = ::finish,
                     onListen = { onRecognized ->
                         speechResultHandler = { recognized -> processInput(recognized, onRecognized) }
@@ -390,8 +390,8 @@ class NexusAssistantActivity : ComponentActivity() {
         val query = rawQuery.trim()
         if (query.isBlank()) return "Tell me what you want to search for."
         return runCatching {
-            startActivity(NexusSearchBrowserActivity.queryIntent(this, query))
-            "Searching the web for $query in Nexus Search."
+            browserUrl = "https://www.google.com/search?q=" + Uri.encode(query)
+            "Searching the web for $query."
         }.getOrElse {
             "Search could not be opened. Please try again."
         }
@@ -437,6 +437,7 @@ class NexusAssistantActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
+    browserUrl: String?,
     onOpenAiGallery: () -> Unit,
     onOpenSearch: () -> Unit,
     onBack: () -> Unit,
@@ -447,41 +448,69 @@ private fun NexusAssistantScreen(
     var response by remember { mutableStateOf("Hi, how can I help?") }
     var showAttach by remember { mutableStateOf(false) }
     var showOnlineAi by remember { mutableStateOf(false) }
-    var onlineWebView by remember { mutableStateOf<WebView?>(null) }
+    var embeddedWebView by remember { mutableStateOf<WebView?>(null) }
+    var embeddedPageTitle by remember { mutableStateOf("Assistant") }
+    var embeddedProgress by remember { mutableIntStateOf(0) }
+
     BackHandler(onBack = {
-        if (showOnlineAi) showOnlineAi = false else onBack()
+        if ((showOnlineAi || browserUrl != null) && embeddedWebView?.canGoBack() == true) {
+            embeddedWebView?.goBack()
+        } else if (showOnlineAi) {
+            showOnlineAi = false
+        } else if (browserUrl != null) {
+            // Browser is closed by the toolbar; the system back returns to the Assistant.
+            onBack()
+        } else {
+            onBack()
+        }
     })
 
-    if (showOnlineAi) {
+    if (showOnlineAi || browserUrl != null) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Assistant") },
+                    title = { Text(if (showOnlineAi) "Assistant" else embeddedPageTitle, maxLines = 1) },
                     navigationIcon = {
-                        IconButton(onClick = { showOnlineAi = false }) {
+                        IconButton(onClick = {
+                            if (showOnlineAi) showOnlineAi = false else onOpenSearch()
+                        }) {
                             Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to Assistant")
                         }
                     },
                 )
             },
         ) { padding ->
-            AndroidView(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                factory = { context ->
-                    createChatWebView(context).also { onlineWebView = it }
-                },
-                update = { onlineWebView = it },
-            )
+            Column(Modifier.fillMaxSize().padding(padding)) {
+                if (!showOnlineAi && embeddedProgress in 1..99) {
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { embeddedProgress / 100f },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { context ->
+                        if (showOnlineAi) {
+                            createChatWebView(context).also { embeddedWebView = it }
+                        } else {
+                            createWebView(context, browserUrl.orEmpty()) { title, progress, _ ->
+                                embeddedPageTitle = title
+                                embeddedProgress = progress
+                            }.also { embeddedWebView = it }
+                        }
+                    },
+                )
+            }
         }
-        DisposableEffect(Unit) {
+        DisposableEffect(showOnlineAi, browserUrl) {
             onDispose {
-                onlineWebView?.apply {
+                embeddedWebView?.apply {
                     stopLoading()
                     loadUrl("about:blank")
                     removeAllViews()
                     destroy()
                 }
-                onlineWebView = null
+                embeddedWebView = null
             }
         }
         return
