@@ -154,8 +154,10 @@ private fun createWebView(
         ): android.webkit.WebResourceResponse? =
             assetLoader.shouldInterceptRequest(request.url)
 
-        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-            request.url.scheme != "http" && request.url.scheme != "https"
+        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+            val uri = request.url
+            return uri.scheme != "http" && uri.scheme != "https"
+        }
 
         override fun onPageFinished(view: WebView, loadedUrl: String?) {
             onState(view.title?.takeIf { it.isNotBlank() } ?: "Nexus Search", 100, view.canGoBack())
