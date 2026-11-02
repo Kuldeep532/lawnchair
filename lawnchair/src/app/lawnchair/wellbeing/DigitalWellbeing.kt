@@ -243,7 +243,7 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
     val totalUsageMinutes = if (access) controller.totalUsageToday() / 60_000L else 0L
     val highestUsageApp = remember(access, installedApps) {
         if (!access) null else installedApps
-            .map { it.first to it.second to controller.packageUsageToday(it.first) }
+            .map { Triple(it.first, it.second, controller.packageUsageToday(it.first)) }
             .maxByOrNull { it.third }
             ?.takeIf { it.third > 0L }
     }
