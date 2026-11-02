@@ -222,7 +222,7 @@
     <string name="about_label">About</string>
 
     <string name="app_info_drop_target_label">App info</string>
-    <string name="debug_restart_launcher">Restart Lawnchair</string>
+    <string name="debug_restart_launcher">Restart Nexus Launcher</string>
     <string name="experimental_features_label">Experimental features</string>
 
     <!-- Experimental features -->
@@ -305,7 +305,7 @@
 
     -->
 
-    <string name="set_default_launcher_tip">To access shortcuts and additional features, set Lawnchair as your default launcher</string>
+    <string name="set_default_launcher_tip">To access shortcuts and additional features, set Nexus Launcher as your default launcher</string>
 
     <string name="notification_dots">Notification dots</string>
     <string name="show_notification_count">Show notification counter</string>
@@ -537,13 +537,13 @@
     <string name="torch_action_off">Tap to turn off</string>
 
     <!-- Onboarding strings -->
-    <string name="onboarding_open_settings_title">Set up Lawnchair</string>
+    <string name="onboarding_open_settings_title">Set up Nexus Launcher</string>
     <string name="onboarding_open_settings_subtitle">Long-press on the home screen to open settings</string>
 
-    <string name="onboarding_major_upgrade_title">Meet the new Lawnchair</string>
+    <string name="onboarding_major_upgrade_title">Meet the new Nexus Launcher</string>
     <string name="onboarding_major_upgrade_subtitle">See what\'s new</string>
 
-    <string name="onboarding_welcome">Welcome to Lawnchair!</string>
+    <string name="onboarding_welcome">Welcome to Nexus Launcher!</string>
     <string name="onboarding_swipe_up">Swipe up to open the app drawer</string>
 
     <!-- Smartspacer strings -->
@@ -557,7 +557,7 @@
 
     <!-- Toggle button for enabling Smartspace -->
     <string name="smartspace_widget_toggle_label">Show on home screen</string>
-    <string name="smartspace_widget_toggle_description">At a Glance can be added to the home screen with the Lawnchair widget</string>
+    <string name="smartspace_widget_toggle_description">At a Glance can be added to the home screen with the Nexus Launcher widget</string>
 
     <!-- List of available providers -->
     <string name="smartspace_mode_label">At a Glance provider</string>
@@ -671,7 +671,7 @@
     <string name="pick_app_for_gesture">Pick app</string>
 
     <string name="dt2s_admin_hint_title">Admin permissions required</string>
-    <string name="dt2s_admin_hint">To put the device to sleep, set Lawnchair as a device admin app. Tap \"Open settings\", then tap \"Activate this device admin app.\"</string>
+    <string name="dt2s_admin_hint">To put the device to sleep, set Nexus Launcher as a device admin app. Tap \"Open settings\", then tap \"Activate this device admin app.\"</string>
     <string name="dt2s_admin_warning">Gestures to put the device to sleep will be turned off.</string>
 
     <string name="d2ts_recents_a11y_hint_title">Turn on accessibility service</string>
@@ -695,7 +695,7 @@
     Bug reporting
 
     -->
-    <string name="lawnchair_bug_report">Lawnchair bug report</string>
+    <string name="lawnchair_bug_report">Nexus Launcher feedback</string>
     <string name="crash_report_notif_title">%1$s crashed</string>
     <string name="action_upload_crash_report">Upload crash log</string>
 
