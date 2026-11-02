@@ -30,6 +30,10 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.Slider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -51,6 +55,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.selection.SelectionContainer
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 import kotlinx.coroutines.launch
@@ -259,9 +265,10 @@ private fun BookReaderScreen(
     val context = LocalContext.current
     var pages by remember(book.uri) { mutableStateOf<List<String>>(emptyList()) }
     var currentPage by remember(book.uri) { mutableIntStateOf(book.lastPosition.coerceAtLeast(0)) }
-    var playing by remember { mutableStateOf(false) }
     var pageInput by remember { mutableStateOf("") }
     var showMore by remember { mutableStateOf(false) }
+    var showPageDialog by remember { mutableStateOf(false) }
+    var readerFontSize by remember { mutableStateOf(20f) }
     var speech by remember { mutableStateOf<android.speech.tts.TextToSpeech?>(null) }
     var speaking by remember { mutableStateOf(false) }
     var ocrBusy by remember { mutableStateOf(false) }
@@ -270,7 +277,6 @@ private fun BookReaderScreen(
     fun stopReading() {
         runCatching { speech?.stop() }
         speaking = false
-        playing = false
     }
 
     fun goToPage(target: Int) {
@@ -291,14 +297,10 @@ private fun BookReaderScreen(
         engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) = Unit
             override fun onDone(utteranceId: String?) {
-                if (utteranceId?.startsWith("book-page") == true) {
-                    speaking = false
-                    playing = false
-                }
+                if (utteranceId?.startsWith("book-page") == true) speaking = false
             }
             override fun onError(utteranceId: String?) {
                 speaking = false
-                playing = false
             }
         })
         speech = engine
@@ -313,9 +315,8 @@ private fun BookReaderScreen(
         val isPdf = book.mimeType == "application/pdf" || book.uri.endsWith(".pdf", true)
         if (isPdf) {
             ocrBusy = true
-            ocrMessage = "Reading PDF with OCR…"
+            ocrMessage = "Preparing readable text from this PDF…"
         }
-
         val result = withContext(Dispatchers.IO) {
             runCatching {
                 val uri = Uri.parse(book.uri)
@@ -326,16 +327,11 @@ private fun BookReaderScreen(
                 }
             }
         }
-        pages = result.getOrElse { listOf("This book could not be read.") }
+        pages = result.getOrElse { listOf("This book could not be opened. Check that the file is still available.") }
             .ifEmpty { listOf("No readable text was found in this book.") }
         currentPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0))
-
         if (isPdf) {
-            ocrMessage = if (result.isSuccess) {
-                "OCR is ready for this PDF."
-            } else {
-                "This PDF could not be read with OCR."
-            }
+            ocrMessage = if (result.isSuccess) "Text is ready for reading." else "Text could not be extracted from this PDF."
             ocrBusy = false
         }
     }
@@ -347,19 +343,38 @@ private fun BookReaderScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = { stopReading(); onBack() }) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to library")
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to your books")
                     }
                 },
-                title = { Text(book.title, maxLines = 1) },
+                title = {
+                    Column {
+                        Text(book.title, maxLines = 1)
+                        Text("BOOK", style = MaterialTheme.typography.labelSmall)
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showMore = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = "More reader options")
+                        Icon(Icons.Rounded.MoreVert, contentDescription = "Reading options")
                     }
                     DropdownMenu(expanded = showMore, onDismissRequest = { showMore = false }) {
                         DropdownMenuItem(
-                            text = { Text("Reader Voice settings") },
-                            onClick = { showMore = false
-                                context.startActivity(Intent(context, BooksVoiceSettingsActivity::class.java)) },
+                            text = { Text("Go to page") },
+                            onClick = { showMore = false; showPageDialog = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Smaller text") },
+                            onClick = { readerFontSize = (readerFontSize - 1f).coerceAtLeast(16f); showMore = false },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Larger text") },
+                            onClick = { readerFontSize = (readerFontSize + 1f).coerceAtMost(30f); showMore = false },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Reader voice settings") },
+                            onClick = {
+                                showMore = false
+                                context.startActivity(Intent(context, BooksVoiceSettingsActivity::class.java))
+                            },
                         )
                     }
                 },
@@ -367,61 +382,129 @@ private fun BookReaderScreen(
         },
         bottomBar = {
             Surface(tonalElevation = 3.dp) {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        IconButton(enabled = currentPage > 0, onClick = { goToPage(currentPage - 1) }) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        IconButton(
+                            enabled = currentPage > 0,
+                            onClick = { goToPage(currentPage - 1) },
+                        ) {
                             Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous page")
                         }
-                        IconButton(enabled = currentPage > 0, onClick = { goToPage(currentPage - 2) }) {
-                            Icon(Icons.Rounded.SkipPrevious, contentDescription = "Rewind")
+                        IconButton(
+                            onClick = {
+                                val text = pages.getOrNull(currentPage).orEmpty()
+                                val engine = speech
+                                if (engine == null || text.isBlank()) return@IconButton
+                                if (speaking) {
+                                    engine.stop()
+                                    speaking = false
+                                } else {
+                                    speaking = true
+                                    engine.speak(
+                                        text,
+                                        android.speech.tts.TextToSpeech.QUEUE_FLUSH,
+                                        null,
+                                        "book-page-$currentPage",
+                                    )
+                                }
+                            },
+                        ) {
+                            Icon(
+                                if (speaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = if (speaking) "Pause reading aloud" else "Read this page aloud",
+                            )
                         }
-                        IconButton(onClick = {
-                            val text = pages.getOrNull(currentPage).orEmpty()
-                            val engine = speech
-                            if (engine == null || text.isBlank()) return@IconButton
-                            if (speaking) {
-                                engine.stop()
-                                speaking = false
-                                playing = false
-                            } else {
-                                speaking = true
-                                playing = true
-                                engine.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "book-page-$currentPage")
-                            }
-                        }) {
-                            Icon(if (speaking) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, contentDescription = if (speaking) "Pause reading" else "Read page aloud")
-                        }
-                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { goToPage(currentPage + 2) }) {
-                            Icon(Icons.Rounded.SkipNext, contentDescription = "Fast forward")
-                        }
-                        IconButton(enabled = currentPage < pages.lastIndex, onClick = { goToPage(currentPage + 1) }) {
+                        IconButton(
+                            enabled = currentPage < pages.lastIndex,
+                            onClick = { goToPage(currentPage + 1) },
+                        ) {
                             Icon(Icons.Rounded.SkipNext, contentDescription = "Next page")
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = pageInput,
-                            onValueChange = { pageInput = it.filter(Char::isDigit) },
-                            label = { Text("Page") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(enabled = pageInput.isNotBlank(), onClick = {
-                            pageInput.toIntOrNull()?.let { goToPage(it - 1) }
-                        }) {
-                            Icon(Icons.Rounded.PlayArrow, contentDescription = "Go to page")
-                        }
+                    Slider(
+                        value = currentPage.toFloat(),
+                        onValueChange = { currentPage = it.toInt().coerceIn(0, pages.lastIndex.coerceAtLeast(0)) },
+                        onValueChangeFinished = { onPositionChanged(currentPage) },
+                        valueRange = 0f..pages.lastIndex.coerceAtLeast(0).toFloat(),
+                        enabled = pages.size > 1,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text("Page ${if (pages.isEmpty()) 0 else currentPage + 1} of ${pages.size}", style = MaterialTheme.typography.labelMedium)
+                        TextButton(onClick = { showPageDialog = true }) { Text("Go to page") }
                     }
                 }
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 18.dp)) {
-            Text("Page ${if (pages.isEmpty()) 0 else currentPage + 1} of ${pages.size}", style = MaterialTheme.typography.labelLarge)
-            Spacer(Modifier.height(14.dp))
-            Text(pages.getOrNull(currentPage).orEmpty().ifBlank { "Loading…" }, modifier = Modifier.fillMaxSize(), style = MaterialTheme.typography.bodyLarge)
-            ocrMessage?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (ocrBusy || ocrMessage != null) {
+                Text(
+                    ocrMessage.orEmpty(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+            Card(
+                modifier = Modifier.fillMaxSize(),
+                colors = androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+            ) {
+                SelectionContainer {
+                    androidx.compose.foundation.verticalScroll(remember { androidx.compose.foundation.rememberScrollState() })
+                    Text(
+                        pages.getOrNull(currentPage).orEmpty().ifBlank { "Opening your book…" },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 26.dp),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = readerFontSize.sp,
+                            lineHeight = (readerFontSize * 1.6f).sp,
+                        ),
+                    )
+                }
+            }
         }
+    }
+
+    if (showPageDialog) {
+        AlertDialog(
+            onDismissRequest = { showPageDialog = false },
+            title = { Text("Go to page") },
+            text = {
+                OutlinedTextField(
+                    value = pageInput,
+                    onValueChange = { pageInput = it.filter(Char::isDigit) },
+                    label = { Text("Page number") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pageInput.toIntOrNull()?.let { goToPage(it - 1) }
+                        showPageDialog = false
+                    },
+                    enabled = pageInput.toIntOrNull()?.let { it in 1..pages.size } == true,
+                ) { Text("Go") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPageDialog = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 
