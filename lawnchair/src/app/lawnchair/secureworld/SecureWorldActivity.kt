@@ -159,7 +159,7 @@ class SecureWorldActivity : FragmentActivity() {
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
                     suggestedDetails = suggestDocumentDetails("Other", extractedText),
-                    categories = store.categories().map { it.name },
+                    categories = (listOf("Aadhaar Card", "PAN Card", "Driving Licence", "Certificate", "Passport", "Voter ID", "Insurance", "Other") + store.categories().map { it.name }).distinct(),
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
                         val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
