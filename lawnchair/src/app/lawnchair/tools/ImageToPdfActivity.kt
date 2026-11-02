@@ -78,9 +78,7 @@ private fun ImageToPdfScreen(onBack: () -> Unit) {
         status = null
     }
 
-    BackHandler {
-        if (selectedUri != null || status != null) clear() else onBack()
-    }
+    BackHandler(onBack = onBack)
 
     Scaffold(
         topBar = {
