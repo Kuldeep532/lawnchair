@@ -358,9 +358,9 @@ private fun StationList(
     favorites: List<RadioStation>,
     loading: Boolean,
     message: String?,
-    emptyMessage: String = "No stations found.",
     onPlay: (RadioStation) -> Unit,
     onFavorite: (RadioStation) -> Unit,
+    emptyMessage: String = "No stations found.",
 ) {
     when {
         loading -> Text("Loading stations…", Modifier.padding(16.dp))
