@@ -8,6 +8,8 @@ import android.hardware.camera2.CameraManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.provider.CalendarContract
+import java.util.Calendar
 import android.speech.RecognizerIntent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -22,8 +24,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -141,18 +151,75 @@ class NexusAssistantActivity : ComponentActivity() {
     private fun processInput(raw: String, onResult: (String) -> Unit) {
         val command = raw.trim()
         if (command.isBlank()) {
-            onResult("Please say or type a command.")
+            onResult("Type or say what you need.")
             return
         }
+        val normalized = command.lowercase(Locale.ROOT)
+
+        // Live information is looked up online; an offline model must never invent today's weather.
+        if (normalized.contains("weather") || normalized.contains("मौसम")) {
+            onResult(openSearch(command))
+            return
+        }
+
+        // Create an event through the phone's calendar app. Android asks the user to review
+        // and save it there; this avoids silently writing to a calendar.
+        if (normalized.startsWith("add ") || normalized.startsWith("schedule ") ||
+            normalized.startsWith("remind me") || normalized.contains("याद दिलाओ") ||
+            normalized.contains("शेड्यूल")) {
+            onResult(createCalendarEvent(command))
+            return
+        }
+
         if (isSystemCommand(command)) {
             onResult(handleCommand(command))
             return
         }
-        runCatching {
-            startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
-            onResult("Nexus Chat opened. Sign in or create your account to continue.")
-        }.onFailure {
-            onResult("Nexus Chat could not be opened. Please try again.")
+
+        // General questions stay in the same assistant. Use the on-device model when available;
+        // otherwise offer a web search instead of pretending cloud chat is already connected here.
+        val answer = runCatching {
+            if (LocalAssistantEngine.loadIfAvailable(this)) {
+                LocalAssistantEngine.reply(command)
+            } else {
+                openSearch(command)
+            }
+        }.getOrElse {
+            openSearch(command)
+        }
+        onResult(answer)
+    }
+
+    private fun createCalendarEvent(raw: String): String {
+        val timeMatch = Regex("(?:at\\s*)?(\\d{1,2})(?::(\\d{2}))?\\s*(a\\.?m\\.?|p\\.?m\\.?)", RegexOption.IGNORE_CASE)
+            .find(raw)
+        if (timeMatch == null) return "Tell me the time, for example: Add drinking water at 7:30 PM."
+        val hourInput = timeMatch.groupValues[1].toIntOrNull() ?: return "Please say the time again."
+        val minute = timeMatch.groupValues[2].ifBlank { "0" }.toIntOrNull() ?: 0
+        if (hourInput !in 1..12 || minute !in 0..59) return "Please provide a valid time."
+        val isPm = timeMatch.groupValues[3].lowercase(Locale.ROOT).startsWith("p")
+        val hour = (hourInput % 12) + if (isPm) 12 else 0
+        val title = raw.substring(0, timeMatch.range.first)
+            .replace(Regex("^(add|schedule|remind me to|remind me|याद दिलाओ|शेड्यूल)\\s*", RegexOption.IGNORE_CASE), "")
+            .trim().ifBlank { "Reminder" }
+        val start = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+        }
+        val end = (start.clone() as Calendar).apply { add(Calendar.MINUTE, 15) }
+        return runCatching {
+            val intent = Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI)
+                .putExtra(CalendarContract.Events.TITLE, title)
+                .putExtra(CalendarContract.Events.DESCRIPTION, "Added with Nexus Assistant")
+                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start.timeInMillis)
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end.timeInMillis)
+            startActivity(intent)
+            "Your reminder is ready. Review it and tap Save in your calendar."
+        }.getOrElse {
+            "I could not open the calendar on this phone. Please check that a calendar app is installed."
         }
     }
 
@@ -363,6 +430,7 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
     onOpenChat: () -> Unit,
@@ -373,14 +441,14 @@ private fun NexusAssistantScreen(
     onCommand: (String, (String) -> Unit) -> Unit,
 ) {
     var query by remember { mutableStateOf("") }
-    var response by remember {
-        mutableStateOf("Welcome to Nexus Assistant. Device commands run on this phone. Use Nexus Chat for cloud AI.")
-    }
+    var response by remember { mutableStateOf("Hi, how can I help?") }
+    var showAttach by remember { mutableStateOf(false) }
     BackHandler(onBack = onBack)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nexus Assistant") },
+                title = { Text("Assistant") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
@@ -390,46 +458,89 @@ private fun NexusAssistantScreen(
         },
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Use device commands here. Open Nexus Chat for general questions with your Supabase account.")
+            Text(
+                "Ask a question or tell me what to do.",
+                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+            )
+            Card(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text("Assistant", style = androidx.compose.material3.MaterialTheme.typography.labelLarge)
+                    Text(response, modifier = Modifier.padding(top = 8.dp))
+                }
+            }
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Device command") },
-                placeholder = { Text("For example: turn on flashlight") },
+                label = { Text("Message") },
+                placeholder = { Text("Ask anything or give a command") },
                 minLines = 2,
+                maxLines = 5,
             )
-            Button(
-                onClick = { onCommand(query) { response = it } },
+            androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = query.isNotBlank(),
-            ) { Text("Run device command") }
-            Button(
-                onClick = onOpenSearch,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Plus Search") }
-            Button(
-                onClick = onOpenChat,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("Sign in / Open Nexus Chat") }
-            Button(
-                onClick = onOpenAiGallery,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("AI Gallery") }
-            Button(
-                onClick = { onListen { response = it } },
-                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.Rounded.Mic, contentDescription = "Voice input")
-                Text("  Speak")
+                IconButton(onClick = { showAttach = true }) {
+                    Icon(Icons.Rounded.AttachFile, contentDescription = "Attach")
+                }
+                IconButton(onClick = { onListen { response = it } }) {
+                    Icon(Icons.Rounded.Mic, contentDescription = "Speak")
+                }
+                Spacer(Modifier.weight(1f))
+                Button(
+                    onClick = {
+                        val message = query
+                        query = ""
+                        onCommand(message) { response = it }
+                    },
+                    enabled = query.isNotBlank(),
+                ) {
+                    Icon(Icons.Rounded.Send, contentDescription = null)
+                    Text(" Send")
+                }
             }
-            Text("Assistant response")
-            Text(response)
-            Text("Cloud chat needs an internet connection and a Nexus account. AI Gallery manages supported on-device assets separately.")
+        }
+    }
+
+    if (showAttach) {
+        ModalBottomSheet(onDismissRequest = { showAttach = false }) {
+            Text(
+                "Add to your message",
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+            )
+            ListItem(
+                headlineContent = { Text("Search the web") },
+                supportingContent = { Text("Find current information") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingContent = { Icon(Icons.Rounded.Search, contentDescription = null) },
+            )
+            TextButton(
+                onClick = { showAttach = false; onOpenSearch() },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Open web search") }
+            ListItem(
+                headlineContent = { Text("On-device AI") },
+                supportingContent = { Text("Manage the offline assistant model") },
+            )
+            TextButton(
+                onClick = { showAttach = false; onOpenAiGallery() },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Manage on-device AI") }
+            ListItem(
+                headlineContent = { Text("Online AI") },
+                supportingContent = { Text("Continue with your Nexus account") },
+            )
+            TextButton(
+                onClick = { showAttach = false; onOpenChat() },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Open online AI") }
+            Spacer(Modifier.padding(bottom = 20.dp))
         }
     }
 }
