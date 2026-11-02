@@ -85,9 +85,9 @@ class SecureWorldActivity : FragmentActivity() {
 
     private fun authenticateAndShow() {
         val biometricManager = BiometricManager.from(this)
-        if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) !=
-            BiometricManager.BIOMETRIC_SUCCESS
-        ) {
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        if (biometricManager.canAuthenticate(authenticators) != BiometricManager.BIOMETRIC_SUCCESS) {
             finish()
             return
         }
@@ -109,8 +109,8 @@ class SecureWorldActivity : FragmentActivity() {
         ).authenticate(
             BiometricPrompt.PromptInfo.Builder()
                 .setTitle("Secure Vault")
-                .setSubtitle("Use your fingerprint to continue")
-                .setNegativeButtonText("Cancel")
+                .setSubtitle("Use your fingerprint or device screen lock to continue")
+                .setAllowedAuthenticators(authenticators)
                 .setConfirmationRequired(false)
                 .build(),
         )
