@@ -327,6 +327,7 @@ class SecureWorldActivity : FragmentActivity() {
 
                 if (showCategoryDialog) {
                     CategoryDialog(
+                        existingCategories = store.categories().map { it.name },
                         onDismiss = { showCategoryDialog = false },
                         onSave = { store.addCategory(it); showCategoryDialog = false; showSecureVault() },
                     )
@@ -891,13 +892,13 @@ private fun PasswordDialog(
     var category by remember { mutableStateOf("Bank Passwords") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Password") },
+        title = { Text("Password") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(title, { title = it }, label = { Text("Name") })
                 OutlinedTextField(username, { username = it }, label = { Text("Username") })
                 OutlinedTextField(password, { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation())
-                OutlinedTextField(category, { category = it }, label = { Text("Category") }, singleLine = true)
+                CategorySelector(category, categories, onCategoryChange = { category = it })
             }
         },
         dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } },
