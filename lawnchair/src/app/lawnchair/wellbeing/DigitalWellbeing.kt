@@ -230,6 +230,7 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
     var showStartConsent by remember { mutableStateOf(false) }
     var showEmergencyDialog by remember { mutableStateOf(false) }
     var emergencyPhrase by remember { mutableStateOf("") }
+    var usageRefresh by remember { mutableIntStateOf(0) }
     val installedApps = remember {
         runCatching {
             context.getSystemService(LauncherApps::class.java)
@@ -241,8 +242,10 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
         }.getOrDefault(emptyList())
     }
 
-    val totalUsageMinutes = if (access) controller.totalUsageToday() / 60_000L else 0L
-    val highestUsageApp = remember(access, installedApps) {
+    val totalUsageMinutes = remember(access, usageRefresh) {
+        if (access) controller.totalUsageToday() / 60_000L else 0L
+    }
+    val highestUsageApp = remember(access, installedApps, usageRefresh) {
         if (!access) null else installedApps
             .map { Triple(it.first, it.second, controller.packageUsageToday(it.first)) }
             .maxByOrNull { it.third }
@@ -262,6 +265,13 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
             monitoring = controller.isAccessibilityMonitoringEnabled()
             focusUntil = controller.focusUntilMillis()
             delay(1000)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            usageRefresh++
         }
     }
 
