@@ -16,7 +16,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 
-private const val CHAT_PAGE_URL = "https://appassets.androidplatform.net/assets/nexus-chat/index.html"
+internal const val CHAT_PAGE_URL = "https://appassets.androidplatform.net/assets/nexus-chat/index.html"
 
 /**
  * Browser-only cloud chat. Supabase password authentication and chat requests run in WebView.
@@ -64,7 +64,7 @@ class NexusChatBrowserActivity : ComponentActivity() {
 }
 
 @SuppressLint("SetJavaScriptEnabled")
-private fun createChatWebView(context: Context): WebView = WebView(context).apply {
+internal fun createChatWebView(context: Context): WebView = WebView(context).apply {
     settings.javaScriptEnabled = true
     settings.domStorageEnabled = true
     settings.allowFileAccess = false
