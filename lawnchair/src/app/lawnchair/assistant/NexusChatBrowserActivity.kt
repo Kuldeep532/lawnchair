@@ -15,6 +15,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import app.lawnchair.ui.theme.EdgeToEdge
 import app.lawnchair.ui.theme.LawnchairTheme
 
+private const val CHAT_PAGE_URL = "https://appassets.androidplatform.net/assets/nexus-chat/index.html"
+
 /**
  * Browser-only cloud chat. Supabase password authentication and chat requests run in WebView.
  * No local model, native Google sign-in, or embedded provider API key is used.
@@ -34,8 +36,6 @@ class NexusChatBrowserActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val CHAT_PAGE_URL = "https://appassets.androidplatform.net/assets/nexus-chat/index.html"
-
         fun intent(context: Context): Intent =
             Intent(context, NexusChatBrowserActivity::class.java)
     }
