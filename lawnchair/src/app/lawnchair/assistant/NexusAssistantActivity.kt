@@ -15,6 +15,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -178,16 +183,16 @@ class NexusAssistantActivity : ComponentActivity() {
 
         // General questions stay in the same assistant. Use the on-device model when available;
         // otherwise offer a web search instead of pretending cloud chat is already connected here.
-        val answer = runCatching {
-            if (LocalAssistantEngine.loadIfAvailable(this)) {
-                LocalAssistantEngine.reply(command)
-            } else {
-                openSearch(command)
+        lifecycleScope.launch {
+            val localAnswer = withContext(Dispatchers.IO) {
+                runCatching {
+                    if (LocalAssistantEngine.isLoaded || LocalAssistantEngine.loadIfAvailable(this@NexusAssistantActivity)) {
+                        LocalAssistantEngine.reply(command)
+                    } else null
+                }.getOrNull()
             }
-        }.getOrElse {
-            openSearch(command)
+            onResult(localAnswer ?: openSearch(command))
         }
-        onResult(answer)
     }
 
     private fun createCalendarEvent(raw: String): String {
@@ -199,8 +204,11 @@ class NexusAssistantActivity : ComponentActivity() {
         if (hourInput !in 1..12 || minute !in 0..59) return "Please provide a valid time."
         val isPm = timeMatch.groupValues[3].lowercase(Locale.ROOT).startsWith("p")
         val hour = (hourInput % 12) + if (isPm) 12 else 0
-        val title = raw.substring(0, timeMatch.range.first)
-            .replace(Regex("^(add|schedule|remind me to|remind me|याद दिलाओ|शेड्यूल)\\s*", RegexOption.IGNORE_CASE), "")
+        val beforeTime = raw.substring(0, timeMatch.range.first)
+        val afterTime = raw.substring(timeMatch.range.last + 1)
+            .trim().trimStart(',', '-', ':').replace(Regex("^(add|remind me to)\\s*", RegexOption.IGNORE_CASE), "").trim()
+        val title = (if (afterTime.isNotBlank()) afterTime else beforeTime)
+            .replace(Regex("^(add|schedule|schedule for|remind me to|remind me|याद दिलाओ|शेड्यूल)\\s*", RegexOption.IGNORE_CASE), "")
             .trim().ifBlank { "Reminder" }
         val start = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
@@ -514,32 +522,18 @@ private fun NexusAssistantScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                 style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
             )
-            ListItem(
-                headlineContent = { Text("Search the web") },
-                supportingContent = { Text("Find current information") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingContent = { Icon(Icons.Rounded.Search, contentDescription = null) },
-            )
             TextButton(
                 onClick = { showAttach = false; onOpenSearch() },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Open web search") }
-            ListItem(
-                headlineContent = { Text("On-device AI") },
-                supportingContent = { Text("Manage the offline assistant model") },
-            )
+            ) { Text("Search the web") }
             TextButton(
                 onClick = { showAttach = false; onOpenAiGallery() },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Manage on-device AI") }
-            ListItem(
-                headlineContent = { Text("Online AI") },
-                supportingContent = { Text("Continue with your Nexus account") },
-            )
             TextButton(
                 onClick = { showAttach = false; onOpenChat() },
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Open online AI") }
+            ) { Text("Online AI") }
             Spacer(Modifier.padding(bottom = 20.dp))
         }
     }
