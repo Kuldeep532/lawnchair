@@ -420,7 +420,7 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 
     private fun openUrlSearch(url: String, successMessage: String): String = runCatching {
-        startActivity(NexusSearchBrowserActivity.urlIntent(this, url))
+        browserUrl = url
         successMessage
     }.getOrElse { "Search could not be opened. Please try again." }
 
