@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
@@ -217,10 +218,10 @@ private fun BooksLibraryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Books") },
+                title = { Text("Your books") },
                 actions = {
                     IconButton(onClick = onImport) {
-                        Icon(Icons.Rounded.Add, contentDescription = "Import book")
+                        Icon(Icons.Rounded.Add, contentDescription = "Add a book")
                     }
                 },
             )
@@ -232,24 +233,38 @@ private fun BooksLibraryScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(Icons.Rounded.MenuBook, contentDescription = null)
-                Text("Your library is empty.", style = MaterialTheme.typography.headlineSmall)
-                Text("Import a book to start reading.", style = MaterialTheme.typography.bodyLarge)
+                Text("Your library is empty", style = MaterialTheme.typography.headlineSmall)
+                Text("Add a PDF, EPUB, text or Markdown book to start reading.")
+                Button(onClick = onImport, modifier = Modifier.padding(top = 16.dp)) {
+                    Icon(Icons.Rounded.Add, contentDescription = null)
+                    Text(" Add a book")
+                }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
                 items(books, key = { it.id }) { book ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onOpen(book) }.padding(horizontal = 20.dp, vertical = 14.dp),
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(book.title, style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                if (book.lastPosition > 0) "Continue from page ${book.lastPosition + 1}" else "Not started",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        IconButton(onClick = { onDelete(book) }) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Remove book")
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f).clickable { onOpen(book) }.padding(18.dp),
+                            ) {
+                                Text(book.title, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    if (book.lastPosition > 0) "Continue from page ${book.lastPosition + 1}" else "Ready to read",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                )
+                            }
+                            IconButton(onClick = { onDelete(book) }) {
+                                Icon(Icons.Rounded.Delete, contentDescription = "Remove ${book.title} from library")
+                            }
                         }
                     }
                 }
