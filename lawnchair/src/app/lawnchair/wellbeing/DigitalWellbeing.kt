@@ -144,7 +144,7 @@ class DigitalWellbeingController(private val context: Context) {
         if (!isUsageAccessGranted()) return null
         val manager = context.getSystemService(UsageStatsManager::class.java)
         val end = System.currentTimeMillis()
-        val start = end - 15_000L
+        val start = end - 60_000L
         val events = manager.queryEvents(start, end)
         val event = UsageEvents.Event()
         var lastPackage: String? = null
@@ -178,7 +178,7 @@ class DigitalWellbeingController(private val context: Context) {
             UsageStatsManager.INTERVAL_DAILY,
             startOfDayMillis(),
             System.currentTimeMillis(),
-        ).firstOrNull { it.packageName == packageName }?.totalTimeInForeground ?: 0L
+        ).filter { it.packageName == packageName }.sumOf { it.totalTimeInForeground }
     }
 
     fun totalBlockedUsageToday(): Long {
@@ -190,7 +190,9 @@ class DigitalWellbeingController(private val context: Context) {
             startOfDayMillis(),
             System.currentTimeMillis(),
         ).filter { it.packageName in blocked && !isAllowedApp(it.packageName) }
-            .sumOf { it.totalTimeInForeground }
+            .groupBy { it.packageName }
+            .values
+            .sumOf { entries -> entries.sumOf { it.totalTimeInForeground } }
     }
 
     fun shouldBlockPackage(packageName: String): Boolean {
@@ -245,7 +247,7 @@ fun DigitalWellbeingSettings(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Choose distracting apps and set daily usage limits. Phone, messaging, payment and core utility apps are protected. YouTube can be selected if you want to limit it.")
+            Text("Your focus plan uses app-usage totals and the launcher's foreground-app monitor. Enable both Android permissions below for reliable limits. Phone, messages, payment and core utility apps stay protected.")
             Text("Daily total limit: $dailyLimit minutes", style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = dailyLimit.toString(),

@@ -9,6 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -22,17 +23,38 @@ private const val CHAT_PAGE_URL = "https://appassets.androidplatform.net/assets/
  * No local model, native Google sign-in, or embedded provider API key is used.
  */
 class NexusChatBrowserActivity : ComponentActivity() {
+    private var webView: WebView? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             LawnchairTheme {
                 EdgeToEdge()
+                BackHandler(enabled = webView?.canGoBack() == true) {
+                    webView?.goBack()
+                }
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
-                    factory = { context -> createChatWebView(context).apply { loadUrl(CHAT_PAGE_URL) } },
+                    factory = { context ->
+                        createChatWebView(context).also {
+                            webView = it
+                            it.loadUrl(CHAT_PAGE_URL)
+                        }
+                    },
                 )
             }
         }
+    }
+
+    override fun onDestroy() {
+        webView?.apply {
+            stopLoading()
+            loadUrl("about:blank")
+            removeAllViews()
+            destroy()
+        }
+        webView = null
+        super.onDestroy()
     }
 
     companion object {

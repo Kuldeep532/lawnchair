@@ -46,14 +46,14 @@ internal fun AiGalleryScreen(
             modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Download and manage on-device AI. No account is needed.", style = MaterialTheme.typography.bodyLarge)
+            Text("Manage AI assets currently supported by Nexus Launcher. Model downloads are available from the Assistant model manager. Unsupported voice engines are not shown as installed.", style = MaterialTheme.typography.bodyLarge)
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Local AI Chat Model", style = MaterialTheme.typography.titleMedium)
                     Text(
                         when {
                             localRuntimeReady -> "Ready for offline chat."
-                            modelState == AssistantModelStore.AssetState.DOWNLOADED -> "Downloaded, but not ready to use."
+                            modelState == AssistantModelStore.AssetState.DOWNLOADED -> "The model file is present, but an offline inference engine is not connected yet."
                             modelState == AssistantModelStore.AssetState.PARTIAL -> "An incomplete download was found. Download again to finish setup."
                             else -> "Not downloaded. Download this model before using offline AI chat."
                         },
@@ -79,17 +79,17 @@ internal fun AiGalleryScreen(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Local Voice", style = MaterialTheme.typography.titleMedium)
-                    Text("Books Reader and PDF Reader use the Android voice installed on this phone. Manage or download supported voice data in Android voice settings.")
+                    Text("Books Reader and PDF Reader use Android's installed text-to-speech voice. Voice availability depends on the device and downloaded language data.")
                     Button(onClick = onVoiceSettings, modifier = Modifier.fillMaxWidth()) {
                         Text("Manage and download voice")
                     }
                     OutlinedButton(onClick = onOpenReader, modifier = Modifier.fillMaxWidth()) {
-                        Text("Open Books Reader")
+                        Text("Open voice settings")
                     }
                 }
             }
             Text(
-                "Voice models from third-party providers are not bundled here. This gallery currently manages the local chat model and links to Android's voice-data settings.",
+                "Chatterbox, Coqui and Piper inference are not connected in this build. This gallery links to working device settings and the existing local model manager.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }

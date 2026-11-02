@@ -73,6 +73,9 @@ class NexusAssistantActivity : ComponentActivity() {
                     onOpenChat = {
                         startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
                     },
+                    onOpenAiGallery = {
+                        startActivity(NexusAssistantLauncher.aiGalleryIntent(this@NexusAssistantActivity))
+                    },
                     onOpenSearch = {
                         startActivity(NexusSearchBrowserActivity.openSearchScreen(this@NexusAssistantActivity))
                     },
@@ -136,15 +139,20 @@ class NexusAssistantActivity : ComponentActivity() {
     }
 
     private fun processInput(raw: String, onResult: (String) -> Unit) {
-        if (isSystemCommand(raw)) {
-            onResult(handleCommand(raw))
+        val command = raw.trim()
+        if (command.isBlank()) {
+            onResult("Please say or type a command.")
+            return
+        }
+        if (isSystemCommand(command)) {
+            onResult(handleCommand(command))
             return
         }
         runCatching {
             startActivity(NexusChatBrowserActivity.intent(this@NexusAssistantActivity))
-            onResult("Nexus Chat opened in the browser. Sign in with your email and password.")
+            onResult("Nexus Chat opened. Sign in or create your account to continue.")
         }.onFailure {
-            onResult("Nexus Chat could not be opened. Please check your connection and try again.")
+            onResult("Nexus Chat could not be opened. Please try again.")
         }
     }
 
@@ -358,6 +366,7 @@ class NexusAssistantActivity : ComponentActivity() {
 @androidx.compose.runtime.Composable
 private fun NexusAssistantScreen(
     onOpenChat: () -> Unit,
+    onOpenAiGallery: () -> Unit,
     onOpenSearch: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
@@ -406,7 +415,11 @@ private fun NexusAssistantScreen(
             Button(
                 onClick = onOpenChat,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("Open Nexus Chat") }
+            ) { Text("Sign in / Open Nexus Chat") }
+            Button(
+                onClick = onOpenAiGallery,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("AI Gallery") }
             Button(
                 onClick = { onListen { response = it } },
                 modifier = Modifier.fillMaxWidth(),
@@ -416,7 +429,7 @@ private fun NexusAssistantScreen(
             }
             Text("Assistant response")
             Text(response)
-            Text("Nexus Chat requires an internet connection and uses email and password sign-in in the browser. No local AI model is needed.")
+            Text("Cloud chat needs an internet connection and a Nexus account. AI Gallery manages supported on-device assets separately.")
         }
     }
 }
