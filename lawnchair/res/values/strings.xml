@@ -149,7 +149,7 @@
     <string name="sort_active_items_action">Sort active items</string>
 
     <!-- A11y description -->
-    <string name="accessibility_service_description">To perform certain actions when you use a gesture, such as locking your phone, Lawnchair requires accessibility access.\n\nLawnchair doesn\'t watch your actions, though all accessibility services require this privilege. Lawnchair discards any event sent by the system.\n\nTo lock your phone or open the Recents screen, Lawnchair uses the performGlobalAction accessibility service.</string>
+    <string name="accessibility_service_description">To perform actions you request, such as locking your phone, Nexus Launcher needs accessibility access.\n\nNexus Launcher uses this access only for the actions you choose.\n\nTo lock your phone or open the Recents screen, Nexus Launcher uses the Android accessibility service.</string>
 
     <string name="iconPackPackageDefault" translatable="false">""</string>
 
@@ -681,7 +681,7 @@
     <string name="quick_settings_a11y_hint">open the Quick Settings panel</string>
     <string name="recents_screen_a11y_hint">open the Recents screen</string>
 
-    <string name="generic_a11y_hint">To %1$s, turn on the Lawnchair accessibility service. Tap \"Open settings\", choose \"Lawnchair\" and turn on \"Use Lawnchair.\"</string>
+    <string name="generic_a11y_hint">To %1$s, turn on the Nexus Launcher accessibility service. Tap "Open settings", choose "Nexus Launcher" and turn on "Use Nexus Launcher."</string>
     <string name="generic_a11y_disclaimer">Nexus Launcher uses Android accessibility access only to perform the action you request. It does not collect the content of other apps.</string>
 
     <string name="sleep_mode_label">Sleep mode</string>
@@ -922,7 +922,7 @@
     <string name="max_folder_rows">Maximum folder rows</string>
 
     <!-- Quickstep settings -->
-    <string name="quickswitch_ignored_warning">These settings will be ignored because Lawnchair isn\'t set as the Recents screen provider</string>
+    <string name="quickswitch_ignored_warning">These settings will be ignored because Nexus Launcher isn't set as the Recents screen provider</string>
 
     <string name="quickstep_incompatible">Incompatible system integration</string>
     <string name="quickstep_incompatible_description">Your device is configured to have system gestures, known as Quickstep, provided by %1$s, but this version of %1$s isn\'t compatible with your Android version. To continue using your device, uninstall %1$s updates or disable %1$s as a system gesture provider.</string>
