@@ -63,6 +63,11 @@ class OnlineRadioActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent { LawnchairTheme { EdgeToEdge(); OnlineRadioScreen(::finish) } }
     }
+
+    override fun onDestroy() {
+        OnlineRadioService.command(this, OnlineRadioService.ACTION_STOP)
+        super.onDestroy()
+    }
 }
 
 @Composable
