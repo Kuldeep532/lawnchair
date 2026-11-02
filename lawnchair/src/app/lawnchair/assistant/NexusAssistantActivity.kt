@@ -90,6 +90,7 @@ class NexusAssistantActivity : ComponentActivity() {
                     },
                     browserUrl = browserUrl,
                     onOpenSearch = { browserUrl = "https://www.google.com" },
+                    onCloseBrowser = { browserUrl = null },
                     onBack = ::finish,
                     onListen = { onRecognized ->
                         speechResultHandler = { recognized -> processInput(recognized, onRecognized) }
@@ -440,6 +441,7 @@ private fun NexusAssistantScreen(
     browserUrl: String?,
     onOpenAiGallery: () -> Unit,
     onOpenSearch: () -> Unit,
+    onCloseBrowser: () -> Unit,
     onBack: () -> Unit,
     onListen: ((String) -> Unit) -> Unit,
     onCommand: (String, (String) -> Unit) -> Unit,
@@ -458,8 +460,7 @@ private fun NexusAssistantScreen(
         } else if (showOnlineAi) {
             showOnlineAi = false
         } else if (browserUrl != null) {
-            // Browser is closed by the toolbar; the system back returns to the Assistant.
-            onBack()
+            onCloseBrowser()
         } else {
             onBack()
         }
@@ -472,7 +473,7 @@ private fun NexusAssistantScreen(
                     title = { Text(if (showOnlineAi) "Assistant" else embeddedPageTitle, maxLines = 1) },
                     navigationIcon = {
                         IconButton(onClick = {
-                            if (showOnlineAi) showOnlineAi = false else onOpenSearch()
+                            if (showOnlineAi) showOnlineAi = false else onCloseBrowser()
                         }) {
                             Icon(Icons.Rounded.ArrowBack, contentDescription = "Back to Assistant")
                         }
