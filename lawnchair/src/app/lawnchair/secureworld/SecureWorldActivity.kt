@@ -159,6 +159,7 @@ class SecureWorldActivity : FragmentActivity() {
                     suggestedName = suggestedName,
                     suggestedNumber = suggestDocumentNumber("Other", extractedText),
                     suggestedDetails = suggestDocumentDetails("Other", extractedText),
+                    categories = store.categories().map { it.name },
                     onDismiss = { showSecureVault() },
                     onSave = { category, number, name, details ->
                         val finalNumber = number.ifBlank { suggestDocumentNumber(category, extractedText) }
@@ -464,7 +465,7 @@ private fun SecureAddBottomSheet(
 ) {
     androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Add new", style = MaterialTheme.typography.titleLarge)
+            Text("Save to Vault", style = MaterialTheme.typography.titleLarge)
             Button(onClick = onAddText, modifier = Modifier.fillMaxWidth()) { Text("Text") }
             Button(onClick = onAddDocument, modifier = Modifier.fillMaxWidth()) { Text("Document") }
             Button(onClick = onAddPassword, modifier = Modifier.fillMaxWidth()) { Text("Password") }
@@ -687,20 +688,14 @@ private fun DocumentDialog(
     suggestedName: String,
     suggestedNumber: String,
     suggestedDetails: String = "",
+    categories: List<String>,
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit,
 ) {
-    val categories = listOf(
-        "Aadhaar Card",
-        "PAN Card",
-        "Driving Licence",
-        "Certificate",
-        "Passport",
-        "Voter ID",
-        "Insurance",
-        "Other",
-    )
-    var category by remember { mutableStateOf(categories.first()) }
+    val documentCategories = categories.ifEmpty {
+        listOf("Aadhaar Card", "PAN Card", "Driving Licence", "Certificate", "Passport", "Voter ID", "Insurance", "Other")
+    }
+    var category by remember { mutableStateOf(documentCategories.first()) }
     var number by remember { mutableStateOf(suggestedNumber) }
     var name by remember { mutableStateOf(suggestedName) }
     var details by remember { mutableStateOf(suggestedDetails) }
@@ -711,7 +706,7 @@ private fun DocumentDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Category", style = MaterialTheme.typography.labelLarge)
-                categories.forEach { option ->
+                documentCategories.forEach { option ->
                     Text(
                         text = option,
                         modifier = Modifier
