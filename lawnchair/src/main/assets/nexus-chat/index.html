@@ -197,6 +197,10 @@
   const { data } = await supabase.auth.getSession();
   if (data.session?.user) showAuthenticated(data.session.user);
   else showSignedOut();
+
+  // A question forwarded from the single native Assistant is prefilled, never sent silently.
+  const initialPrompt = new URLSearchParams(window.location.search).get('prompt');
+  if (initialPrompt) $('message').value = initialPrompt;
 </script>
 </body>
 </html>
